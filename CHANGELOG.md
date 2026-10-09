@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.4.0] — 2026-10-09 — Scannable showcase layout (rule R7)
+**Files:** docs/index.html
+- **Situation:** Each section of the showcase opened with a 2–4 sentence paragraph; the problem statement was two paragraphs.
+- **Task:** Apply portfolio rule R7: no passages, use visual structure.
+- **Action:** Problem became a before/after flow plus three numbered needs; each method became 3 numbered steps or bullets plus a one-line "why it matters"; added a clickable pipeline flowchart (labels → snapshot → validation → model → call list); "Our take" became two bullet lists; the table key became a tag legend.
+- **Result:** Longest paragraph on the page dropped from 42 to 22 words; all simulations and formulas unchanged.
+- **Talking point:** "The page went from essay to dashboard: a reader can follow the method by scanning the steps and the flow."
+
 ## [0.3.1] — 2026-10-09 — Explicit status labels in the alternatives table
 **Files:** docs/index.html
 - **Situation:** The "Why this methodology" table marked rejected options with strikethrough. A first reader did not know what it meant, and it was inconsistent: options kept as baselines looked the same as unmarked rejected ones.

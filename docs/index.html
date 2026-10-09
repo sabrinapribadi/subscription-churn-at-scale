@@ -69,7 +69,8 @@ td.chosen { color: var(--stay); font-weight: 600; }
 .tag.base { color: var(--accent); background: var(--accent-soft); }
 .tag.later { color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
 .tag.ref { color: var(--amber); box-shadow: inset 0 0 0 1px var(--line); }
-.table-note { font-size: 13px; color: var(--muted); }
+.tagkey { gap: 8px 18px; }
+.tagkey > span { display: inline-flex; align-items: baseline; gap: 6px; }
 
 .chip { display: inline-block; font: 600 11px/1 var(--font-mono); letter-spacing: 0.04em; padding: 5px 8px; border-radius: 999px; white-space: nowrap; }
 .chip.use { background: var(--stay-soft); color: var(--stay); }
@@ -136,6 +137,26 @@ svg.plot { width: 100%; height: auto; display: block; }
 .lam::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--line); }
 .lam span { position: absolute; top: 0; height: 10px; border-radius: 2px; }
 
+.steps, .points { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
+.steps li::marker { font: 600 13px var(--font-mono); color: var(--accent); }
+.points li::marker { color: var(--accent); }
+.flow { display: grid; gap: 12px; }
+.lane { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.lane .who { flex-basis: 100%; font: 600 11px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.node { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; font-size: 14px; color: var(--fg); text-decoration: none; }
+.node small { font: 500 11px var(--font-mono); color: var(--muted); margin-left: 4px; }
+a.node:hover { border-color: var(--accent); }
+.node.bad { background: var(--churn-soft); border-color: transparent; color: var(--churn); font-weight: 600; }
+.node.good { background: var(--stay-soft); border-color: transparent; color: var(--stay); font-weight: 600; }
+.arrow { color: var(--muted); font-size: 16px; }
+.needs-wrap { display: grid; gap: 10px; }
+.needs { list-style: none; counter-reset: n; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.needs li { counter-increment: n; display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: baseline; }
+.needs li::before { content: counter(n); grid-row: span 2; font: 600 20px var(--font-mono); color: var(--accent); }
+.needs li span { color: var(--muted); font-size: 14px; }
+.take { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+.take > div { display: grid; gap: 10px; align-content: start; }
+
 .gates td:nth-child(3) { white-space: nowrap; }
 footer { margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--line); display: grid; gap: 10px; font-size: 13px; color: var(--muted); }
 footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
@@ -152,7 +173,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 <header class="top">
   <span class="eyebrow">Portfolio · Commercial / Churn · CHN-1</span>
   <h1>Subscription Churn at Scale</h1>
-  <p class="lede">Who leaves, when, why, and who to call first. A churn system built on ~400 million daily listening records from a public music-streaming dataset, designed to warn a retention team before renewal instead of after it.</p>
+  <p class="lede">A churn system on ~400 million daily listening records that warns a retention team <b>before</b> renewal, not after.</p>
   <nav class="toc" aria-label="Sections">
     <a href="#problem"><span class="step">1</span>Problem</a>
     <a href="#why"><span class="step">2</span>Why this methodology</a>
@@ -165,11 +186,25 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 <!-- 1. PROBLEM -->
 <section class="block" id="problem">
   <span class="eyebrow">1 · Problem statement</span>
-  <h2>A subscription business learns a customer has left only after the renewal date has passed</h2>
-  <div class="prose">
-    <p>By the time a member fails to renew, there is nothing left for a retention team to do. The best-known public benchmark for this problem, the WSDM Cup 2018 KKBox challenge, predicts churn <em>at</em> the expiry date and is usually scored on random splits by log-loss. That setup is fine for a leaderboard. A retention team works differently: it needs a short list of members to contact <b>days before</b> renewal, ordered by how much revenue is at stake, with a reason it can act on.</p>
-    <p>This project changes the question from "will this member churn?" to "who should we call two weeks before renewal, and in what order?"</p>
+  <h2>Members leave silently. By the renewal date, it is too late to act.</h2>
+  <div class="flow">
+    <div class="lane"><span class="who">Today · competition setup</span>
+      <span class="node">Membership expires</span><span class="arrow" aria-hidden="true">→</span>
+      <span class="node">30 days pass</span><span class="arrow" aria-hidden="true">→</span>
+      <span class="node">Churn confirmed</span><span class="arrow" aria-hidden="true">→</span>
+      <span class="node bad">Nothing left to do</span></div>
+    <div class="lane"><span class="who">This project</span>
+      <span class="node">Score 14 days before expiry</span><span class="arrow" aria-hidden="true">→</span>
+      <span class="node">Rank by revenue at risk</span><span class="arrow" aria-hidden="true">→</span>
+      <span class="node">Call with a reason</span><span class="arrow" aria-hidden="true">→</span>
+      <span class="node good">Member renews</span></div>
   </div>
+  <div class="needs-wrap"><span class="eyebrow">What a retention team needs</span>
+  <ol class="needs">
+    <li><b>Lead time</b><span>A warning days before renewal</span></li>
+    <li><b>Order</b><span>Who is worth calling first</span></li>
+    <li><b>A reason</b><span>Why this member is at risk</span></li>
+  </ol></div>
   <div class="facts">
     <div class="fact"><b>992,931</b><span>members expiring Feb 2017 (official labels)</span></div>
     <div class="fact churn"><b>6.39%</b><span>churned in the Feb 2017 cohort</span></div>
@@ -198,26 +233,40 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       </tbody>
     </table>
   </div>
-  <p class="table-note">Rejected: ruled out, with the reason in the ADR. Baseline: kept as the comparison the chosen method must beat. Secondary: reported, but not used for decisions. Deferred / later: a planned extension. Reference only: reported once to show what lead time costs.</p>
+  <div class="legend tagkey">
+    <span><span class="tag rej">rejected</span> ruled out (reason in ADR)</span>
+    <span><span class="tag base">baseline</span> the bar to beat</span>
+    <span><span class="tag base">secondary</span> reported, not decisive</span>
+    <span><span class="tag later">deferred</span> planned extension</span>
+    <span><span class="tag ref">reference only</span> shows the cost of lead time</span>
+  </div>
 </section>
 
 <!-- 3. METHODOLOGY -->
 <section class="block" id="method">
   <span class="eyebrow">3 · Methodology, simulated</span>
-  <h2>Each method, its logic, its math, and a simulation you can move</h2>
-  <p class="muted prose">Simulations run in your browser on synthetic data generated to show how each method behaves. They are not project results; those are in section 4.</p>
+  <h2>Each method: logic, math, and a simulation you can move</h2>
+  <div class="flow pipe">
+    <div class="lane"><span class="who">Pipeline · click a step</span>
+      <a class="node" href="#m-label">Labels <small>3.1</small></a><span class="arrow" aria-hidden="true">→</span>
+      <a class="node" href="#m-pit">Snapshot <small>3.2 · 3.3</small></a><span class="arrow" aria-hidden="true">→</span>
+      <a class="node" href="#m-split">Validation <small>3.4 · 3.5</small></a><span class="arrow" aria-hidden="true">→</span>
+      <a class="node" href="#m-gbm">Model <small>3.6 · 3.7</small></a><span class="arrow" aria-hidden="true">→</span>
+      <a class="node good" href="#m-profit">Call list <small>3.8 · 3.9</small></a></div>
+  </div>
+  <p class="muted">Simulations use synthetic data in your browser. Real results are in section 4.</p>
 
   <!-- M1 -->
   <article class="method" id="m-label">
     <div class="explain">
       <div class="head"><span class="num">3.1</span><h3>Churn label rule</h3><span class="chip use">In use · P0</span></div>
-      <p>A member is a candidate if their last expiry, worked out from the previous month's transactions, falls in the target month. A cancellation can only move that expiry earlier. The first renewal after it decides the label.</p>
+      <ol class="steps"><li>Find the member's last expiry from last month's transactions.</li><li>A cancellation can only move that expiry <b>earlier</b>.</li><li>Renewal within 30 days → <b>retained</b>. Otherwise → <b>churn</b>.</li></ol>
       <div class="formula">
         <span class="lbl">Effective expiry</span><i>E′</i> = min(<i>E</i>, <i>E</i><sub>cancel</sub>)
         <span class="lbl">Renewal gap</span><i>g</i> = <i>t</i><sub>renew</sub> − <i>E′</i>
         <span class="lbl">Label</span><i>y</i> = 1 ⟺ no renewal ∨ <i>g</i> ≥ 30
       </div>
-      <p class="why-here"><b>Why it matters:</b> we need labels for more than the two official months. Porting the organiser's own labeller lets us build new cohorts and check them against official labels (gate ≥ 99%).</p>
+      <p class="why-here"><b>Why it matters:</b> lets us label any month, checked against the official labels (gate ≥ 99%).</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · one member, expiry 15 Feb 2017</span>
@@ -238,13 +287,13 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <article class="method" id="m-pit">
     <div class="explain">
       <div class="head"><span class="num">3.2</span><h3>Point-in-time snapshot</h3><span class="chip decided">Decided · ADR-001</span></div>
-      <p>For every member we freeze the clock at a snapshot date k days before expiry. Features may only use the W days before the snapshot. Anything on or after the snapshot is invisible to the model; using it would be leakage.</p>
+      <ol class="steps"><li>Freeze the clock <b>k days</b> before expiry.</li><li>Build features from the <b>W days</b> before the freeze.</li><li>Anything after the freeze is invisible. A unit test enforces it.</li></ol>
       <div class="formula">
         <span class="lbl">Snapshot</span><i>S</i> = <i>E</i> − <i>k</i>
         <span class="lbl">Feature window</span><i>x</i> = <i>f</i>( events with <i>t</i> ∈ [<i>S</i> − <i>W</i>, <i>S</i>) )
         <span class="lbl">Leakage test</span>∀ event used: <i>t</i> &lt; <i>S</i>
       </div>
-      <p class="why-here"><b>Why it matters:</b> the competition version predicts at k = 0, which leaves no time to act. A unit test fails the build if any feature row is dated on or after its snapshot.</p>
+      <p class="why-here"><b>Why it matters:</b> the competition predicts at k = 0, which leaves no time to act.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · daily listening minutes of one member who is fading out</span>
@@ -262,13 +311,13 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <article class="method" id="m-window">
     <div class="explain">
       <div class="head"><span class="num">3.3</span><h3>Observation-window sufficiency</h3><span class="chip planned">Planned · P2</span></div>
-      <p>How much history does the model need? We compute a decline feature (recent 14-day usage divided by the window average) for every window length W and measure how well it separates churners from stayers. The point where the curve flattens is the window we keep.</p>
+      <ol class="steps"><li>For each window W: recent 14-day use ÷ window average.</li><li>Measure how well that separates churners from stayers (AUC).</li><li>Keep the shortest W past the <b>knee</b>.</li></ol>
       <div class="formula">
         <span class="lbl">Decline ratio</span><i>r</i><sub>W</sub> = mean<sub>[S−14, S)</sub> / mean<sub>[S−W, S)</sub>
         <span class="lbl">Separation</span>AUC(<i>W</i>) = P( <i>r</i><sub>W</sub><sup>stay</sup> &gt; <i>r</i><sub>W</sub><sup>churn</sup> )
         <span class="lbl">Knee</span><i>W</i>* = min <i>W</i> with gain ≥ 95% of max
       </div>
-      <p class="why-here"><b>Why it matters:</b> a 2026 study on this dataset found the knee moves between 30 and 120 days depending on the setup. Move the sliders and the knee moves too.</p>
+      <p class="why-here"><b>Why it matters:</b> a 2026 study on this dataset found the knee anywhere from 30 to 120 days.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · 800 synthetic members, half of them churners</span>
@@ -285,12 +334,12 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <article class="method" id="m-split">
     <div class="explain">
       <div class="head"><span class="num">3.4</span><h3>Out-of-time validation</h3><span class="chip decided">Decided · ADR-002</span></div>
-      <p>We train on earlier expiry cohorts, tune on the next one and test on the one after. A random split mixes months, so the test set looks like the training set, and the score is optimistic whenever behaviour drifts.</p>
+      <ol class="steps"><li><b>Train</b> on older monthly cohorts.</li><li><b>Tune</b> on the next month.</li><li><b>Test</b> on the month after.</li></ol>
       <div class="formula">
         <span class="lbl">Out-of-time</span>train: <i>c</i> ≤ <i>t</i> · val: <i>c</i> = <i>t</i>+1 · test: <i>c</i> = <i>t</i>+2
         <span class="lbl">Drift in the simulation</span>logit <i>p</i><sub>m</sub> = <i>a</i><sub>m</sub> + β<sub>1,m</sub><i>x</i><sub>1</sub> + β<sub>2,m</sub><i>x</i><sub>2</sub>, &nbsp;β<sub>1</sub>↓ β<sub>2</sub>↑
       </div>
-      <p class="why-here"><b>Why it matters:</b> real churn moved from 6.39% to 8.99% in one month. When behaviour shifts, the out-of-time score is the honest one.</p>
+      <p class="why-here"><b>Why it matters:</b> churn moved 6.39% → 8.99% in one month. Random splits hide that.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · 8 monthly cohorts × 1,200 members, logistic model</span>
@@ -307,13 +356,13 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <article class="method" id="m-prauc">
     <div class="explain">
       <div class="head"><span class="num">3.5</span><h3>PR-AUC under class imbalance</h3><span class="chip decided">Decided · ADR-002</span></div>
-      <p>ROC-AUC asks whether a churner usually scores above a stayer, and it ignores how rare churners are. PR-AUC asks how clean the top of the list is, and that drops sharply when churn is rare. The retention team only ever sees the top of the list.</p>
+      <ul class="points"><li><b>ROC-AUC</b>: does a churner usually outscore a stayer? Ignores how rare churn is.</li><li><b>PR-AUC</b>: how clean is the top of the list? Falls when churn is rare.</li></ul>
       <div class="formula">
         <span class="lbl">Scores</span>churn ~ 𝒩(<i>d</i>, 1), stay ~ 𝒩(0, 1)
         <span class="lbl">Precision at threshold τ</span><i>P</i>(τ) = π·TPR / (π·TPR + (1−π)·FPR)
         <span class="lbl">ROC-AUC</span>Φ(<i>d</i> / √2) — independent of π
       </div>
-      <p class="why-here"><b>Why it matters:</b> at 6–9% churn, a model can look strong on ROC-AUC while a third of its top calls go to members who would have stayed anyway.</p>
+      <p class="why-here"><b>Why it matters:</b> the retention team only ever works the top of the list.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · analytic curves, same model, different churn rates</span>
@@ -331,13 +380,13 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <article class="method" id="m-gbm">
     <div class="explain">
       <div class="head"><span class="num">3.6</span><h3>Gradient boosting baseline</h3><span class="chip planned">Planned · P1</span></div>
-      <p>Boosting builds the model one small tree at a time. Each new tree fits what the current model still gets wrong (the pseudo-residuals), and its vote is shrunk by a learning rate so no single tree dominates.</p>
+      <ol class="steps"><li>Start from the average churn rate.</li><li>Fit a small tree to what the model still gets wrong.</li><li>Add it, shrunk by learning rate η. Repeat.</li></ol>
       <div class="formula">
         <span class="lbl">Additive model</span><i>F</i><sub>m</sub>(<i>x</i>) = <i>F</i><sub>m−1</sub>(<i>x</i>) + η · <i>h</i><sub>m</sub>(<i>x</i>)
         <span class="lbl">Pseudo-residual (log-loss)</span><i>r</i><sub>i</sub> = <i>y</i><sub>i</sub> − σ(<i>F</i><sub>m−1</sub>(<i>x</i><sub>i</sub>))
         <span class="lbl">Leaf value (Newton step)</span>γ = Σ<i>r</i><sub>i</sub> / Σ<i>p</i><sub>i</sub>(1 − <i>p</i><sub>i</sub>)
       </div>
-      <p class="why-here"><b>Why it matters:</b> gradient boosting is the strongest family on this benchmark, so it is the bar every deeper idea has to clear.</p>
+      <p class="why-here"><b>Why it matters:</b> strongest family on this benchmark, so it is the bar for every deeper idea.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · 160 members, one feature, depth-1 trees</span>
@@ -355,12 +404,12 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <article class="method" id="m-embed">
     <div class="explain">
       <div class="head"><span class="num">3.7</span><h3>Behavioural embeddings</h3><span class="chip planned">Planned · P3</span></div>
-      <p>An encoder reads a member's daily usage, hides part of it, and learns to fill the gap. To do that it has to compress habits (commuter, weekend binger, fading, sporadic) into a short vector. Those vectors become features and personas.</p>
+      <ol class="steps"><li>Hide some days of a member's usage.</li><li>Train an encoder to fill them back in.</li><li>Its compressed vector becomes <b>features</b> and <b>personas</b>.</li></ol>
       <div class="formula">
         <span class="lbl">Masked reconstruction</span>ℒ = Σ<sub><i>t</i> ∈ 𝓜</sub> ( <i>x</i><sub>t</sub> − <i>x̂</i><sub>t</sub> )²,&nbsp; <i>x̂</i> = dec(enc(<i>x</i><sub>∖𝓜</sub>))
         <span class="lbl">Linear special case</span>a linear auto-encoder with squared loss spans the top principal components
       </div>
-      <p class="why-here"><b>Why it matters:</b> the simulation uses the linear case (PCA) so it runs in the browser. The project uses a non-linear sequence encoder, and it stays only if it beats RFM features by +0.02 PR-AUC out-of-time.</p>
+      <p class="why-here"><b>Why it matters:</b> the demo uses the linear case (PCA). The real encoder stays only if it beats RFM by +0.02 PR-AUC.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · 320 members × 28 days, 2-D embedding</span>
@@ -377,12 +426,12 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <article class="method" id="m-profit">
     <div class="explain">
       <div class="head"><span class="num">3.8</span><h3>Profit at k</h3><span class="chip decided">Decided · ADR-002</span></div>
-      <p>A call costs money and only sometimes saves the member. Profit counts the revenue saved from the churners you actually reach, minus the cost of every call. Sorting by expected value (probability × revenue) beats sorting by probability alone.</p>
+      <ul class="points"><li>Each call costs <b>c</b> and saves a churner with probability <b>s</b>.</li><li>Profit = revenue saved − cost of every call.</li><li>Sort by <b>probability × revenue</b>, not probability alone.</li></ul>
       <div class="formula">
         <span class="lbl">Realised profit of the top k</span>Π(<i>k</i>) = Σ<sub><i>i</i> ∈ top <i>k</i></sub> ( <i>s</i> · <i>y</i><sub>i</sub> · <i>r</i><sub>i</sub> − <i>c</i> )
         <span class="lbl">Expected value per member</span>𝔼[Π<sub>i</sub>] = <i>s</i> · <i>p̂</i><sub>i</sub> · <i>r</i><sub>i</sub> − <i>c</i>
       </div>
-      <p class="why-here"><b>Why it matters:</b> save rate <i>s</i> and call cost <i>c</i> are stated assumptions in the config and are varied in a sensitivity table. The headline uses the top 10%.</p>
+      <p class="why-here"><b>Why it matters:</b> s and c are stated assumptions, varied in a sensitivity table.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · 3,000 members, synthetic plan prices</span>
@@ -401,13 +450,13 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <article class="method" id="m-lambda">
     <div class="explain">
       <div class="head"><span class="num">3.9</span><h3>LambdaMART ranking</h3><span class="chip planned">Planned · P4</span></div>
-      <p>LambdaMART learns the order of the list directly. For every pair in the wrong order, it computes a push (λ) scaled by how much swapping them would improve NDCG at the top of the list. Trees are fit to those pushes, so mistakes near the top cost more than mistakes lower down.</p>
+      <ol class="steps"><li>For each pair in the wrong order, compute a push <b>λ</b>.</li><li>Scale it by the NDCG gain of swapping them.</li><li>Trees learn the pushes. Mistakes near the top cost most.</li></ol>
       <div class="formula">
         <span class="lbl">Pair push, for grade<sub>i</sub> &gt; grade<sub>j</sub></span>λ<sub>ij</sub> = σ · |ΔNDCG<sub>ij</sub>| / (1 + e<sup>σ(<i>s</i><sub>i</sub> − <i>s</i><sub>j</sub>)</sup>)
         <span class="lbl">Per member</span>λ<sub>i</sub> = Σ<sub>j</sub> λ<sub>ij</sub> − Σ<sub>j</sub> λ<sub>ji</sub>
         <span class="lbl">Quality</span>NDCG@5 = DCG@5 / IDCG@5,&nbsp; DCG = Σ (2<sup>g</sup> − 1) / log₂(rank + 1)
       </div>
-      <p class="why-here"><b>Why it matters:</b> grades are revenue-at-risk tiers. A trained tree would fit the λ values; here they are applied straight to the scores so you can watch the list reorder.</p>
+      <p class="why-here"><b>Why it matters:</b> grades are revenue-at-risk tiers. Here λ moves the scores directly so you can watch.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · 8 members, grade = revenue-at-risk tier (0–3)</span>
@@ -421,7 +470,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 <!-- 4. RESULTS -->
 <section class="block" id="results">
   <span class="eyebrow">4 · Results</span>
-  <h2>Gates were fixed before training. Results go here as each phase finishes, including failures.</h2>
+  <h2>Gates fixed before training. Failures get reported too.</h2>
   <div class="table-wrap">
     <table class="gates">
       <thead><tr><th>Phase</th><th>Gate</th><th>Status</th><th>Result</th></tr></thead>
@@ -439,10 +488,10 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 <!-- 5. TAKE -->
 <section class="block" id="take">
   <span class="eyebrow">5 · Our take</span>
-  <h2>Working view, to be revised once results are in</h2>
-  <div class="prose">
-    <p>The most important decision so far was the framing. The benchmark predicts at expiry and scores log-loss; a retention team needs lead time and a list ordered by value. The 2.6-point jump in churn between two consecutive months tells us any random-split score would overstate what next month's list will deliver.</p>
-    <p>What would change our mind: if lead time costs little accuracy (P2), we will recommend predicting 30 days out rather than 14. If behavioural embeddings fail their gate (P3), we will keep them for personas only and say so here.</p>
+  <h2>Working view, revised as results come in</h2>
+  <div class="take">
+    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li></ul></div>
+    <div><span class="eyebrow">What would change our mind</span><ul class="points"><li>Lead time costs little (P2) → predict <b>30 days</b> out, not 14.</li><li>Embeddings miss their gate (P3) → keep them for <b>personas only</b>.</li></ul></div>
   </div>
 </section>
 
