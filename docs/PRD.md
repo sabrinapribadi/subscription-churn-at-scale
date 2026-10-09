@@ -1,9 +1,9 @@
 PRODUCT REQUIREMENT DOCUMENT (PRD)
 Project: Subscription Churn at Scale — Who Leaves, When, Why, and Who to Call First
-Version: 0.2 (Label port from official labeller; ADR-001 amended; tests passing)
+Version: 0.3 (P0 gate failed and diagnosed; official labels = test truth)
 Author: Sabrina Pribadi
 Date: October 9, 2026
-Status: Design — blocked on data access (Kaggle competition rules + API token)
+Status: Active — P0 complete (gate failed, documented); P1 next
 
 
 1. EXECUTIVE SUMMARY

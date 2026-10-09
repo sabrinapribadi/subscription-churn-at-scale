@@ -54,6 +54,30 @@ Reading `WSDMChurnLabeller.scala` (shipped with the competition data) changed tw
 
 Official cohort facts (from `train.csv` / `train_v2.csv`): Feb-2017 = 992,931 members, 6.39% churn; Mar-2017 = 970,960 members, 8.99% churn; 881,701 members appear in both. The +2.6 pp month-on-month shift is direct evidence for out-of-time validation (ADR-002).
 
+## Amendment 2 (2026-10-09) — P0 gate failed; official labels cannot be rebuilt from shipped data
+
+**Result (pre-registered gate ≥ 99%):**
+
+| Cohort | Official members covered | Agreement on overlap | Churn rate ours / official | Gate |
+|--------|--------------------------|----------------------|----------------------------|------|
+| Feb 2017 | 86.2% | 98.77% | 3.33% / 6.39% | Failed |
+| Mar 2017 | 85.7% | 97.00% | 3.94% / 8.99% | Failed |
+
+**Hypotheses tested:**
+
+| # | Hypothesis | Test | Verdict |
+|---|------------|------|---------|
+| H1 | Port is wrong | Spark port = pure-Python port on 400 random histories; 10 rule-level unit tests | Rejected — port is faithful |
+| H2 | Official history window = all transactions, not previous month | Re-ran with full history | Rejected — coverage 86→89%, agreement fell (Feb 98.4%, Mar 95.7%) |
+| H3 | Official labels used a different transactions file | Profiled the 10,357 Feb disagreements (ours = renewed, official = churn) | Supported — 99.5% show a renewal in Feb in the shipped data, 60% before expiry, median gap −1 day |
+
+**Decision (Option D):**
+1. **Official labels are the test truth** for Feb-2017 and Mar-2017 — they are what the public benchmark and published work score against.
+2. **Reconstructed labels are training augmentation only** for earlier cohorts, and must earn their place: P1 compares OOT PR-AUC on official Mar-2017 labels with vs. without the earlier reconstructed cohorts.
+3. Validation becomes: train ≤ Jan-2017 (reconstructed) + Feb-2017 (official), test Mar-2017 (official).
+
+**Rejected alternatives:** relaxing the gate after seeing results (defeats pre-registration); using only reconstructed labels (systematically under-counts churn by ~3 points vs. the benchmark).
+
 ## Positive Consequences
 
 - Every result is reported with an explicit lead time — directly usable by a retention team

@@ -62,6 +62,10 @@ Churn is a minority class (single-digit % in the official cohorts), and the mode
 - Fewer training cohorts available for the latest test month
 - Profit metric depends on stated assumptions (mitigated by a sensitivity table)
 
+## Amendment 1 (2026-10-09)
+
+After the P0 gate failed (ADR-001 Amendment 2), the test cohort is **Mar-2017 with official labels**. Training uses cohorts up to Feb-2017; earlier cohorts carry reconstructed labels and are kept only if they raise test PR-AUC. Validation for tuning is a member-level hold-out inside the training cohorts.
+
 ## Related Decisions
 
-- ADR-001: Task framing (defines cohorts and snapshot dates)
+- ADR-001: Task framing (defines cohorts and snapshot dates; Amendment 2 sets label sources)

@@ -16,7 +16,7 @@ import yaml
 from pyspark.sql import functions as F
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from src.data.cohorts import build_cohort_labels  # noqa: E402
+from src.data.cohorts import build_cohort_labels_fast  # noqa: E402
 from src.spark_session import get_spark  # noqa: E402
 
 OFFICIAL = {(2017, 2): "train.csv", (2017, 3): "train_v2.csv"}
@@ -33,7 +33,7 @@ def main() -> None:
 
     results = {}
     for (year, month), fname in OFFICIAL.items():
-        ours = build_cohort_labels(txns, year, month).withColumnRenamed("is_churn", "ours").cache()
+        ours = build_cohort_labels_fast(txns, year, month).withColumnRenamed("is_churn", "ours").cache()
         official = spark.read.csv(str(raw / fname), header=True, inferSchema=True).withColumnRenamed("is_churn", "official")
 
         both = ours.join(official, "msno", "inner")

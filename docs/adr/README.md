@@ -6,7 +6,7 @@ This directory documents the key design decisions for the subscription churn pro
 
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
-| [ADR-001](ADR-001-task-framing.md) | Point-in-time snapshots k days before expiry | Proposed | Predict at expiry − k days (k ∈ {7, 14, 30}) with observation window W tested over {30…180}; labels reconstructed from transactions and validated against official labels (≥ 99% gate). |
+| [ADR-001](ADR-001-task-framing.md) | Point-in-time snapshots k days before expiry | Amended | Predict at expiry − k days (k ∈ {7, 14, 30}) with observation window W tested over {30…180}; labels reconstructed from transactions. **Amended:** P0 gate failed (98.8% / 97.0%); official labels are test truth, rebuilt labels are training augmentation only. |
 | [ADR-002](ADR-002-validation-strategy.md) | Out-of-time cohorts, PR-AUC, profit@k | Proposed | Train on earlier expiry cohorts, test on later ones; PR-AUC primary; profit@top-10% for ranking with explicit save-rate and contact-cost assumptions; gates pre-registered per phase. |
 | ADR-003 | Behavioural encoder design | Planned (P3) | — |
 | ADR-004 | Ranking objective and relevance labels | Planned (P4) | — |

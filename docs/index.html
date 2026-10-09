@@ -76,6 +76,7 @@ td.chosen { color: var(--stay); font-weight: 600; }
 .chip.use { background: var(--stay-soft); color: var(--stay); }
 .chip.decided { background: var(--accent-soft); color: var(--accent); }
 .chip.planned { background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
+.chip.fail { background: var(--churn-soft); color: var(--churn); }
 .chip.run { background: var(--tint); color: var(--amber); box-shadow: inset 0 0 0 1px var(--line); }
 
 .method { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 28px; padding-block: 34px; border-top: 1px solid var(--line); }
@@ -475,7 +476,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
     <table class="gates">
       <thead><tr><th>Phase</th><th>Gate</th><th>Status</th><th>Result</th></tr></thead>
       <tbody>
-        <tr><td>P0 · Labels</td><td>Reconstructed labels agree with official labels on ≥ 99% of members (Feb + Mar 2017)</td><td><span class="chip run">Running</span></td><td>Label port passes 12 unit and Spark tests; full-data check in progress</td></tr>
+        <tr><td>P0 · Labels</td><td>Reconstructed labels agree with official labels on ≥ 99% of members (Feb + Mar 2017)</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>Agreement: <b>98.8%</b> Feb · <b>97.0%</b> Mar</li><li>Cause: the shipped transactions show renewals the official labels count as churn</li><li>Decision: official labels = test truth; rebuilt labels must earn a place in training (ADR-001 Amendment 2)</li></ul></td></tr>
         <tr><td>P1 · Baseline</td><td>Out-of-time PR-AUC reported; leakage tests pass</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
         <tr><td>P2 · Window</td><td>Window curve and knee reported for each k</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
         <tr><td>P3 · Embeddings</td><td>PR-AUC(GBM + embeddings) ≥ PR-AUC(GBM) + 0.02 out-of-time</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
@@ -490,7 +491,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <span class="eyebrow">5 · Our take</span>
   <h2>Working view, revised as results come in</h2>
   <div class="take">
-    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li></ul></div>
+    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
     <div><span class="eyebrow">What would change our mind</span><ul class="points"><li>Lead time costs little (P2) → predict <b>30 days</b> out, not 14.</li><li>Embeddings miss their gate (P3) → keep them for <b>personas only</b>.</li></ul></div>
   </div>
 </section>

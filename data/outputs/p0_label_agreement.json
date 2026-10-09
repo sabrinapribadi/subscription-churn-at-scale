@@ -1,0 +1,36 @@
+{
+  "2017-02": {
+    "official_members": 992931,
+    "reconstructed_members": 856144,
+    "overlap_members": 856085,
+    "official_covered_pct": 86.218,
+    "label_agreement_on_overlap": 0.98771,
+    "churn_rate_ours": 0.03329,
+    "churn_rate_official": 0.06392,
+    "confusion_on_overlap": {
+      "ours=1,official=1": 28327,
+      "ours=0,official=0": 817233,
+      "ours=1,official=0": 168,
+      "ours=0,official=1": 10357
+    },
+    "gate_min": 0.99,
+    "gate_passed": false
+  },
+  "2017-03": {
+    "official_members": 970960,
+    "reconstructed_members": 853904,
+    "overlap_members": 832239,
+    "official_covered_pct": 85.713,
+    "label_agreement_on_overlap": 0.96999,
+    "churn_rate_ours": 0.03943,
+    "churn_rate_official": 0.08994,
+    "confusion_on_overlap": {
+      "ours=1,official=1": 25816,
+      "ours=0,official=0": 781447,
+      "ours=1,official=0": 7630,
+      "ours=0,official=1": 17346
+    },
+    "gate_min": 0.99,
+    "gate_passed": false
+  }
+}

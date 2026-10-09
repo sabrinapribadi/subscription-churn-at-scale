@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.5.0] — 2026-10-09 — P0 result: label gate failed, cause found, decision recorded
+**Files:** src/data/cohorts.py, scripts/validate_labels.py, scripts/stream_user_logs_to_parquet.py, tests/test_cohorts_spark.py, docs/adr/ADR-001-task-framing.md, docs/adr/ADR-002-validation-strategy.md, docs/adr/README.md, docs/PRD.md, docs/index.html, data/outputs/p0_label_agreement.json
+- **Situation:** The per-member Python labeller had run for 75+ minutes without finishing; the P0 gate (≥ 99% agreement with official labels) was still unanswered. The 30 GB user-log CSV would not fit on disk next to its Parquet copy.
+- **Task:** Make labelling fast enough for ~20 cohorts, answer the gate honestly, and convert user logs within the disk budget.
+- **Action:** Rewrote the labeller's ordering as a 4-column Spark sort with window functions and proved equivalence on 400 random histories (13/13 tests). Ran the gate: failed. Tested three hypotheses: port bug (rejected), full-history window (rejected: agreement fell), different source data (supported: 99.5% of disagreements show a real February renewal in the shipped data). Chose Option D: official labels are test truth; rebuilt labels must earn their place in training. Streamed user logs from 7z straight into month-partitioned Parquet without extracting the CSV.
+- **Result:** Labelling 3.5 min instead of 75+ min. Gate failed at 98.77% (Feb) / 97.00% (Mar), with a documented cause and a testable decision instead of a quietly relaxed threshold.
+- **Talking point:** "My first gate failed. I didn't move the bar. I proved my code was right, showed the benchmark labels came from different data, and turned that into a test of whether rebuilt labels help."
+
 ## [0.4.0] — 2026-10-09 — Scannable showcase layout (rule R7)
 **Files:** docs/index.html
 - **Situation:** Each section of the showcase opened with a 2–4 sentence paragraph; the problem statement was two paragraphs.
