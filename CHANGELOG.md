@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.8.0] — 2026-10-09 — Hover details on every chart; plain-language NDCG
+**Files:** docs/index.html
+- **Situation:** Readers could not read exact values off most charts; "NDCG" and the rule's kink ("runs out of manual renewers") were unexplained; the calibration labels overlapped the reference line.
+- **Task:** Apply rule R10 to all charts and explain the jargon in words.
+- **Action:** Added one shared hover helper (tooltip + highlight ring) and wired it into all 10 SVG charts, plus row tooltips on the LambdaMART table (tier, score, push, rank weight, and why the member is pushed up or down). Rewrote NDCG as "how close the top 5 is to the best possible top 5", with the rank weights spelled out. Replaced the kink label with "12%: every manual renewer has been called — rule moves on to auto-renew members (about 3% churn)". Moved the calibration labels off the line. Verified with a headless DOM test that hovers every chart.
+- **Result:** 12 charts with tooltips; 0 runtime errors; the readout now says "NDCG@5 = 0.911: the top 5 is worth 91% of a perfect top 5".
+- **Talking point:** "Every chart answers 'what am I looking at?' on hover, and the test suite checks it."
+
 ## [0.7.1] — 2026-10-09 — Hover details on charts; "churner" wording
 **Files:** docs/index.html
 - **Situation:** The budget dial showed numbers only at the slider position; reading other points meant dragging. The page said "leavers", which is not the term practitioners use. The rule's curve had an unexplained kink, and the legend's "Random" swatch did not match its dashed line.

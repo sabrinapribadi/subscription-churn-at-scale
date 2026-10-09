@@ -187,6 +187,10 @@ td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; whit
 .tip-hint { font-size: 11px; border-top: 1px solid var(--line); padding-top: 4px; }
 .legend i.dash { background: none; border-top: 2px dashed var(--muted); height: 0; width: 14px; vertical-align: 3px; border-radius: 0; }
 
+.hover-mark { fill: none; stroke: var(--fg); stroke-width: 2; pointer-events: none; }
+.chart-wrap svg.plot { cursor: crosshair; }
+.rank .r:not(.head) { cursor: default; }
+.rank .r:not(.head):hover { box-shadow: inset 0 0 0 1px var(--accent); }
 .gates td:nth-child(3) { white-space: nowrap; }
 footer { margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--line); display: grid; gap: 10px; font-size: 13px; color: var(--muted); }
 footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
@@ -484,7 +488,8 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <div class="formula">
         <span class="lbl">Pair push, for grade<sub>i</sub> &gt; grade<sub>j</sub></span>λ<sub>ij</sub> = σ · |ΔNDCG<sub>ij</sub>| / (1 + e<sup>σ(<i>s</i><sub>i</sub> − <i>s</i><sub>j</sub>)</sup>)
         <span class="lbl">Per member</span>λ<sub>i</sub> = Σ<sub>j</sub> λ<sub>ij</sub> − Σ<sub>j</sub> λ<sub>ji</sub>
-        <span class="lbl">Quality</span>NDCG@5 = DCG@5 / IDCG@5,&nbsp; DCG = Σ (2<sup>g</sup> − 1) / log₂(rank + 1)
+        <span class="lbl">Quality, in plain words</span>NDCG@5 = how close the top 5 is to the best possible top 5 (0 to 1). Higher tiers count more; rank 1 counts in full, rank 2 63%, rank 3 50%, rank 4 43%, rank 5 39%.
+        <span class="lbl">Quality, as a formula</span>NDCG@5 = DCG@5 / IDCG@5,&nbsp; DCG = Σ (2<sup>g</sup> − 1) / log₂(rank + 1)
       </div>
       <p class="why-here"><b>Why it matters:</b> grades are revenue-at-risk tiers. Here λ moves the scores directly so you can watch.</p>
     </div>
@@ -646,8 +651,35 @@ function frame(svg, o) {
   S("line", { x1: o.l, x2: o.r, y1: o.b, y2: o.b, style: "stroke: var(--muted)" }, g);
   if (o.xl) T(o.xl, { x: (o.l + o.r) / 2, y: o.b + 32, "text-anchor": "middle" }, g);
   if (o.yl) T(o.yl, { x: o.l, y: o.t - 8, "text-anchor": "start" }, g);
-  return { sx, sy };
+  const ix = (px) => o.x0 + (px - o.l) / (o.r - o.l) * (o.x1 - o.x0);
+  return { sx, sy, ix };
 }
+/* hover (rule R10): every chart shows its numbers on hover. A chart sets svg._hover = (vx, vy) => ({ html, at }) | null */
+function place(tip, x, y, width) { const w = tip.offsetWidth, h = tip.offsetHeight; tip.style.left = (x + 14 + w > width ? Math.max(0, x - w - 14) : x + 14) + "px"; tip.style.top = Math.max(0, y - h / 2) + "px"; }
+function tipFor(el) {
+  let wrap = el.parentElement;
+  if (!wrap.classList.contains("chart-wrap")) { wrap = document.createElement("div"); wrap.className = "chart-wrap"; el.parentNode.insertBefore(wrap, el); wrap.appendChild(el); }
+  let tip = wrap.querySelector(":scope > .tip");
+  if (!tip) { tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; wrap.appendChild(tip); }
+  return tip;
+}
+function hoverable(svg) {
+  const tip = tipFor(svg);
+  const mark = () => svg.querySelector(".hover-mark") || S("circle", { r: 5.5, class: "hover-mark" }, svg);
+  svg.addEventListener("pointermove", (ev) => {
+    const box = svg.getBoundingClientRect(), k = box.width / svg.viewBox.baseVal.width;
+    const r = svg._hover ? svg._hover((ev.clientX - box.left) / k, (ev.clientY - box.top) / k) : null, m = mark();
+    if (!r) { tip.hidden = true; m.setAttribute("visibility", "hidden"); return; }
+    tip.innerHTML = r.html; tip.hidden = false;
+    if (r.at) { m.setAttribute("cx", r.at[0]); m.setAttribute("cy", r.at[1]); m.setAttribute("visibility", "visible"); svg.appendChild(m); } else m.setAttribute("visibility", "hidden");
+    place(tip, ev.clientX - box.left, ev.clientY - box.top, box.width);
+  });
+  svg.addEventListener("pointerleave", () => { tip.hidden = true; const m = svg.querySelector(".hover-mark"); if (m) m.setAttribute("visibility", "hidden"); });
+}
+const nearestIdx = (arr, v) => arr.reduce((b, x, i) => (Math.abs(x - v) < Math.abs(arr[b] - v) ? i : b), 0);
+const pct = (v, d = 0) => (v * 100).toFixed(d) + "%";
+const tipRows = (rows) => rows.map(([k, v, c]) => `<div class="tip-row"><i style="background:${c || "transparent"}"></i><span>${k}</span><span>${v}</span></div>`).join("");
+
 function path(pts, sx, sy) { return pts.map((p, i) => (i ? "L" : "M") + sx(p[0]).toFixed(1) + "," + sy(p[1]).toFixed(1)).join(""); }
 function bindOut(id, f) { const el = $(id), out = $(id + "-o"); const show = () => { if (out) out.textContent = f ? f(+el.value) : el.value; }; el.addEventListener("input", show); show(); }
 function on(ids, fn) { ids.forEach((id) => $(id).addEventListener("input", fn)); fn(); }
@@ -672,7 +704,8 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
     [["rule", "s-muted"], ["realistic", "s-amber"], ["model", "s-accent"]].forEach(([k, cls]) => S("path", { d: path([[0, 0]].concat(P1R.curve[k]), sx, sy), fill: "none", class: cls, "stroke-width": k === "model" ? 2.6 : 2 }, svg));
     const ry = sy(at(P1R.curve.rule, RULE_RUNS_OUT));
     S("line", { x1: sx(RULE_RUNS_OUT), x2: sx(RULE_RUNS_OUT) + 30, y1: ry + 4, y2: ry + 34, class: "s-muted" }, svg);
-    T("rule runs out of manual renewers", { x: sx(RULE_RUNS_OUT) + 34, y: ry + 38, class: "svgtxt" }, svg);
+    T("12%: every manual renewer has been called", { x: sx(RULE_RUNS_OUT) + 34, y: ry + 38, class: "svgtxt" }, svg);
+    T("rule moves on to auto-renew members (about 3% churn)", { x: sx(RULE_RUNS_OUT) + 34, y: ry + 52, class: "svgtxt" }, svg);
     S("line", { x1: sx(f), x2: sx(f), y1: 22, y2: 200, class: "s-fg", "stroke-dasharray": "4 3" }, svg);
     const m = at(P1R.curve.model, f), r = at(P1R.curve.rule, f), e = at(P1R.curve.realistic, f);
     S("circle", { cx: sx(f), cy: sy(m), r: 4.5, class: "f-accent" }, svg); S("circle", { cx: sx(f), cy: sy(r), r: 4, class: "f-muted" }, svg);
@@ -692,7 +725,7 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
     const [ln, ...dots] = hover.children; ln.setAttribute("x1", sx(f)); ln.setAttribute("x2", sx(f));
     dots.forEach((d, i) => { d.setAttribute("cx", sx(f)); d.setAttribute("cy", sy(vals[i][1])); });
     const prec = (v) => (L * v / (N * f) * 100).toFixed(0);
-    tip.innerHTML = `<b>Call ${Math.round(f * 100)}% · ${n(N * f)} members</b>` + vals.map(([name, v, c]) => `<div class="tip-row"><i style="background:${c}"></i><span>${name}</span><span>${(v * 100).toFixed(0)}% · ${n(L * v)}</span><span class="muted">${prec(v)} per 100 calls</span></div>`).join("") + `<div class="muted tip-hint">Click to set the dial here</div>`;
+    tip.innerHTML = `<b>Call ${Math.round(f * 100)}% · ${n(N * f)} members</b>` + vals.map(([name, v, c]) => `<div class="tip-row"><i style="background:${c}"></i><span>${name}</span><span>${(v * 100).toFixed(0)}% · ${n(L * v)}</span><span class="muted">${prec(v)} per 100 calls</span></div>`).join("") + (f >= 0.13 ? `<div class="muted tip-hint">The rule has called all 104,817 manual renewers by 12%. Extra calls go to auto-renew members, where only about 3% churn.</div>` : "") + `<div class="muted tip-hint">Click to set the dial here</div>`;
     tip.hidden = false;
     const x = ev.clientX - box.left, w = tip.offsetWidth;
     tip.style.left = (x + 14 + w > box.width ? x - w - 14 : x + 14) + "px";
@@ -703,19 +736,20 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
   svg.addEventListener("click", (ev) => { $("bd-share").value = Math.round(pick(ev).f * 100); $("bd-share").dispatchEvent(new Event("input")); });
   on(["bd-share"], draw);
 
-  const cal = $("cal-svg"), mx = 0.5, ctip = $("cal-tip");
+  const cal = $("cal-svg"), mx = 0.5;
   const C = frame(cal, { l: 48, r: 620, t: 22, b: 200, x0: 0, x1: mx, y0: 0, y1: mx, xt: [0, 0.1, 0.2, 0.3, 0.4, 0.5], yt: [0, 0.1, 0.2, 0.3, 0.4, 0.5], xf: (v) => Math.round(v * 100) + "%", yf: (v) => Math.round(v * 100) + "%", xl: "predicted churn probability (group average)", yl: "observed churn rate" });
   S("line", { x1: C.sx(0), y1: C.sy(0), x2: C.sx(mx), y2: C.sy(mx), class: "s-muted", "stroke-dasharray": "3 3" }, cal);
-  T("perfect calibration", { x: C.sx(0.45), y: C.sy(0.45) + 16, class: "svgtxt", "text-anchor": "end" }, cal);
+  T("perfect calibration: predicted = observed", { x: C.sx(0.49), y: C.sy(0.49) + 22, class: "svgtxt", "text-anchor": "end" }, cal);
   S("path", { d: path(P1R.cal, C.sx, C.sy), fill: "none", class: "s-accent", "stroke-width": 2 }, cal);
-  P1R.cal.forEach(([a, b], i) => {
-    const dot = S("circle", { cx: C.sx(a), cy: C.sy(b), r: 4, class: "f-accent", tabindex: 0 }, cal);
-    const showCal = () => { const box = cal.getBoundingClientRect(), k = box.width / 640; ctip.innerHTML = `<b>Group ${i + 1} of 10</b><div>predicted ${(a * 100).toFixed(1)}% · observed ${(b * 100).toFixed(1)}%</div><div class="muted">${b > a ? "under" : "over"}-predicts by ${(Math.abs(b - a) * 100).toFixed(1)} pts</div>`; ctip.hidden = false; const x = C.sx(a) * k, w = ctip.offsetWidth; ctip.style.left = (x + 14 + w > box.width ? x - w - 14 : x + 14) + "px"; ctip.style.top = Math.max(0, C.sy(b) * k - 30) + "px"; };
-    dot.addEventListener("pointerenter", showCal); dot.addEventListener("focus", showCal);
-    dot.addEventListener("pointerleave", () => (ctip.hidden = true)); dot.addEventListener("blur", () => (ctip.hidden = true));
-  });
+  P1R.cal.forEach(([a, b]) => S("circle", { cx: C.sx(a), cy: C.sy(b), r: 4, class: "f-accent" }, cal));
+  cal._hover = (vx, vy) => {
+    const d = P1R.cal.map(([a, b]) => Math.hypot(C.sx(a) - vx, C.sy(b) - vy)), i = d.indexOf(Math.min(...d));
+    if (d[i] > 40) return null; const [a, b] = P1R.cal[i];
+    return { at: [C.sx(a), C.sy(b)], html: `<b>Group ${i + 1} of 10</b> <span class="muted">(${i === 9 ? "highest" : i === 0 ? "lowest" : ""} scores)</span>` + tipRows([["predicted", pct(a, 1)], ["actually churned", pct(b, 1)]]) + `<div class="muted tip-hint">${b > a ? "Under" : "Over"}-predicts by ${((b - a) * 100).toFixed(1)} pts. March churn ran higher than February's.</div>` };
+  };
+  hoverable(cal);
   const last = P1R.cal[P1R.cal.length - 1];
-  T(`top group: predicted ${(last[0] * 100).toFixed(0)}%, observed ${(last[1] * 100).toFixed(0)}%`, { x: C.sx(last[0]) - 6, y: C.sy(last[1]) - 10, class: "svglab", "text-anchor": "end" }, cal);
+  T(`top group: predicted ${(last[0] * 100).toFixed(0)}%, observed ${(last[1] * 100).toFixed(0)}%`, { x: C.sx(last[0]) - 12, y: C.sy(last[1]) + 4, class: "svglab", "text-anchor": "end" }, cal);
 })();
 
 
@@ -727,6 +761,10 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
   [0, 0.2, 0.4, 0.6].forEach((v) => { S("line", { x1: sx(v), x2: sx(v), y1: 26, y2: 200 }, g); T(v.toFixed(1), { x: sx(v), y: 216, "text-anchor": "middle" }, g); });
   T("PR-AUC on March 2017 (precision in top 10% in brackets)", { x: x0, y: 14, class: "svgtxt" }, svg);
   rows.forEach(([name, v, p10, cls], i) => { const y = 36 + i * 42; T(name, { x: 8, y: y + 15, class: "svgtxt" }, svg); S("rect", { x: x0, y, width: sx(v) - x0, height: 22, class: cls, rx: 3 }, svg); T(`${v.toFixed(3)}  (${(p10 * 100).toFixed(0)}%)`, { x: sx(v) + 6, y: y + 15, class: "svglab" }, svg); });
+  const what = ["Call manual renewers first, longest idle first. No model.", "Trained on Nov–Jan outcomes only: what a team has on prediction day.", "Nov–Feb outcomes, including rebuilt labels.", "Trained on February outcomes, the usual benchmark setup."];
+  svg._hover = (vx, vy) => { const i = Math.floor((vy - 30) / 42); if (i < 0 || i > 3) return null; const [name, v, p10] = rows[i];
+    return { html: `<b>${name}</b>` + tipRows([["PR-AUC", v.toFixed(3)], ["churners per 100 calls (top 10%)", Math.round(p10 * 100)]]) + `<div class="muted tip-hint">${what[i]}</div>` }; };
+  hoverable(svg);
 })();
 
 /* 3.1 label rule */
@@ -763,9 +801,13 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
     }
     const churn = none || gap >= 30;
     const why = none ? "no renewal transaction" : `g = t_renew − E′ = ${renew} − (${Ep}) = ${gap} days ${gap >= 30 ? "≥" : "<"} 30`;
+    svg._hover = (vx) => { const d = Math.round(x0 + (vx - l) / (r - l) * (x1 - x0)); if (d < x0 || d > x1) return null;
+      const g2 = d - Ep, zone = g2 < 0 ? ["before the effective expiry", "A renewal here comes early: retained"] : g2 < 30 ? [`day ${g2} of the 30-day grace window`, "A renewal here keeps the member: retained"] : [`${g2} days after the effective expiry`, "A renewal this late counts as churn"];
+      return { at: [sx(d), y], html: `<b>${dayFmt(E, d)} 2017</b>` + tipRows([["position", zone[0]]]) + `<div class="muted tip-hint">${zone[1]}${d === 0 ? " · E = original expiry" : ""}${cancel && d === Ep ? " · E′ = expiry after the cancel" : ""}</div>` }; };
     $("lr-out").innerHTML = `${why}<br>label: <span class="pill ${churn ? "churn" : "stay"}">${churn ? "CHURN  y = 1" : "RETAINED  y = 0"}</span>`;
   }
   on(["lr-renew", "lr-cancelto", "lr-none", "lr-cancel"], draw);
+  hoverable($("lr-svg"));
   ["lr-none", "lr-cancel"].forEach((id) => $(id).addEventListener("change", draw));
 })();
 
@@ -789,9 +831,13 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
     T("min / day", { x: 6, y: o.t - 10, class: "svgtxt" }, svg);
     const used = days.filter(([d]) => d >= Sd - W && d < Sd), mean = used.reduce((a, b) => a + b[1], 0) / used.length;
     const recent = days.filter(([d]) => d >= Sd - 14 && d < Sd), rmean = recent.reduce((a, b) => a + b[1], 0) / recent.length;
+    svg._hover = (vx) => { const d = Math.round(o.x0 + (vx - o.l) / (o.r - o.l) * (o.x1 - o.x0)); const row = days.find((q) => q[0] === d); if (!row) return null;
+      const st = d >= Sd ? ["hidden from the model", "on or after the snapshot", "var(--churn)"] : d >= Sd - W ? ["used by the model", "inside the observation window", "var(--accent)"] : ["not used", "older than the window", "var(--line)"];
+      return { at: [sx(d), sy(Math.min(row[1], 160))], html: `<b>${dayFmt(E, d)} 2017</b>` + tipRows([["minutes listened", row[1].toFixed(0)], [st[0], st[1], st[2]], ["days before expiry", -d]]) }; };
     $("pt-out").innerHTML = `S = E − ${k} = <b>${dayFmt(E, Sd)} 2017</b> · window ${dayFmt(E, Sd - W)} → ${dayFmt(E, Sd - 1)} (${W} days)<br>decline ratio seen by the model r = ${fmt(rmean, 1)} / ${fmt(mean, 1)} = <b>${fmt(rmean / mean, 2)}</b> · hidden from the model: last ${k} days + the 30-day label window`;
   }
   on(["pt-k", "pt-w"], draw);
+  hoverable($("pt-svg"));
 })();
 
 /* 3.3 window sufficiency */
@@ -823,9 +869,12 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
     T(`knee W* = ${knee}`, { x: sx(knee) + 6, y: o.t + 12, class: "svglab" }, svg);
     S("path", { d: path(Ws.map((w, i) => [w, aucs[i]]), sx, sy), fill: "none", class: "s-accent", "stroke-width": 2.2 }, svg);
     Ws.forEach((w, i) => S("circle", { cx: sx(w), cy: sy(aucs[i]), r: 3.5, class: "f-accent" }, svg));
+    svg._hover = (vx) => { const i = nearestIdx(Ws, o.x0 + (vx - o.l) / (o.r - o.l) * (o.x1 - o.x0));
+      return { at: [sx(Ws[i]), sy(aucs[i])], html: `<b>Window W = ${Ws[i]} days</b>` + tipRows([["AUC", fmt(aucs[i])], ["gain vs 21 days", (aucs[i] - aucs[0] >= 0 ? "+" : "") + fmt(aucs[i] - aucs[0])]]) + `<div class="muted tip-hint">${Ws[i] < knee ? "Still improving: more history helps." : Ws[i] === knee ? "The knee: the shortest window with 95% of the gain." : "Past the knee: extra history adds little."}</div>` }; };
     $("ws-out").innerHTML = `AUC at W=21: <b>${fmt(aucs[0])}</b> → best <b>${fmt(hi)}</b> · knee at <b>W* = ${knee} days</b><br>Longer windows help until they reach back past the point where churners start fading. Raise k and part of the fade happens after the snapshot, so the whole curve drops.`;
   }
   on(["ws-onset", "ws-k"], draw);
+  hoverable($("ws-svg"));
 })();
 
 /* 3.4 out-of-time */
@@ -857,9 +906,16 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
     T("PR-AUC", { x: 330, y: 26, class: "svgtxt" }, svg);
     bars.forEach(([name, v, cls], i) => { const yy = yTop + i * 46; T(name, { x: 330, y: yy + 14, class: "svgtxt" }, svg); S("rect", { x: x0, y: yy, width: (x1 - x0) * v / mx, height: 20, class: cls, rx: 3 }, svg); T(fmt(v), { x: x0 + (x1 - x0) * v / mx + 6, y: yy + 14, class: "svglab" }, svg); });
     const gap = apRandom - apTest;
+    svg._hover = (vx, vy) => {
+      if (vx < 300) { const m = Math.min(8, Math.max(1, Math.round(A.ix(vx)))), role = m <= 6 ? "train" : m === 7 ? "validation" : "test";
+        return { at: [A.sx(m), A.sy(b1[m - 1])], html: `<b>Month ${m} · ${role}</b>` + tipRows([["weight of feature 1 (β₁)", b1[m - 1].toFixed(2), "var(--accent)"], ["weight of feature 2 (β₂)", b2[m - 1].toFixed(2), "var(--amber)"]]) + `<div class="muted tip-hint">Behaviour shifts month to month; the model trained on months 1–6 never saw the late weights.</div>` }; }
+      const i = Math.floor((vy - yTop + 6) / 46); if (i < 0 || i > 2) return null; const [name, v] = bars[i];
+      const why = ["Test rows are mixed in from every month, so the test looks like training.", "Next month after training (used for tuning).", "Two months after training: the honest score."];
+      return { html: `<b>${name}</b>` + tipRows([["PR-AUC", fmt(v)]]) + `<div class="muted tip-hint">${why[i]}</div>` }; };
     $("oot-out").innerHTML = `random split says <b>${fmt(apRandom)}</b> · next month actually delivers <b>${fmt(apTest)}</b> · optimism ${gap >= 0 ? "+" : ""}${fmt(gap)}<br>Set drift to 0 and the two agree. Raise it and the random split keeps reporting a score that later months will not reach.`;
   }
   on(["oot-drift"], draw);
+  hoverable($("oot-svg"));
   $("oot-resample").addEventListener("click", () => { seed++; draw(); });
 })();
 
@@ -881,9 +937,16 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
     T(`baseline π = ${(pi * 100).toFixed(1)}%`, { x: B.sx(1) - 2, y: B.sy(pi) - 5, class: "svgtxt", "text-anchor": "end" }, svg);
     S("path", { d: path(pr, B.sx, B.sy), fill: "none", class: "s-accent", "stroke-width": 2.2 }, svg);
     const at = pr.find((p) => p[0] >= 0.3) || pr[pr.length - 1];
+    svg._hover = (vx) => {
+      if (vx >= 40 && vx <= 290) { const x = A.ix(vx), q = roc[nearestIdx(roc.map((r2) => r2[0]), x)];
+        return { at: [A.sx(q[0]), A.sy(q[1])], html: `<b>ROC point</b>` + tipRows([["churners caught (TPR)", pct(q[1])], ["stayers flagged (FPR)", pct(q[0])]]) + `<div class="muted tip-hint">Same curve at any churn rate.</div>` }; }
+      if (vx >= 370 && vx <= 620) { const x = B.ix(vx), q = pr[nearestIdx(pr.map((r2) => r2[0]), x)];
+        return { at: [B.sx(q[0]), B.sy(q[1])], html: `<b>PR point</b>` + tipRows([["churners caught (recall)", pct(q[0])], ["precision", pct(q[1])]]) + `<div class="muted tip-hint">Of 100 members flagged, ${Math.round(q[1] * 100)} are real churners at a ${pct(pi, 1)} churn rate.</div>` }; }
+      return null; };
     $("pr-out").innerHTML = `ROC-AUC = Φ(d/√2) = <b>${fmt(rocAuc)}</b> (unchanged by π) · PR-AUC = <b>${fmt(apv)}</b><br>at 30% recall, precision = <b>${(at[1] * 100).toFixed(1)}%</b>, so ${(100 - at[1] * 100).toFixed(0)}% of calls reach members who would have stayed`;
   }
   on(["pr-pi", "pr-d"], draw);
+  hoverable($("pr-svg"));
   document.querySelectorAll("[data-pi]").forEach((b) => b.addEventListener("click", () => { $("pr-pi").value = b.dataset.pi; $("pr-pi").dispatchEvent(new Event("input")); }));
 })();
 
@@ -910,9 +973,13 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
     const grid = Array.from({ length: 201 }, (_, i) => i / 200);
     S("path", { d: path(grid.map((x) => [x, truth(x)]), sx, sy), fill: "none", class: "s-muted", "stroke-width": 1.5, "stroke-dasharray": "5 4" }, svg);
     S("path", { d: path(grid.map((x) => { let f = F0; stumps.forEach((s) => { f += eta * (x < s.c ? s.gl : s.gr); }); return [x, sig(f)]; }), sx, sy), fill: "none", class: "s-accent", "stroke-width": 2.4 }, svg);
+    const model = (x) => { let f = F0; stumps.forEach((st) => { f += eta * (x < st.c ? st.gl : st.gr); }); return sig(f); };
+    svg._hover = (vx) => { const o2 = { l: 40, r: 620 }, x = (vx - o2.l) / (o2.r - o2.l); if (x < 0 || x > 1) return null; const t = truth(x), m = model(x);
+      return { at: [sx(x), sy(m)], html: `<b>Feature value ${x.toFixed(2)}</b>` + tipRows([["true churn probability", pct(t), "var(--muted)"], ["boosted model", pct(m), "var(--accent)"], ["error", ((m - t) * 100).toFixed(1) + " pts"]]) }; };
     $("gb-out").innerHTML = `trees: <b>${M}</b> · learning rate η = <b>${eta.toFixed(2)}</b> · training log-loss = <b>${fmt(ll)}</b><br>Few trees underfit the shape. Many trees with a high η start chasing individual members (overfitting), which is why P1 tunes both on the next month's cohort.`;
   }
   on(["gb-m", "gb-eta"], draw);
+  hoverable($("gb-svg"));
 })();
 
 /* 3.7 embeddings via PCA */
@@ -956,9 +1023,14 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
     const cent = [0, 1, 2, 3].map((p) => { const pts = Z.filter((_, i) => persona[i] === p); return [pts.reduce((a, b) => a + b[0], 0) / pts.length, pts.reduce((a, b) => a + b[1], 0) / pts.length]; });
     let within = 0; Z.forEach((z, i) => { const c = cent[persona[i]]; within += (z[0] - c[0]) ** 2 + (z[1] - c[1]) ** 2; });
     const gm = [xs.reduce((a, b) => a + b, 0) / N, ys.reduce((a, b) => a + b, 0) / N]; let tot = 0; Z.forEach((z) => (tot += (z[0] - gm[0]) ** 2 + (z[1] - gm[1]) ** 2));
+    const names = ["Weekday commuter", "Weekend binger", "Fading out", "Sporadic"], colors = ["var(--accent)", "var(--stay)", "var(--churn)", "var(--amber)"];
+    svg._hover = (vx, vy) => { const d = Z.map((z) => Math.hypot(sx(z[0]) - vx, sy(z[1]) - vy)), i = d.indexOf(Math.min(...d)); if (d[i] > 14) return null;
+      const raw = Array.from(base[i], (x, k) => Math.max(0, x + s * eps[i][k])), wd = raw.filter((_, k) => k % 7 < 5), we = raw.filter((_, k) => k % 7 >= 5), avg = (a) => (a.reduce((p, q) => p + q, 0) / a.length).toFixed(0);
+      return { at: [sx(Z[i][0]), sy(Z[i][1])], html: `<b>Member ${i + 1}</b>` + tipRows([["habit", names[persona[i]], colors[persona[i]]], ["weekday minutes / day", avg(wd)], ["weekend minutes / day", avg(we)], ["week 1 → week 4", avg(raw.slice(0, 7)) + " → " + avg(raw.slice(21))]]) }; };
     $("em-out").innerHTML = `2 dimensions keep <b>${(share * 100).toFixed(0)}%</b> of the variance in 28 days of usage · persona separation (between ÷ total) = <b>${fmt(1 - within / tot, 2)}</b><br>The "fading out" group forms its own region without ever seeing a churn label. That is the signal the P3 gate tests.`;
   }
   on(["em-noise"], draw);
+  hoverable($("em-svg"));
 })();
 
 /* 3.8 profit@k */
@@ -983,10 +1055,13 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
     S("path", { d: path(cP, sx, sy), fill: "none", class: "s-muted", "stroke-width": 2 }, svg);
     S("path", { d: path(cE, sx, sy), fill: "none", class: "s-accent", "stroke-width": 2.4 }, svg);
     const at = (cv) => cv.reduce((best, q) => (Math.abs(q[0] - 0.1) < Math.abs(best[0] - 0.1) ? q : best))[1];
+    svg._hover = (vx) => { const x = (vx - 58) / (620 - 58); if (x < 0 || x > 1) return null; const i = nearestIdx(cE.map((q) => q[0]), x), a1 = cP[i][1], b1 = cE[i][1], nn = (v) => Math.round(v).toLocaleString("en-US");
+      return { at: [sx(cE[i][0]), sy(b1)], html: `<b>Contact the top ${pct(cE[i][0])}</b> <span class="muted">(${nn(cE[i][0] * N)} of ${nn(N)})</span>` + tipRows([["sort by probability", nn(a1), "var(--muted)"], ["sort by probability × revenue", nn(b1), "var(--accent)"], ["difference", (b1 - a1 >= 0 ? "+" : "") + nn(b1 - a1)]]) + `<div class="muted tip-hint">Cumulative profit = revenue saved − cost of every call.</div>` }; };
     const a = at(cP), b = at(cE), bestK = cE.reduce((m, q) => (q[1] > m[1] ? q : m));
     $("pk-out").innerHTML = `profit@10%: probability sort <b>${Math.round(a).toLocaleString("en-US")}</b> · expected-value sort <b>${Math.round(b).toLocaleString("en-US")}</b> (${a !== 0 ? ((b - a) / Math.abs(a) * 100 >= 0 ? "+" : "") + ((b - a) / Math.abs(a) * 100).toFixed(0) + "%" : "n/a"})<br>best stopping point for the value sort: top <b>${(bestK[0] * 100).toFixed(0)}%</b>. Past it, each extra call costs more than it saves.`;
   }
   on(["pk-s", "pk-c", "pk-n"], draw);
+  hoverable($("pk-svg"));
 })();
 
 /* 3.9 LambdaMART */
@@ -1015,9 +1090,15 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
       const row = document.createElement("div"); row.className = "r" + (rnk === K ? " cut" : "");
       const w = Math.abs(lam[i]) / mx * 50, left = lam[i] >= 0 ? 50 : 50 - w, col = lam[i] >= 0 ? "var(--accent)" : "var(--churn)";
       row.innerHTML = `<span>${rnk + 1}</span><span>${ids[i]}</span><span class="grade" aria-label="grade ${grades[i]}">${[0, 1, 2].map((g) => `<i class="${g < grades[i] ? "on" : ""}"></i>`).join("")}</span><span>${scores[i].toFixed(2)}</span><span class="lam"><span style="left:${left}%;width:${w}%;background:${col}"></span></span>`;
+      const below = order.slice(rnk + 1).filter((j) => grades[j] > grades[i]).length, above = order.slice(0, rnk).filter((j) => grades[j] < grades[i]).length;
+      row.addEventListener("pointerenter", (ev) => { const tip = tipFor(list), box = list.getBoundingClientRect();
+        tip.innerHTML = `<b>${ids[i]} · rank ${rnk + 1}</b>` + tipRows([["revenue-at-risk tier", `${grades[i]} of 3`], ["score", scores[i].toFixed(2)], ["push λ", (lam[i] >= 0 ? "+" : "") + lam[i].toFixed(3), lam[i] >= 0 ? "var(--accent)" : "var(--churn)"], ["weight of this rank in NDCG", rnk < K ? (1 / Math.log2(rnk + 2) * 100).toFixed(0) + "%" : "0% (below the cut-off)"]]) +
+          `<div class="muted tip-hint">${above ? `Sits below ${above} lower-tier member${above > 1 ? "s" : ""} → pushed up. ` : ""}${below ? `Sits above ${below} higher-tier member${below > 1 ? "s" : ""} → pushed down. ` : ""}${!above && !below ? "Already in the right order." : ""}</div>`;
+        tip.hidden = false; place(tip, ev.clientX - box.left, ev.clientY - box.top, box.width); });
+      row.addEventListener("pointerleave", () => (tipFor(list).hidden = true));
       list.appendChild(row);
     });
-    $("lm-out").innerHTML = `NDCG@5 = <b>${fmt(base)}</b> after <b>${steps}</b> step${steps === 1 ? "" : "s"} · the line under rank 5 is the call-list cut-off<br>${base > 0.999 ? "Perfect order: every high-tier member is above every lower-tier one inside the top 5." : "Members with long blue bars are pushed up and red bars pushed down; pairs that straddle the cut-off get the largest pushes."}`;
+    $("lm-out").innerHTML = `NDCG@5 = <b>${fmt(base)}</b>: the top 5 is worth ${Math.round(base * 100)}% of a perfect top 5 · ${steps} step${steps === 1 ? "" : "s"} · the line under rank 5 is the call-list cut-off<br>${base > 0.999 ? "Perfect order: every high-tier member is above every lower-tier one inside the top 5." : "Members with long blue bars are pushed up and red bars pushed down; pairs that straddle the cut-off get the largest pushes."}`;
   }
   $("lm-step").addEventListener("click", () => { const { lam } = lambdas(); scores = scores.map((s, i) => s + eta * lam[i]); steps++; render(); });
   $("lm-reset").addEventListener("click", reset);
