@@ -78,6 +78,10 @@ def main() -> None:
     results = {"setup": {"lead_days": k, "window_days": W, "test_cohort": TEST, "top_k_fraction": frac,
                          "features": features}}
     results["rule_baseline"] = evaluate(y_test, rule_score(test), frac)
+    store = Path(cfg["paths"]["parquet_dir"]).expanduser().parent
+    (store / "models").mkdir(parents=True, exist_ok=True)
+    preds = test[["msno", "label", "last_auto_renew", "tenure_days", "last_plan_days", "last_list_price"]].copy()
+    preds["score_rule"] = rule_score(test)
     print("rule baseline", json.dumps(results["rule_baseline"]))
 
     mlflow.set_tracking_uri(cfg.get("mlflow_uri", "sqlite:///mlflow.db"))
@@ -98,6 +102,8 @@ def main() -> None:
         gain = pd.Series(model.booster_.feature_importance("gain"), index=features)
         res["top_features"] = (gain / gain.sum()).sort_values(ascending=False).head(12).round(4).to_dict()
         results[name] = res
+        preds[f"score_{name}"] = p
+        model.booster_.save_model(str(store / "models" / f"p1_{name}.txt"))
         with mlflow.start_run(run_name=name):
             mlflow.log_params({**{k_: v for k_, v in PARAMS.items()}, "train_cohorts": ",".join(map(str, cohorts)),
                                "test_cohort": TEST, "lead_days": k, "window_days": W})
@@ -105,6 +111,8 @@ def main() -> None:
             mlflow.log_dict(res["top_features"], "top_features.json")
         print(name, json.dumps({m: round(v, 4) for m, v in res.items() if isinstance(v, float)}), flush=True)
 
+    (store / "predictions").mkdir(parents=True, exist_ok=True)
+    preds.to_parquet(store / "predictions" / f"p1_test_{TEST}.parquet", index=False)
     out = Path(cfg["paths"]["outputs_dir"]) / "p1_baseline.json"
     out.write_text(json.dumps(results, indent=2, default=str))
     print("wrote", out)

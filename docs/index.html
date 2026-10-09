@@ -162,6 +162,22 @@ a.node:hover { border-color: var(--accent); }
 .results-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px; align-items: start; }
 .results-grid .explain { display: grid; gap: 12px; min-width: 0; }
 @media (max-width: 860px) { .results-grid { grid-template-columns: minmax(0, 1fr); } }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+.tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 14px; color: var(--muted); font-weight: 600; }
+.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.pane { display: grid; gap: 24px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.tile { display: grid; gap: 4px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.tile b { font: 600 28px/1.1 var(--font-mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+.tile b small { font-size: 14px; color: var(--muted); }
+.tile span { font-size: 13.5px; color: var(--muted); }
+table.compact { min-width: 520px; }
+td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.faq { display: grid; gap: 8px; }
+.faq details { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 10px 14px; }
+.faq summary { cursor: pointer; font-weight: 600; }
+.faq details p { margin-top: 8px; color: var(--muted); max-width: 72ch; }
+
 .gates td:nth-child(3) { white-space: nowrap; }
 footer { margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--line); display: grid; gap: 10px; font-size: 13px; color: var(--muted); }
 footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
@@ -475,8 +491,59 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 <!-- 4. RESULTS -->
 <section class="block" id="results">
   <span class="eyebrow">4 · Results</span>
-  <h2>Gates fixed before training. Failures get reported too.</h2>
-  <div class="table-wrap">
+  <h2>Call 86,000 members two weeks before renewal and reach 2 in 3 of those about to leave</h2>
+  <div class="tabs" role="tablist" aria-label="Results view">
+    <button type="button" role="tab" id="tab-prac" aria-selected="true" aria-controls="pane-prac">For practitioners</button>
+    <button type="button" role="tab" id="tab-app" aria-selected="false" aria-controls="pane-app">Appendix · ML metrics</button>
+  </div>
+
+  <div id="pane-prac" role="tabpanel" aria-labelledby="tab-prac" class="pane">
+    <div class="tiles">
+      <div class="tile"><b>48 <small>of 100</small></b><span>calls reach a member who was about to leave. Today's rule: 39. Random: 7.</span></div>
+      <div class="tile"><b>65%</b><span>of all leavers reached by calling the top 10% (rule: 54%)</span></div>
+      <div class="tile"><b>+7,100</b><span>more leavers reached each month for the same 86,000 calls</span></div>
+      <div class="tile"><b>14 days</b><span>before renewal, while there is still time to act</span></div>
+    </div>
+
+    <div class="sim">
+      <span class="simtag">Budget dial · March 2017 · 862,158 members · 62,616 leavers</span>
+      <div class="controls"><label class="ctl" for="bd-share"><span class="row">Share of members we can call <output id="bd-share-o"></output></span><input type="range" id="bd-share" min="1" max="50" value="10"></label></div>
+      <svg class="plot" id="bd-svg" viewBox="0 0 640 250" role="img" aria-label="Share of leavers reached by share of members called"></svg>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Model</span><span><i style="background:var(--amber)"></i>Model trained only on outcomes known on the day</span><span><i style="background:var(--muted)"></i>Today's rule</span><span><i style="background:var(--line)"></i>Random</span></div>
+      <div class="readout" id="bd-out"></div>
+    </div>
+
+    <div class="results-grid">
+      <div class="explain">
+        <span class="eyebrow">Where the calls go · top 10% list</span>
+        <div class="table-wrap"><table class="compact">
+          <thead><tr><th>Segment</th><th>Members</th><th>Churn rate</th><th>Share of calls</th><th>Leavers reached</th></tr></thead>
+          <tbody><tr><td>Manual renewal</td><td class='num'>104,817</td><td class='num'>38.4%</td><td class='num'>87%</td><td class='num'>89%</td></tr><tr><td>Auto-renew</td><td class='num'>757,218</td><td class='num'>2.9%</td><td class='num'>13%</td><td class='num'>23%</td></tr><tr><td>New (< 6 months)</td><td class='num'>139,067</td><td class='num'>9.7%</td><td class='num'>33%</td><td class='num'>81%</td></tr><tr><td>Established (≥ 6 months)</td><td class='num'>722,968</td><td class='num'>6.8%</td><td class='num'>67%</td><td class='num'>61%</td></tr></tbody></table></div>
+      </div>
+      <div class="explain">
+        <span class="eyebrow">Before you rely on it</span>
+        <ol class="steps">
+          <li><b>Fresh outcomes matter.</b> With only outcomes known on the day, the list beats the rule at small budgets (top 5%: 45% vs 30% of leavers), not at 10%+.</li>
+          <li><b>Scores run low.</b> Members scored ~37% actually left 48% of the time. Recalibrate monthly before using scores in offers.</li>
+          <li><b>Auto-renew leavers are mostly missed.</b> About 22,000, a third of leavers; the list reaches 1 in 4.</li>
+          <li><b>Coverage.</b> The test covers 89% of March members, those with a known renewal date.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="faq">
+      <span class="eyebrow">Questions practitioners ask</span>
+      <details><summary>Isn't this just "members without auto-renew"?</summary><p>That is today's rule, and it only ever calls manual renewers. The model reaches 11 points more leavers with the same calls, and finds 1 in 4 auto-renew leavers the rule never calls.</p></details>
+      <details><summary>Did it use information from the future?</summary><p>No. Every input is built from data dated before the snapshot, 14 days ahead of renewal. An automated test fails if any later record changes a score.</p></details>
+      <details><summary>How many members should we call?</summary><p>Profit analysis puts the sweet spot near 10% (assuming 30% offer acceptance, offer cost 10, call cost 1, member value 200). Use the dial above for your budget.</p></details>
+      <details><summary>Why is this member on the list?</summary><p>The strongest signals: manual renewal, payment method, a recent cancellation, days since the last payment, and tenure. Per-member reasons come in Phase 5.</p></details>
+      <details><summary>Should we just call the riskiest members?</summary><p>Not always. Some will leave whatever we offer (Ascarza, JMR 2018). Finding members who respond to an offer is the next project (uplift modelling).</p></details>
+      <details><summary>How often does it need refreshing?</summary><p>Monthly: retrain on the latest outcomes and recalibrate. Drift monitoring is covered in the MLOps project.</p></details>
+    </div>
+  </div>
+
+  <div id="pane-app" role="tabpanel" aria-labelledby="tab-app" class="pane" hidden>
+    <div class="table-wrap">
     <table class="gates">
       <thead><tr><th>Phase</th><th>Gate</th><th>Status</th><th>Result</th></tr></thead>
       <tbody>
@@ -488,7 +555,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       </tbody>
     </table>
   </div>
-  <div class="results-grid">
+    <div class="results-grid">
     <div class="sim">
       <span class="simtag">P1 · March 2017 cohort · 862,158 members · 7.26% churn · scored 14 days before expiry</span>
       <svg class="plot" id="res-svg" viewBox="0 0 640 230" role="img" aria-label="PR-AUC by training setup"></svg>
@@ -505,6 +572,18 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <p class="muted" style="font-size:13px">Test covers 88.8% of official March members (those with a known expiry date). Source: <span class="mono">data/outputs/p1_baseline.json</span></p>
     </div>
   </div>
+    <div class="explain">
+      <span class="eyebrow">Secondary metrics · same March 2017 test</span>
+      <div class="table-wrap"><table class="compact">
+        <thead><tr><th>Metric</th><th>What it tells you</th><th>Rule</th><th>Realistic</th><th>Model</th></tr></thead>
+        <tbody><tr><td><b>PR-AUC <span class='tag base'>primary</span></b></td><td>Quality at the top of the list</td><td class='num'>0.342</td><td class='num'>0.504</td><td class='num'>0.568</td></tr><tr><td><b>ROC-AUC</b></td><td>Ranking across all members</td><td class='num'>0.803</td><td class='num'>0.800</td><td class='num'>0.891</td></tr><tr><td><b>Gini</b></td><td>ROC-AUC rescaled (2·AUC − 1); common in credit risk</td><td class='num'>0.607</td><td class='num'>0.600</td><td class='num'>0.781</td></tr><tr><td><b>Top-decile lift</b></td><td>Leavers in the top 10% vs a random 10%</td><td class='num'>5.41×</td><td class='num'>5.59×</td><td class='num'>6.55×</td></tr><tr><td><b>H-measure</b></td><td>AUC with coherent cost weighting (Hand 2009)</td><td class='num'>0.432</td><td class='num'>0.411</td><td class='num'>0.535</td></tr><tr><td><b>MPC</b></td><td>Max profit per member at the best cut-off, 30% accept rate</td><td class='num'>1.79 <span class='muted'>@ 12%</span></td><td class='num'>1.72 <span class='muted'>@ 8%</span></td><td class='num'>2.09 <span class='muted'>@ 10%</span></td></tr><tr><td><b>EMPC</b></td><td>Expected max profit, uncertain accept rate (Verbraken 2013)</td><td class='num'>1.80 <span class='muted'>@ 12%</span></td><td class='num'>1.74 <span class='muted'>@ 7%</span></td><td class='num'>2.13 <span class='muted'>@ 10%</span></td></tr><tr><td><b>Brier</b></td><td>Probability error, lower is better</td><td class='num'>—</td><td class='num'>0.050</td><td class='num'>0.045</td></tr><tr><td><b>ECE</b></td><td>Calibration gap, lower is better</td><td class='num'>—</td><td class='num'>0.033</td><td class='num'>0.016</td></tr></tbody></table></div>
+      <p class="muted" style="font-size:13px">Metrics disagree on the realistic model: PR-AUC and top-5% capture favour it; Gini, H-measure and EMPC favour the rule. It helps only at small call budgets. Profit assumptions: CLV 200, incentive 10, contact 1, accept rate ~ Beta(6, 14).</p>
+    </div>
+    <div class="sim">
+      <span class="simtag">Calibration · model, March 2017 · ten equal-size groups</span>
+      <svg class="plot" id="cal-svg" viewBox="0 0 640 250" role="img" aria-label="Predicted versus observed churn rate"></svg>
+    </div>
+  </div>
 </section>
 
 <!-- 5. TAKE -->
@@ -512,7 +591,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <span class="eyebrow">5 · Our take</span>
   <h2>Working view, revised as results come in</h2>
   <div class="take">
-    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark scores overstate:</b> a realistic setup loses 0.06 PR-AUC versus training on labels that arrive too late.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
+    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark scores overstate:</b> a realistic setup loses 0.06 PR-AUC versus training on labels that arrive too late.</li><li><b>The open gap is auto-renew cancellers:</b> a third of leavers, and the list reaches 1 in 4. That is where Phase 3 behaviour signals have to earn their keep.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
     <div><span class="eyebrow">What would change our mind</span><ul class="points"><li>Lead time costs little (P2) → predict <b>30 days</b> out, not 14.</li><li>Embeddings miss their gate (P3) → keep them for <b>personas only</b>. Likely, since listening carries only ~6% of the signal so far.</li></ul></div>
   </div>
 </section>
@@ -563,6 +642,36 @@ function path(pts, sx, sy) { return pts.map((p, i) => (i ? "L" : "M") + sx(p[0])
 function bindOut(id, f) { const el = $(id), out = $(id + "-o"); const show = () => { if (out) out.textContent = f ? f(+el.value) : el.value; }; el.addEventListener("input", show); show(); }
 function on(ids, fn) { ids.forEach((id) => $(id).addEventListener("input", fn)); fn(); }
 const dayFmt = (base, off) => { const d = new Date(base + off * 864e5); return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }); };
+
+/* results: tabs, budget dial, calibration (data from data/outputs/p1_practitioner.json) */
+const P1R = {"members":862158,"leavers":62616,"curve":{"rule":[[0.01,0.0846],[0.02,0.1463],[0.03,0.2028],[0.04,0.2547],[0.05,0.3025],[0.06,0.3497],[0.07,0.3977],[0.08,0.4464],[0.09,0.4933],[0.1,0.5406],[0.11,0.5869],[0.12,0.6356],[0.13,0.6479],[0.14,0.6529],[0.15,0.6575],[0.16,0.6623],[0.17,0.6671],[0.18,0.672],[0.19,0.6764],[0.2,0.6807],[0.21,0.6856],[0.22,0.6903],[0.23,0.6949],[0.24,0.7002],[0.25,0.7045],[0.26,0.7095],[0.27,0.7144],[0.28,0.7197],[0.29,0.7248],[0.3,0.7295],[0.31,0.7346],[0.32,0.7405],[0.33,0.747],[0.34,0.7526],[0.35,0.7582],[0.36,0.7635],[0.37,0.7692],[0.38,0.7751],[0.39,0.7818],[0.4,0.7874],[0.41,0.793],[0.42,0.798],[0.43,0.803],[0.44,0.8075],[0.45,0.8119],[0.46,0.816],[0.47,0.8203],[0.48,0.8247],[0.49,0.8288],[0.5,0.8329]],"realistic":[[0.01,0.1217],[0.02,0.2315],[0.03,0.3274],[0.04,0.4042],[0.05,0.4533],[0.06,0.4737],[0.07,0.5069],[0.08,0.5306],[0.09,0.5463],[0.1,0.5586],[0.11,0.5719],[0.12,0.5857],[0.13,0.5973],[0.14,0.6033],[0.15,0.6054],[0.16,0.61],[0.17,0.6156],[0.18,0.6228],[0.19,0.6256],[0.2,0.6298],[0.21,0.636],[0.22,0.6438],[0.23,0.6481],[0.24,0.6532],[0.25,0.6609],[0.26,0.6678],[0.27,0.6742],[0.28,0.6805],[0.29,0.6864],[0.3,0.6925],[0.31,0.6985],[0.32,0.7054],[0.33,0.7123],[0.34,0.7186],[0.35,0.7248],[0.36,0.731],[0.37,0.7365],[0.38,0.7423],[0.39,0.7472],[0.4,0.7525],[0.41,0.7575],[0.42,0.7625],[0.43,0.7678],[0.44,0.7721],[0.45,0.7763],[0.46,0.7807],[0.47,0.7853],[0.48,0.7895],[0.49,0.7943],[0.5,0.7998]],"model":[[0.01,0.1164],[0.02,0.2124],[0.03,0.3032],[0.04,0.3877],[0.05,0.4624],[0.06,0.5213],[0.07,0.5657],[0.08,0.6008],[0.09,0.6303],[0.1,0.6547],[0.11,0.6767],[0.12,0.6971],[0.13,0.7147],[0.14,0.7309],[0.15,0.7459],[0.16,0.7576],[0.17,0.7702],[0.18,0.779],[0.19,0.7883],[0.2,0.795],[0.21,0.8024],[0.22,0.8098],[0.23,0.8162],[0.24,0.8219],[0.25,0.8278],[0.26,0.8337],[0.27,0.8389],[0.28,0.844],[0.29,0.8486],[0.3,0.8541],[0.31,0.8588],[0.32,0.8638],[0.33,0.8674],[0.34,0.8716],[0.35,0.876],[0.36,0.88],[0.37,0.8844],[0.38,0.8874],[0.39,0.8912],[0.4,0.895],[0.41,0.8988],[0.42,0.9019],[0.43,0.9052],[0.44,0.9085],[0.45,0.9107],[0.46,0.9133],[0.47,0.9157],[0.48,0.9185],[0.49,0.9213],[0.5,0.9243]]},"cal":[[0.0033,0.0038],[0.0051,0.0082],[0.0064,0.0122],[0.0076,0.0138],[0.0092,0.0168],[0.0123,0.0213],[0.0197,0.0297],[0.0363,0.0429],[0.0925,0.1019],[0.3725,0.4755]]};
+(function () {
+  const tabs = [["tab-prac", "pane-prac"], ["tab-app", "pane-app"]];
+  tabs.forEach(([t]) => $(t).addEventListener("click", () => tabs.forEach(([t2, p2]) => { const on = t2 === t; $(t2).setAttribute("aria-selected", on); $(p2).hidden = !on; })));
+  bindOut("bd-share", (v) => v + "%");
+  const at = (curve, f) => curve.reduce((b, q) => (Math.abs(q[0] - f) < Math.abs(b[0] - f) ? q : b))[1];
+  function draw() {
+    const f = +$("bd-share").value / 100, svg = $("bd-svg"); clear(svg);
+    const { sx, sy } = frame(svg, { l: 44, r: 620, t: 22, b: 200, x0: 0, x1: 0.5, y0: 0, y1: 1, xt: [0, 0.1, 0.2, 0.3, 0.4, 0.5], yt: [0, 0.25, 0.5, 0.75, 1], xf: (v) => Math.round(v * 100) + "%", yf: (v) => Math.round(v * 100) + "%", xl: "share of members called", yl: "share of leavers reached" });
+    S("line", { x1: sx(0), y1: sy(0), x2: sx(0.5), y2: sy(0.5), class: "s-muted", "stroke-dasharray": "3 3", opacity: 0.6 }, svg);
+    [["rule", "s-muted"], ["realistic", "s-amber"], ["model", "s-accent"]].forEach(([k, cls]) => S("path", { d: path([[0, 0]].concat(P1R.curve[k]), sx, sy), fill: "none", class: cls, "stroke-width": k === "model" ? 2.6 : 2 }, svg));
+    S("line", { x1: sx(f), x2: sx(f), y1: 22, y2: 200, class: "s-fg", "stroke-dasharray": "4 3" }, svg);
+    const m = at(P1R.curve.model, f), r = at(P1R.curve.rule, f), e = at(P1R.curve.realistic, f);
+    S("circle", { cx: sx(f), cy: sy(m), r: 4.5, class: "f-accent" }, svg); S("circle", { cx: sx(f), cy: sy(r), r: 4, class: "f-muted" }, svg);
+    const calls = Math.round(P1R.members * f), L = P1R.leavers, n = (v) => Math.round(v).toLocaleString("en-US");
+    $("bd-out").innerHTML = `calling <b>${n(calls)}</b> members (${Math.round(f * 100)}%) reaches <b>${n(L * m)}</b> leavers (${(m * 100).toFixed(0)}%) · rule ${n(L * r)} (${(r * 100).toFixed(0)}%) · random ${n(L * f)}<br>extra vs today: <b>${m >= r ? "+" : ""}${n(L * (m - r))}</b> leavers · trained on day-one outcomes only: ${(e * 100).toFixed(0)}% · at a 1-in-5 save rate: <b>${n(L * m * 0.2)}</b> saves vs ${n(L * r * 0.2)}`;
+  }
+  on(["bd-share"], draw);
+  const svg = $("cal-svg"), mx = 0.5;
+  const { sx, sy } = frame(svg, { l: 48, r: 620, t: 22, b: 200, x0: 0, x1: mx, y0: 0, y1: mx, xt: [0, 0.1, 0.2, 0.3, 0.4, 0.5], yt: [0, 0.1, 0.2, 0.3, 0.4, 0.5], xf: (v) => Math.round(v * 100) + "%", yf: (v) => Math.round(v * 100) + "%", xl: "predicted churn probability (group average)", yl: "observed churn rate" });
+  S("line", { x1: sx(0), y1: sy(0), x2: sx(mx), y2: sy(mx), class: "s-muted", "stroke-dasharray": "3 3" }, svg);
+  T("perfect calibration", { x: sx(0.45), y: sy(0.45) + 16, class: "svgtxt", "text-anchor": "end" }, svg);
+  S("path", { d: path(P1R.cal, sx, sy), fill: "none", class: "s-accent", "stroke-width": 2 }, svg);
+  P1R.cal.forEach(([a, b]) => S("circle", { cx: sx(a), cy: sy(b), r: 3.5, class: "f-accent" }, svg));
+  const last = P1R.cal[P1R.cal.length - 1];
+  T(`top group: predicted ${(last[0] * 100).toFixed(0)}%, observed ${(last[1] * 100).toFixed(0)}%`, { x: sx(last[0]) - 6, y: sy(last[1]) - 10, class: "svglab", "text-anchor": "end" }, svg);
+})();
+
 
 /* results: P1 PR-AUC bars (values from data/outputs/p1_baseline.json) */
 (function () {

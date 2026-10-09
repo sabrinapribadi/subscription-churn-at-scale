@@ -1,6 +1,6 @@
 PRODUCT REQUIREMENT DOCUMENT (PRD)
 Project: Subscription Churn at Scale — Who Leaves, When, Why, and Who to Call First
-Version: 0.4 (P1 baseline: PR-AUC 0.568 out-of-time vs rule 0.342)
+Version: 0.5 (Practitioner reporting + secondary metrics appendix)
 Author: Sabrina Pribadi
 Date: October 9, 2026
 Status: Active — P0 (failed, documented) and P1 (passed) complete; P2 next

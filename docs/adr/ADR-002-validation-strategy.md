@@ -66,6 +66,22 @@ Churn is a minority class (single-digit % in the official cohorts), and the mode
 
 After the P0 gate failed (ADR-001 Amendment 2), the test cohort is **Mar-2017 with official labels**. Training uses cohorts up to Feb-2017; earlier cohorts carry reconstructed labels and are kept only if they raise test PR-AUC. Validation for tuning is a member-level hold-out inside the training cohorts.
 
+## Amendment 2 (2026-10-09) — Secondary metrics and practitioner reporting
+
+Added **after** P1, so none of these are gates. Reported in the showcase appendix:
+
+| Metric | Why it is reported | Source |
+|--------|--------------------|--------|
+| Gini (2·AUC − 1) | Familiar to practitioners and credit-risk teams | Neslin et al. (2006), JMR 43(2) |
+| Top-decile lift | Standard churn-tournament metric | Neslin et al. (2006) |
+| H-measure | Coherent alternative to AUC | Hand (2009), Machine Learning 77 |
+| Brier, ECE, calibration curve | Probabilities will drive offers | — |
+| MPC / EMPC + optimal share | Profit-maximising cut-off | Verbeke et al. (2012), EJOR 218(1); Verbraken et al. (2013), IEEE TKDE 25(5) |
+
+**Finding that motivated this:** on the realistic setup, Gini (0.600) rated the model *below* the rule (0.607) while PR-AUC (0.505 vs 0.342) and top-5% capture (45% vs 30%) favoured the model. Gini stays secondary; decisions use PR-AUC and capture at the call budget.
+
+**Practitioner translation (rule R9):** precision@10% → "48 of 100 calls reach a leaver"; recall@10% → "2 in 3 leavers reached"; capture curve → budget dial.
+
 ## Related Decisions
 
 - ADR-001: Task framing (defines cohorts and snapshot dates; Amendment 2 sets label sources)

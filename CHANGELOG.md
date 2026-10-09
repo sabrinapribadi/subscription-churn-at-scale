@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.7.0] — 2026-10-09 — Practitioner view, budget dial, and an appendix of secondary metrics
+**Files:** scripts/train_model.py, scripts/practitioner_report.py, data/outputs/p1_practitioner.json, docs/index.html, docs/adr/ADR-002-validation-strategy.md
+- **Situation:** Results were reported in ML metrics only. Practitioners ask how many calls reach a leaver, whether it beats today's rule, and what happens on a smaller budget. A consultant recommended Gini.
+- **Task:** Lead with operational answers, keep the evidence one click away, and test whether Gini would pick the right model.
+- **Action:** Saved test predictions; computed capture curves, calibration, and segment cuts; added Gini, top-decile lift, H-measure, Brier, ECE, MPC and EMPC (Verbraken et al. defaults). Rebuilt the Results section as two tabs: practitioner view (four plain numbers, a budget dial, where the calls go, caveats, FAQ) and an ML appendix.
+- **Result:** 48 of 100 calls reach a leaver (rule 39, random 7); +7,100 leavers a month at the same call volume; EMPC's profit-maximising share is 10.3%, matching the planned list. Found that Gini rates the realistic model below the rule while PR-AUC and top-5% capture rate it well above; scores run low (top group 37% predicted vs 48% observed); auto-renew cancellers are a third of leavers and mostly missed.
+- **Talking point:** "When the consultant asked for Gini, I showed a case from our own data where Gini would have thrown away the better model — then reported it anyway, in the appendix."
+
 ## [0.6.0] — 2026-10-09 — P1 baseline: LightGBM out-of-time, three training setups
 **Files:** src/features/build.py, src/data/cohorts.py, src/spark_session.py, scripts/build_dataset.py, scripts/train_model.py, tests/test_features.py, docs/index.html, docs/adr/ADR-001-task-framing.md, docs/PRD.md, data/outputs/p1_dataset.json, data/outputs/p1_baseline.json, .gitignore, .env.example
 - **Situation:** Labels were settled (P0) but no model existed. The benchmark trains on February labels to predict March, yet those labels are not known when March predictions must be made.
