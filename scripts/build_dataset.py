@@ -19,7 +19,7 @@ from pyspark.sql import functions as F
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.data.cohorts import build_cohort_labels_fast, last_expiry_before, month_bounds  # noqa: E402
-from src.features.build import add_snapshot, build_features  # noqa: E402
+from src.features.build import add_snapshot, build_features, build_features_multi  # noqa: E402
 from src.spark_session import get_spark  # noqa: E402
 
 OFFICIAL = {201702: "train.csv", 201703: "train_v2.csv"}
@@ -31,18 +31,20 @@ def main() -> None:
     ap.add_argument("--months", nargs="+", type=int, required=True)
     ap.add_argument("--k", type=int, default=cfg["framing"]["lead_days"])
     ap.add_argument("--W", type=int, default=cfg["framing"]["window_days"])
+    ap.add_argument("--windows", nargs="+", type=int, help="P2: build every window in one pass (writes k{k}_wmulti)")
     a = ap.parse_args()
 
     raw = Path(cfg["paths"]["raw_dir"]).expanduser()
     pq = Path(cfg["paths"]["parquet_dir"]).expanduser()
-    out = Path(cfg["paths"]["parquet_dir"]).expanduser().parent / "features" / f"k{a.k}_w{a.W}"
+    tag = f"k{a.k}_wmulti" if a.windows else f"k{a.k}_w{a.W}"
+    out = Path(cfg["paths"]["parquet_dir"]).expanduser().parent / "features" / tag
     spark = get_spark(driver_memory=cfg["spark"]["driver_memory"])
     spark.sparkContext.setLogLevel("ERROR")
     tx = spark.read.parquet(str(pq / "transactions")).cache()
     ul = spark.read.parquet(str(pq / "user_logs"))
     members = spark.read.parquet(str(pq / "members"))
 
-    stats_path = Path(cfg["paths"]["outputs_dir"]) / "p1_dataset.json"
+    stats_path = Path(cfg["paths"]["outputs_dir"]) / ("p2_dataset.json" if a.windows else "p1_dataset.json")
     stats = json.loads(stats_path.read_text()) if stats_path.exists() else {}
     for ym in a.months:
         t0 = time.time()
@@ -61,14 +63,14 @@ def main() -> None:
                 "msno", "last_expire", F.col("is_churn").alias("label"), F.lit("reconstructed").alias("label_source"))
         cohort = add_snapshot(cohort.withColumn("cohort", F.lit(ym)), a.k).cache()
         n, churn = cohort.count(), cohort.agg(F.avg("label")).first()[0]
-        feats = build_features(tx, ul, members, cohort, a.W)
+        feats = build_features_multi(tx, ul, members, cohort, a.windows) if a.windows else build_features(tx, ul, members, cohort, a.W)
         feats.write.mode("overwrite").parquet(str(out / f"cohort={ym}"))
-        stats[f"k{a.k}_w{a.W}:{ym}"] = {
+        stats[f"{tag}:{ym}"] = {
             "members": n, "churn_rate": round(churn, 5), "label_source": "official" if ym in OFFICIAL else "reconstructed",
             "official_members": n_off, "official_coverage": round(n / n_off, 5) if n_off else None,
             "seconds": round(time.time() - t0),
         }
-        print(ym, stats[f"k{a.k}_w{a.W}:{ym}"], flush=True)
+        print(ym, stats[f"{tag}:{ym}"], flush=True)
         cohort.unpersist()
     stats_path.parent.mkdir(parents=True, exist_ok=True)
     stats_path.write_text(json.dumps(stats, indent=2))

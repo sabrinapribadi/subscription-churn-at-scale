@@ -115,3 +115,122 @@ def build_features(tx: DataFrame, user_logs: DataFrame, members: DataFrame, coho
         .join(member_features(members, cohort), "msno", "left")
         .fillna(0, subset=["use_active_days", "use_active_days_recent", "use_secs", "use_secs_per_day", "use_secs_per_day_recent"])
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase 2: every observation window in one pass (ADR-001 window grid)
+# Window-dependent columns are suffixed "__w{W}"; select_window() turns one window's
+# columns back into the Phase 1 names, so P1 and P2 models see identical features.
+# ---------------------------------------------------------------------------
+
+WINDOW_SUFFIX = "__w"
+_USAGE_FILL = ["use_active_days", "use_secs", "use_secs_per_day"]
+
+
+def _transaction_features_multi(tx: DataFrame, cohort: DataFrame, windows: list[int]) -> DataFrame:
+    s = cohort.select("msno", "snapshot")
+    t = tx.join(s, "msno").filter(F.col("transaction_date") < F.col("snapshot"))
+    for w in windows:
+        t = t.withColumn(f"_in{w}", F.col("transaction_date") >= _int_date(F.date_sub(_d("snapshot"), w)))
+    last = F.struct("transaction_date", "membership_expire_date")
+    per_w = []
+    for w in windows:
+        per_w += [
+            F.sum(F.col(f"_in{w}").cast("int")).alias(f"tx_count_window{WINDOW_SUFFIX}{w}"),
+            F.sum((F.col(f"_in{w}") & (F.col("is_cancel") == 1)).cast("int")).alias(f"tx_cancels_window{WINDOW_SUFFIX}{w}"),
+        ]
+    return t.groupBy("msno").agg(
+        F.count("*").alias("tx_count"),
+        F.sum("is_cancel").alias("tx_cancels"),
+        F.avg("is_auto_renew").alias("tx_auto_renew_share"),
+        F.avg(F.col("plan_list_price") - F.col("actual_amount_paid")).alias("tx_mean_discount"),
+        F.countDistinct("payment_method_id").alias("tx_distinct_methods"),
+        F.min("transaction_date").alias("_first_tx"),
+        F.max("transaction_date").alias("_last_tx"),
+        F.max_by("payment_plan_days", last).alias("last_plan_days"),
+        F.max_by("plan_list_price", last).alias("last_list_price"),
+        F.max_by("actual_amount_paid", last).alias("last_amount_paid"),
+        F.max_by("is_auto_renew", last).alias("last_auto_renew"),
+        F.max_by("payment_method_id", last).alias("last_payment_method"),
+        F.max_by("is_cancel", last).alias("last_is_cancel"),
+        F.first("snapshot").alias("_snap"),
+        *per_w,
+    ).select(
+        "*",
+        F.datediff(_d("_snap"), _d("_first_tx")).alias("tenure_days"),
+        F.datediff(_d("_snap"), _d("_last_tx")).alias("days_since_last_tx"),
+    ).drop("_first_tx", "_last_tx", "_snap")
+
+
+def _usage_features_multi(user_logs: DataFrame, cohort: DataFrame, windows: list[int]) -> DataFrame:
+    wmax = max(windows)
+    s = cohort.select("msno", "snapshot").withColumn("w_start", _int_date(F.date_sub(_d("snapshot"), wmax)))
+    s = s.withColumn("r_start", _int_date(F.date_sub(_d("snapshot"), RECENT_DAYS)))
+    lo, hi = s.agg(F.min("w_start"), F.max("snapshot")).first()
+    ul = (
+        user_logs.filter(F.col("year_month").between(lo // 100, hi // 100))
+        .filter(F.col("date").between(lo, hi))
+        .join(s, "msno")
+        .filter((F.col("date") >= F.col("w_start")) & (F.col("date") < F.col("snapshot")))
+        .withColumn("secs", F.least(F.greatest(F.col("total_secs"), F.lit(0.0)), F.lit(float(SECONDS_PER_DAY))))
+        .withColumn("plays", F.col("num_25") + F.col("num_50") + F.col("num_75") + F.col("num_985") + F.col("num_100"))
+        .withColumn("recent", (F.col("date") >= F.col("r_start")).cast("int"))
+    )
+    for w in windows:
+        ul = ul.withColumn(f"_in{w}", F.col("date") >= _int_date(F.date_sub(_d("snapshot"), w)))
+    aggs = [
+        F.sum("recent").alias("use_active_days_recent"),
+        F.sum(F.col("secs") * F.col("recent")).alias("_secs_recent"),
+        F.first("snapshot").alias("_snap"),
+    ]
+    for w in windows:
+        inw = F.col(f"_in{w}")
+        aggs += [
+            F.count(F.when(inw, 1)).alias(f"_days{w}"),
+            F.sum(F.when(inw, F.col("secs"))).alias(f"_secs{w}"),
+            F.avg(F.when(inw, F.col("num_unq"))).alias(f"_unq{w}"),
+            F.sum(F.when(inw, F.col("plays"))).alias(f"_plays{w}"),
+            F.sum(F.when(inw, F.col("num_100"))).alias(f"_full{w}"),
+            F.sum(F.when(inw, F.col("num_25"))).alias(f"_skip{w}"),
+            F.max(F.when(inw, F.col("date"))).alias(f"_last{w}"),
+        ]
+    g = ul.groupBy("msno").agg(*aggs)
+    cols = ["msno", "use_active_days_recent", (F.col("_secs_recent") / RECENT_DAYS).alias("use_secs_per_day_recent")]
+    for w in windows:
+        sfx = f"{WINDOW_SUFFIX}{w}"
+        cols += [
+            F.col(f"_days{w}").alias(f"use_active_days{sfx}"),
+            F.col(f"_secs{w}").alias(f"use_secs{sfx}"),
+            F.col(f"_unq{w}").alias(f"use_unique_songs_mean{sfx}"),
+            (F.col(f"_secs{w}") / w).alias(f"use_secs_per_day{sfx}"),
+            ((F.col("_secs_recent") / RECENT_DAYS) / (F.col(f"_secs{w}") / w + 1e-9)).alias(f"use_decline_ratio{sfx}"),
+            (F.col(f"_full{w}") / (F.col(f"_plays{w}") + 1e-9)).alias(f"use_full_listen_share{sfx}"),
+            (F.col(f"_skip{w}") / (F.col(f"_plays{w}") + 1e-9)).alias(f"use_skip_share{sfx}"),
+            F.datediff(_d("_snap"), _d(f"_last{w}")).alias(f"days_since_last_play{sfx}"),
+        ]
+    return g.select(*cols)
+
+
+def build_features_multi(tx: DataFrame, user_logs: DataFrame, members: DataFrame, cohort: DataFrame,
+                         windows: list[int]) -> DataFrame:
+    """Like build_features, for several observation windows at once (one join over the logs)."""
+    base = cohort.select("msno", "cohort", "last_expire", "snapshot", "label", "label_source")
+    fill = ["use_active_days_recent", "use_secs_per_day_recent"] + [f"{c}{WINDOW_SUFFIX}{w}" for c in _USAGE_FILL for w in windows]
+    return (
+        base.join(_transaction_features_multi(tx, cohort, windows), "msno", "left")
+        .join(_usage_features_multi(user_logs, cohort, windows), "msno", "left")
+        .join(member_features(members, cohort), "msno", "left")
+        .fillna(0, subset=fill)
+    )
+
+
+def select_window(columns: list[str], window: int) -> dict[str, str]:
+    """Map multi-window column names to Phase 1 names for one window: {source: target}."""
+    sfx = f"{WINDOW_SUFFIX}{window}"
+    out = {}
+    for c in columns:
+        if WINDOW_SUFFIX not in c:
+            out[c] = c
+        elif c.endswith(sfx):
+            out[c] = c[: -len(sfx)]
+    return out

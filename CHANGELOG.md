@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.9.0] — 2026-10-09 — P2: how early can we call, how much history do we need
+**Files:** src/features/build.py, src/models/baseline.py, src/evaluation/metrics.py, scripts/build_dataset.py, scripts/train_model.py, scripts/window_curve.py, tests/test_features.py, configs/default_config.yaml, docs/index.html, docs/adr/ADR-001-task-framing.md, docs/PRD.md, README.md, data/outputs/p2_dataset.json, data/outputs/p2_window_curve.json
+- **Situation:** P1 used a 14-day lead time and 120 days of history by assumption. A 2026 study on this dataset found the history "knee" anywhere from 30 to 120 days depending on design.
+- **Task:** Measure both choices on real data — 4 lead times × 5 history windows — without 40 separate 20-minute feature builds.
+- **Action:** Computed all five windows in one pass over 410M log rows (equivalence test vs P1 features); moved model and metric code into src/ and confirmed P1 reproduces to 0.0 difference; trained 20 models (Feb → Mar); added two hoverable practitioner charts and the full grid to the appendix; rewrote the README in practitioner-first style.
+- **Result:** Lead time is the real trade-off: churners reached at a 10% call budget fall from 68% (7 days) to 65% (14) to 60% (30) — about 3,600 fewer a month from 14 to 30 days. History length is not: 30 to 180 days all within 0.003 PR-AUC, the same as run-to-run noise → use 30 days. Both outcomes match pre-registered falsification rows in ADR-001.
+- **Talking point:** "I measured my own noise floor — same features, different column order, 0.003 PR-AUC — and used it to show that 180 days of history buys nothing over 30, while each extra week of warning costs real churners."
+
 ## [0.8.0] — 2026-10-09 — Hover details on every chart; plain-language NDCG
 **Files:** docs/index.html
 - **Situation:** Readers could not read exact values off most charts; "NDCG" and the rule's kink ("runs out of manual renewers") were unexplained; the calibration labels overlapped the reference line.

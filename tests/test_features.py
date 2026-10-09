@@ -54,3 +54,15 @@ def test_recent_window_and_counts(spark):
     assert f.tx_count == 2 and f.last_plan_days == 30 and f.last_auto_renew == 1
     assert f.use_active_days == 3 and f.use_active_days_recent == 2  # 01-20 and 01-28 fall in [01-18, 02-01)
     assert f.days_since_last_play == 4 and f.gender == 2
+
+
+@pytest.mark.parametrize("window", [30, 120])
+def test_multi_window_matches_single_window(spark, window):
+    from src.features.build import build_features_multi, select_window
+    frames = _frames(spark, extra_ul=[("a", 20161201, 2, 1, 0, 0, 5, 6, 1500.0, 201612)])
+    single = build_features(*frames, window_days=window).first().asDict()
+    multi = build_features_multi(*frames, windows=[30, 60, 120]).first().asDict()
+    mapped = {target: multi[src] for src, target in select_window(list(multi), window).items()}
+    assert set(mapped) == set(single)
+    for k, v in single.items():
+        assert mapped[k] == pytest.approx(v, rel=1e-9, abs=1e-12), k

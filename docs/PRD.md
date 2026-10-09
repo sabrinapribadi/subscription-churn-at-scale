@@ -1,9 +1,9 @@
 PRODUCT REQUIREMENT DOCUMENT (PRD)
 Project: Subscription Churn at Scale — Who Leaves, When, Why, and Who to Call First
-Version: 0.5 (Practitioner reporting + secondary metrics appendix)
+Version: 0.6 (P2: lead-time trade-off; 30-day history is enough)
 Author: Sabrina Pribadi
 Date: October 9, 2026
-Status: Active — P0 (failed, documented) and P1 (passed) complete; P2 next
+Status: Active — P0 (failed, documented), P1 and P2 (passed) complete; P3 next
 
 
 1. EXECUTIVE SUMMARY

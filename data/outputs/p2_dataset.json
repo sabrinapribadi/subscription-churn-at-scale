@@ -1,0 +1,66 @@
+{
+  "k14_wmulti:201702": {
+    "members": 879478,
+    "churn_rate": 0.05545,
+    "label_source": "official",
+    "official_members": 992931,
+    "official_coverage": 0.88574,
+    "seconds": 1077
+  },
+  "k14_wmulti:201703": {
+    "members": 862158,
+    "churn_rate": 0.07263,
+    "label_source": "official",
+    "official_members": 970960,
+    "official_coverage": 0.88794,
+    "seconds": 1199
+  },
+  "k0_wmulti:201702": {
+    "members": 879478,
+    "churn_rate": 0.05545,
+    "label_source": "official",
+    "official_members": 992931,
+    "official_coverage": 0.88574,
+    "seconds": 1039
+  },
+  "k0_wmulti:201703": {
+    "members": 862158,
+    "churn_rate": 0.07263,
+    "label_source": "official",
+    "official_members": 970960,
+    "official_coverage": 0.88794,
+    "seconds": 937
+  },
+  "k7_wmulti:201702": {
+    "members": 879478,
+    "churn_rate": 0.05545,
+    "label_source": "official",
+    "official_members": 992931,
+    "official_coverage": 0.88574,
+    "seconds": 1108
+  },
+  "k7_wmulti:201703": {
+    "members": 862158,
+    "churn_rate": 0.07263,
+    "label_source": "official",
+    "official_members": 970960,
+    "official_coverage": 0.88794,
+    "seconds": 1004
+  },
+  "k30_wmulti:201702": {
+    "members": 879478,
+    "churn_rate": 0.05545,
+    "label_source": "official",
+    "official_members": 992931,
+    "official_coverage": 0.88574,
+    "seconds": 924
+  },
+  "k30_wmulti:201703": {
+    "members": 862158,
+    "churn_rate": 0.07263,
+    "label_source": "official",
+    "official_members": 970960,
+    "official_coverage": 0.88794,
+    "seconds": 1020
+  }
+}

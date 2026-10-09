@@ -13,7 +13,8 @@ paths:
 framing:
   lead_days: 14                      # k: predict at expiry − k days
   lead_days_grid: [7, 14, 30]
-  window_days: 120                   # W: observation window
+  window_days: 120                   # W used by P1 (kept for reproducibility)
+  window_days_selected: 30           # P2 result: flat beyond 30 days (ADR-001 Am. 3); used from P3 on
   window_days_grid: [30, 60, 90, 120, 180]
   churn_grace_days: 30               # official WSDM definition
 

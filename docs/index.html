@@ -191,6 +191,8 @@ td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; whit
 .chart-wrap svg.plot { cursor: crosshair; }
 .rank .r:not(.head) { cursor: default; }
 .rank .r:not(.head):hover { box-shadow: inset 0 0 0 1px var(--accent); }
+.results-grid.even { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
 .gates td:nth-child(3) { white-space: nowrap; }
 footer { margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--line); display: grid; gap: 10px; font-size: 13px; color: var(--muted); }
 footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
@@ -351,7 +353,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
         <span class="lbl">Separation</span>AUC(<i>W</i>) = P( <i>r</i><sub>W</sub><sup>stay</sup> &gt; <i>r</i><sub>W</sub><sup>churn</sup> )
         <span class="lbl">Knee</span><i>W</i>* = min <i>W</i> with gain ≥ 95% of max
       </div>
-      <p class="why-here"><b>Why it matters:</b> a 2026 study on this dataset found the knee anywhere from 30 to 120 days.</p>
+      <p class="why-here"><b>Why it matters:</b> a 2026 study on this dataset found the knee anywhere from 30 to 120 days. <b>Our real data (P2):</b> flat from 30 days, because payment behaviour carries the signal.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · 800 synthetic members, half of them churners</span>
@@ -528,6 +530,27 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <div class="readout" id="bd-out"></div>
     </div>
 
+    <div class="results-grid even">
+      <div class="sim">
+        <span class="simtag">P2 · How early can we call?</span>
+        <svg class="plot" id="lt-svg" viewBox="0 0 640 260" role="img" aria-label="Share of churners reached by days before renewal"></svg>
+        <div class="legend"><span><i style="background:var(--accent)"></i>Call 10% of members</span><span><i style="background:var(--amber)"></i>Call 5%</span><span><i class="dash"></i>Competition setup: renewal already visible</span></div>
+      </div>
+      <div class="sim">
+        <span class="simtag">P2 · How much listening history do we need?</span>
+        <svg class="plot" id="hw-svg" viewBox="0 0 640 260" role="img" aria-label="Share of churners reached by days of history"></svg>
+        <div class="legend"><span><i style="background:var(--muted)"></i>0 days</span><span><i style="background:var(--stay)"></i>7 days</span><span><i style="background:var(--accent)"></i>14 days</span><span><i style="background:var(--amber)"></i>30 days before renewal</span></div>
+      </div>
+    </div>
+    <div class="explain">
+      <span class="eyebrow">What P2 showed</span>
+      <ol class="steps">
+        <li><b>Every week of warning costs churners.</b> Calling 30 days ahead instead of 14 reaches about 3,600 fewer churners a month (60% vs 65%). 7 days reaches about 1,600 more (68%).</li>
+        <li><b>30 days of history is enough.</b> 30 to 180 days of listening history all land within 0.3 points of each other, which is run-to-run noise.</li>
+        <li><b>Scoring on the renewal date looks best (74%)</b> only because the renewal is already visible. It leaves no time to act.</li>
+      </ol>
+    </div>
+
     <div class="results-grid">
       <div class="explain">
         <span class="eyebrow">Where the calls go · top 10% list</span>
@@ -564,7 +587,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <tbody>
         <tr><td>P0 · Labels</td><td>Reconstructed labels agree with official labels on ≥ 99% of members (Feb + Mar 2017)</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>Agreement: <b>98.8%</b> Feb · <b>97.0%</b> Mar</li><li>Cause: the shipped transactions show renewals the official labels count as churn</li><li>Decision: official labels = test truth; rebuilt labels must earn a place in training (ADR-001 Amendment 2)</li></ul></td></tr>
         <tr><td>P1 · Baseline</td><td>Out-of-time PR-AUC reported; leakage tests pass</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>PR-AUC <b>0.568</b> vs rule <b>0.342</b></li><li>Top 10% of the list catches <b>65%</b> of churners</li><li>Leakage tests: 3/3 pass</li></ul></td></tr>
-        <tr><td>P2 · Window</td><td>Window curve and knee reported for each k</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
+        <tr><td>P2 · Window</td><td>Window curve and knee reported for each k</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>Lead time: PR-AUC 0.676 (0 d) → 0.602 (7 d) → 0.561 (14 d) → 0.476 (30 d)</li><li>History: flat from 30 to 180 days → use 30</li></ul></td></tr>
         <tr><td>P3 · Embeddings</td><td>PR-AUC(GBM + embeddings) ≥ PR-AUC(GBM) + 0.02 out-of-time</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
         <tr><td>P4 · Ranking</td><td>profit@10%(LambdaMART) &gt; profit@10%(probability sort)</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
       </tbody>
@@ -594,6 +617,13 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
         <tbody><tr><td><b>PR-AUC <span class='tag base'>primary</span></b></td><td>Quality at the top of the list</td><td class='num'>0.342</td><td class='num'>0.504</td><td class='num'>0.568</td></tr><tr><td><b>ROC-AUC</b></td><td>Ranking across all members</td><td class='num'>0.803</td><td class='num'>0.800</td><td class='num'>0.891</td></tr><tr><td><b>Gini</b></td><td>ROC-AUC rescaled (2·AUC − 1); common in credit risk</td><td class='num'>0.607</td><td class='num'>0.600</td><td class='num'>0.781</td></tr><tr><td><b>Top-decile lift</b></td><td>Churners in the top 10% vs a random 10%</td><td class='num'>5.41×</td><td class='num'>5.59×</td><td class='num'>6.55×</td></tr><tr><td><b>H-measure</b></td><td>AUC with coherent cost weighting (Hand 2009)</td><td class='num'>0.432</td><td class='num'>0.411</td><td class='num'>0.535</td></tr><tr><td><b>MPC</b></td><td>Max profit per member at the best cut-off, 30% accept rate</td><td class='num'>1.79 <span class='muted'>@ 12%</span></td><td class='num'>1.72 <span class='muted'>@ 8%</span></td><td class='num'>2.09 <span class='muted'>@ 10%</span></td></tr><tr><td><b>EMPC</b></td><td>Expected max profit, uncertain accept rate (Verbraken 2013)</td><td class='num'>1.80 <span class='muted'>@ 12%</span></td><td class='num'>1.74 <span class='muted'>@ 7%</span></td><td class='num'>2.13 <span class='muted'>@ 10%</span></td></tr><tr><td><b>Brier</b></td><td>Probability error, lower is better</td><td class='num'>—</td><td class='num'>0.050</td><td class='num'>0.045</td></tr><tr><td><b>ECE</b></td><td>Calibration gap, lower is better</td><td class='num'>—</td><td class='num'>0.033</td><td class='num'>0.016</td></tr></tbody></table></div>
       <p class="muted" style="font-size:13px">Metrics disagree on the realistic model: PR-AUC and top-5% capture favour it; Gini, H-measure and EMPC favour the rule. It helps only at small call budgets. Profit assumptions: CLV 200, incentive 10, contact 1, accept rate ~ Beta(6, 14).</p>
     </div>
+    <div class="explain">
+      <span class="eyebrow">P2 · PR-AUC by lead time × history window · train Feb 2017, test Mar 2017</span>
+      <div class="table-wrap"><table class="compact">
+        <thead><tr><th>Days before renewal</th><th>30 days history</th><th>60 days history</th><th>90 days history</th><th>120 days history</th><th>180 days history</th></tr></thead>
+        <tbody><tr><td>0 days <span class='tag ref'>reference only</span></td><td class='num'>0.676</td><td class='num'>0.674</td><td class='num'>0.675</td><td class='num'>0.676</td><td class='num'>0.675</td></tr><tr><td>7 days</td><td class='num'>0.602</td><td class='num'>0.599</td><td class='num'>0.599</td><td class='num'>0.603</td><td class='num'>0.604</td></tr><tr><td>14 days</td><td class='num'>0.561</td><td class='num'>0.564</td><td class='num'>0.562</td><td class='num'>0.565</td><td class='num'>0.561</td></tr><tr><td>30 days</td><td class='num'>0.476</td><td class='num'>0.474</td><td class='num'>0.476</td><td class='num'>0.476</td><td class='num'>0.475</td></tr></tbody></table></div>
+      <p class="muted" style="font-size:13px">Across windows, scores differ by at most 0.003. Training the same features with a different column order moved PR-AUC by 0.003, so these differences are noise. Decision: 30 days of history (ADR-001 Amendment 3).</p>
+    </div>
     <div class="sim">
       <span class="simtag">Calibration · model, March 2017 · ten equal-size groups</span>
       <div class="chart-wrap"><svg class="plot" id="cal-svg" viewBox="0 0 640 250" role="img" aria-label="Predicted versus observed churn rate"></svg><div class="tip" id="cal-tip" hidden></div></div>
@@ -606,8 +636,8 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <span class="eyebrow">5 · Our take</span>
   <h2>Working view, revised as results come in</h2>
   <div class="take">
-    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark scores overstate:</b> a realistic setup loses 0.06 PR-AUC versus training on labels that arrive too late.</li><li><b>The open gap is auto-renew cancellers:</b> a third of churners, and the list reaches 1 in 4. That is where Phase 3 behaviour signals have to earn their keep.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
-    <div><span class="eyebrow">What would change our mind</span><ul class="points"><li>Lead time costs little (P2) → predict <b>30 days</b> out, not 14.</li><li>Embeddings miss their gate (P3) → keep them for <b>personas only</b>. Likely, since listening carries only ~6% of the signal so far.</li></ul></div>
+    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Warning time is the real trade-off;</b> history length is not. 30 days of logs is enough.</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark scores overstate:</b> a realistic setup loses 0.06 PR-AUC versus training on labels that arrive too late.</li><li><b>The open gap is auto-renew cancellers:</b> a third of churners, and the list reaches 1 in 4. That is where Phase 3 behaviour signals have to earn their keep.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
+    <div><span class="eyebrow">What would change our mind</span><ul class="points"><li><b>Answered by P2:</b> lead time is not free (−5 points of reach from 14 to 30 days). We keep 14 days; 7 if campaigns can move faster.</li><li>Embeddings miss their gate (P3) → keep them for <b>personas only</b>. Likely, since listening carries only ~6% of the signal so far.</li></ul></div>
   </div>
 </section>
 
@@ -620,7 +650,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
     <li>Predicting customer churn: extreme gradient boosting with temporal data (2018). <a href="https://arxiv.org/abs/1802.03396">arXiv 1802.03396</a></li>
     <li>Exploiting time-varying RFM measures for customer churn prediction with deep neural networks. Annals of Operations Research (2023). <a href="https://doi.org/10.1007/s10479-023-05259-9">doi:10.1007/s10479-023-05259-9</a></li>
   </ol>
-  <p>Simulations use synthetic data generated in the browser. Sabrina Pribadi · last updated 9 Oct 2026 · see CHANGELOG.md</p>
+  <p>Simulations use synthetic data generated in the browser. Sabrina Pribadi · last updated 9 Oct 2026 · code and change log: <a href="https://github.com/sabrinapribadi/subscription-churn-at-scale">github.com/sabrinapribadi/subscription-churn-at-scale</a></p>
 </footer>
 </div>
 
@@ -752,6 +782,32 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
   T(`top group: predicted ${(last[0] * 100).toFixed(0)}%, observed ${(last[1] * 100).toFixed(0)}%`, { x: C.sx(last[0]) - 12, y: C.sy(last[1]) + 4, class: "svglab", "text-anchor": "end" }, cal);
 })();
 
+
+/* results: P2 lead time and history charts (data from data/outputs/p2_window_curve.json) */
+const P2R = {"leads":[0,7,14,30],"windows":[30,60,90,120,180],"g":{"0_30":[0.6758,0.7378,0.4906],"0_60":[0.6738,0.7423,0.4851],"0_90":[0.6753,0.7414,0.488],"0_120":[0.6763,0.7466,0.4861],"0_180":[0.6754,0.7446,0.487],"7_30":[0.6019,0.6793,0.4746],"7_60":[0.5985,0.6804,0.4738],"7_90":[0.599,0.6793,0.475],"7_120":[0.6026,0.6812,0.4801],"7_180":[0.6036,0.6827,0.4792],"14_30":[0.5614,0.6533,0.4574],"14_60":[0.5635,0.6537,0.4631],"14_90":[0.5619,0.6524,0.461],"14_120":[0.5645,0.6549,0.4625],"14_180":[0.5611,0.6505,0.4587],"30_30":[0.4756,0.5956,0.4074],"30_60":[0.4744,0.5957,0.4046],"30_90":[0.4762,0.5982,0.4067],"30_120":[0.4759,0.598,0.4055],"30_180":[0.4753,0.5978,0.4048]}};
+(function () {
+  const L = 62616, W0 = 30, n = (v) => Math.round(v).toLocaleString("en-US");
+  const lt = $("lt-svg"), leads = P2R.leads, g = (k, w) => P2R.g[k + "_" + w];
+  const A = frame(lt, { l: 48, r: 610, t: 26, b: 206, x0: -2, x1: 32, y0: 0.3, y1: 0.8, xt: leads, yt: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8], xf: (v) => v + " d", yf: (v) => Math.round(v * 100) + "%", xl: "days before renewal when we score", yl: "share of churners reached" });
+  [[1, "s-accent", "f-accent"], [2, "s-amber", "f-amber"]].forEach(([j, sc, fc]) => {
+    const pts = leads.map((k) => [k, g(k, W0)[j]]);
+    S("path", { d: path(pts.slice(0, 2), A.sx, A.sy), fill: "none", class: sc, "stroke-width": 2, "stroke-dasharray": "5 4" }, lt);
+    S("path", { d: path(pts.slice(1), A.sx, A.sy), fill: "none", class: sc, "stroke-width": 2.4 }, lt);
+    pts.forEach(([k, v]) => S("circle", { cx: A.sx(k), cy: A.sy(v), r: 4.5, class: k === 0 ? "" : fc, fill: k === 0 ? "var(--surface)" : null, stroke: k === 0 ? (j === 1 ? "var(--accent)" : "var(--amber)") : null, "stroke-width": 2 }, lt));
+  });
+  T("our default: 14 days", { x: A.sx(14), y: A.sy(g(14, W0)[1]) - 12, class: "svglab", "text-anchor": "middle" }, lt);
+  lt._hover = (vx) => { const k = leads[nearestIdx(leads, A.ix(vx))], [pr, r10, r5] = g(k, W0);
+    return { at: [A.sx(k), A.sy(r10)], html: `<b>Score ${k} days before renewal</b>` + tipRows([["call 10%: churners reached", `${pct(r10)} · ${n(L * r10)}`, "var(--accent)"], ["call 5%: churners reached", `${pct(r5)} · ${n(L * r5)}`, "var(--amber)"], ["PR-AUC", pr.toFixed(3)]]) +
+      `<div class="muted tip-hint">${k === 0 ? "Competition setup: auto-renewals already show up in the data, so it looks best but leaves no time to act." : k === 14 ? "Our default." : `${r10 > g(14, W0)[1] ? "+" : ""}${n(L * (r10 - g(14, W0)[1]))} churners vs 14 days.`}</div>` }; };
+  hoverable(lt);
+
+  const hw = $("hw-svg"), wins = P2R.windows, cols = { 0: "s-muted", 7: "s-stay", 14: "s-accent", 30: "s-amber" }, fills = { 0: "f-muted", 7: "f-stay", 14: "f-accent", 30: "f-amber" };
+  const B = frame(hw, { l: 48, r: 610, t: 26, b: 206, x0: 20, x1: 190, y0: 0.55, y1: 0.8, xt: wins, yt: [0.55, 0.6, 0.65, 0.7, 0.75, 0.8], xf: (v) => v + " d", yf: (v) => Math.round(v * 100) + "%", xl: "days of listening history used", yl: "share of churners reached (call 10%)" });
+  leads.forEach((k) => { const pts = wins.map((w) => [w, g(k, w)[1]]); S("path", { d: path(pts, B.sx, B.sy), fill: "none", class: cols[k], "stroke-width": k === 14 ? 2.6 : 2, "stroke-dasharray": k === 0 ? "5 4" : null }, hw); pts.forEach(([w, v]) => S("circle", { cx: B.sx(w), cy: B.sy(v), r: 3.2, class: fills[k] }, hw)); T(`${k} d`, { x: B.sx(190) + 4, y: B.sy(pts[pts.length - 1][1]) + 4, class: "svgtxt" }, hw); });
+  hw._hover = (vx, vy) => { const w = wins[nearestIdx(wins, B.ix(vx))], k = leads.reduce((b, kk) => (Math.abs(B.sy(g(kk, w)[1]) - vy) < Math.abs(B.sy(g(b, w)[1]) - vy) ? kk : b), leads[0]), [pr, r10] = g(k, w), spread = Math.max(...wins.map((x) => g(k, x)[1])) - Math.min(...wins.map((x) => g(k, x)[1]));
+    return { at: [B.sx(w), B.sy(r10)], html: `<b>${w} days of history · scored ${k} days ahead</b>` + tipRows([["churners reached (call 10%)", `${pct(r10, 1)} · ${n(L * r10)}`], ["PR-AUC", pr.toFixed(3)]]) + `<div class="muted tip-hint">All windows for ${k}-day lead time sit within ${(spread * 100).toFixed(1)} points: more history does not help here.</div>` }; };
+  hoverable(hw);
+})();
 
 /* results: P1 PR-AUC bars (values from data/outputs/p1_baseline.json) */
 (function () {

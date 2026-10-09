@@ -80,6 +80,23 @@ Official cohort facts (from `train.csv` / `train_v2.csv`): Feb-2017 = 992,931 me
 
 **Rejected alternatives:** relaxing the gate after seeing results (defeats pre-registration); using only reconstructed labels (systematically under-counts churn by ~3 points vs. the benchmark).
 
+## Amendment 3 (2026-10-09) — P2 result: lead time costs, history length does not
+
+Train Feb-2017 (official) → test Mar-2017 (official), LightGBM as in P1, 20 models.
+
+| Lead time k | PR-AUC (W = 30) | Best over W | Churners reached, call 10% | Call 5% |
+|---|---|---|---|---|
+| 0 (reference only) | 0.676 | 0.676 | 73.8% | 49.1% |
+| 7 | 0.602 | 0.604 | 67.9% | 47.5% |
+| 14 | 0.561 | 0.565 | 65.3% | 45.7% |
+| 30 | 0.476 | 0.476 | 59.6% | 40.7% |
+
+**Falsification table outcomes:**
+- *"PR-AUC at k = 14 ≪ k = 0 (drop > 0.10)"* → **triggered** (0.676 → 0.561, −0.115). Action as pre-registered: report the trade-off curve and let the business pick k. Default stays **k = 14**; k = 7 if campaigns can launch within a week. k = 0 is inflated because auto-renewal transactions are visible at expiry.
+- *"Window curve flat beyond W = 30"* → **triggered**. All windows within ≤ 0.003 PR-AUC for every k. Training identical features in a different column order moved PR-AUC by 0.003 (P1 0.5675 vs P2 0.5645 at k = 14, W = 120), so differences are within run-to-run noise. Action as pre-registered: **W = 30** for tabular features (reads a quarter of the logs). The P3 sequence encoder chooses its own window (ADR-003).
+
+**Interpretation:** consistent with arXiv 2607.00473 — window sufficiency is design-dependent. In this design, payment and renewal state carries the signal, so listening history beyond 30 days adds nothing.
+
 ## Positive Consequences
 
 - Every result is reported with an explicit lead time — directly usable by a retention team
