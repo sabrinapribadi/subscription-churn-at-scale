@@ -1,0 +1,44 @@
+# ============================================================
+# Default configuration — subscription-churn-at-scale
+# ============================================================
+
+# ----- Paths (raw data stays outside the repo and cloud-synced folders) -----
+paths:
+  raw_dir: ~/data/kkbox/raw
+  parquet_dir: ~/data/kkbox/parquet
+  cohorts_dir: ~/data/kkbox/cohorts
+  outputs_dir: data/outputs          # small, committed artefacts only
+
+# ----- Task framing (ADR-001) -----
+framing:
+  lead_days: 14                      # k: predict at expiry − k days
+  lead_days_grid: [7, 14, 30]
+  window_days: 120                   # W: observation window
+  window_days_grid: [30, 60, 90, 120, 180]
+  churn_grace_days: 30               # official WSDM definition
+
+# ----- Validation (ADR-002) -----
+validation:
+  split: out_of_time                 # by expiry cohort, never random rows
+  primary_metric: pr_auc
+  top_k_fraction: 0.10
+  gates:
+    label_agreement_min: 0.99        # P0
+    embedding_pr_auc_gain_min: 0.02  # P3
+
+# ----- Business assumptions for profit@k (ADR-002) — varied in a sensitivity table -----
+business:
+  save_rate: 0.20                    # share of contacted churners retained (assumption)
+  contact_cost: 1.0                  # cost per contact, in revenue units (assumption)
+  revenue_horizon_periods: 1         # next billing period only
+
+# ----- Spark -----
+spark:
+  app_name: churn-at-scale
+  driver_memory: 8g
+  sample_fraction: 0.10              # dev sample of members; 1.0 for full runs
+
+# ----- LLM (ADR-006, pending) -----
+llm:
+  provider: openai
+  model: gpt-4o-mini

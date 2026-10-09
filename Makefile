@@ -1,0 +1,29 @@
+.PHONY: install data cohorts train rank services dashboard test lint
+
+install:
+	poetry install
+
+# Phase 0 — requires Kaggle API token and accepted competition rules
+data:
+	poetry run python scripts/download_data.py
+
+cohorts:
+	poetry run python scripts/build_cohorts.py
+
+train:
+	poetry run python scripts/train_model.py
+
+rank:
+	poetry run python scripts/train_ranker.py
+
+services:
+	docker compose up --build
+
+dashboard:
+	PYTHONPATH=. poetry run streamlit run src/ui/dashboard.py
+
+lint:
+	poetry run ruff check . && poetry run mypy src
+
+test:
+	poetry run pytest tests/ -v
