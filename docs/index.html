@@ -62,7 +62,14 @@ th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-botto
 th { font: 600 12px var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); background: var(--tint); }
 tr:last-child td { border-bottom: 0; }
 td.chosen { color: var(--stay); font-weight: 600; }
-td .rej { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+.alts { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.alts li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.tag { font: 600 10.5px/1 var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 6px; border-radius: 4px; white-space: nowrap; }
+.tag.rej { color: var(--churn); background: var(--churn-soft); }
+.tag.base { color: var(--accent); background: var(--accent-soft); }
+.tag.later { color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
+.tag.ref { color: var(--amber); box-shadow: inset 0 0 0 1px var(--line); }
+.table-note { font-size: 13px; color: var(--muted); }
 
 .chip { display: inline-block; font: 600 11px/1 var(--font-mono); letter-spacing: 0.04em; padding: 5px 8px; border-radius: 999px; white-space: nowrap; }
 .chip.use { background: var(--stay-soft); color: var(--stay); }
@@ -180,17 +187,18 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
     <table>
       <thead><tr><th>Decision</th><th>Alternatives considered</th><th>Chosen</th><th>Why</th><th>Evidence</th></tr></thead>
       <tbody>
-        <tr><td>When to predict</td><td><span class="rej">At expiry (competition)</span>, <span class="rej">fixed calendar date</span>, continuous survival (deferred)</td><td class="chosen">Expiry − k days</td><td>A prediction is only useful if it leaves time to act. Lead time k is reported with every result.</td><td><a href="https://arxiv.org/abs/2606.06776">arXiv 2606.06776</a> (2026)</td></tr>
-        <tr><td>How much history</td><td>Fixed 30 days by habit</td><td class="chosen">Measure a window curve W ∈ 30…180</td><td>How much history is enough depends on how the task is set up, so it has to be measured.</td><td><a href="https://arxiv.org/abs/2607.00473">arXiv 2607.00473</a> (2026, KKBox)</td></tr>
-        <tr><td>Labels for more months</td><td><span class="rej">Only the 2 official months</span>, <span class="rej">own churn rule</span></td><td class="chosen">Port the official labeller</td><td>More cohorts for out-of-time tests, with a ≥ 99% parity check against official labels.</td><td>Competition's <span class="mono">WSDMChurnLabeller.scala</span></td></tr>
-        <tr><td>Train / test split</td><td><span class="rej">Random rows</span>, <span class="rej">group by member</span></td><td class="chosen">Out-of-time by expiry cohort</td><td>Churn rate moved 2.6 points in one month. A random split hides that drift.</td><td>ADR-002</td></tr>
-        <tr><td>Primary metric</td><td><span class="rej">Accuracy</span>, ROC-AUC (kept as secondary)</td><td class="chosen">PR-AUC + profit@top-10%</td><td>Churn is a minority class, and the team only works the top of the list.</td><td>ADR-002</td></tr>
-        <tr><td>Baseline model</td><td>Logistic regression, deep sequence model first</td><td class="chosen">Gradient boosting on RFM features</td><td>The strongest model family on this benchmark; it sets the bar the deep model must beat.</td><td><a href="https://arxiv.org/abs/1802.03396">arXiv 1802.03396</a></td></tr>
-        <tr><td>Behaviour signal</td><td>Hand-crafted RFM only</td><td class="chosen">Self-supervised embeddings, as an ablation</td><td>They are added only if they beat RFM by +0.02 PR-AUC out-of-time.</td><td><a href="https://doi.org/10.1007/s10479-023-05259-9">Annals of OR (2023)</a></td></tr>
-        <tr><td>Ordering the call list</td><td>Sort by churn probability</td><td class="chosen">LambdaMART on revenue at risk</td><td>Two members with the same probability are not worth the same call.</td><td>ADR-004 (planned)</td></tr>
+        <tr><td>When to predict</td><td><ul class="alts"><li>At expiry (competition) <span class="tag ref">reference only</span></li><li>Fixed calendar date <span class="tag rej">rejected</span></li><li>Continuous survival model <span class="tag later">deferred</span></li></ul></td><td class="chosen">Expiry − k days</td><td>A prediction is only useful if it leaves time to act. Lead time k is reported with every result.</td><td><a href="https://arxiv.org/abs/2606.06776">arXiv 2606.06776</a> (2026)</td></tr>
+        <tr><td>How much history</td><td><ul class="alts"><li>Fixed 30 days by habit <span class="tag rej">rejected</span></li></ul></td><td class="chosen">Measure a window curve W ∈ 30…180</td><td>How much history is enough depends on how the task is set up, so it has to be measured.</td><td><a href="https://arxiv.org/abs/2607.00473">arXiv 2607.00473</a> (2026, KKBox)</td></tr>
+        <tr><td>Labels for more months</td><td><ul class="alts"><li>Only the 2 official months <span class="tag rej">rejected</span></li><li>Our own churn rule <span class="tag rej">rejected</span></li></ul></td><td class="chosen">Port the official labeller</td><td>More cohorts for out-of-time tests, with a ≥ 99% parity check against official labels.</td><td>Competition's <span class="mono">WSDMChurnLabeller.scala</span></td></tr>
+        <tr><td>Train / test split</td><td><ul class="alts"><li>Random rows <span class="tag rej">rejected</span></li><li>Group by member <span class="tag rej">rejected</span></li></ul></td><td class="chosen">Out-of-time by expiry cohort</td><td>Churn rate moved 2.6 points in one month. A random split hides that drift.</td><td>ADR-002</td></tr>
+        <tr><td>Primary metric</td><td><ul class="alts"><li>Accuracy <span class="tag rej">rejected</span></li><li>ROC-AUC <span class="tag base">secondary</span></li></ul></td><td class="chosen">PR-AUC + profit@top-10%</td><td>Churn is a minority class, and the team only works the top of the list.</td><td>ADR-002</td></tr>
+        <tr><td>Baseline model</td><td><ul class="alts"><li>Logistic regression <span class="tag rej">rejected</span></li><li>Deep sequence model first <span class="tag later">later, P3</span></li></ul></td><td class="chosen">Gradient boosting on RFM features</td><td>The strongest model family on this benchmark; it sets the bar the deep model must beat.</td><td><a href="https://arxiv.org/abs/1802.03396">arXiv 1802.03396</a></td></tr>
+        <tr><td>Behaviour signal</td><td><ul class="alts"><li>Hand-crafted RFM only <span class="tag base">baseline</span></li></ul></td><td class="chosen">Self-supervised embeddings, as an ablation</td><td>They are added only if they beat RFM by +0.02 PR-AUC out-of-time.</td><td><a href="https://doi.org/10.1007/s10479-023-05259-9">Annals of OR (2023)</a></td></tr>
+        <tr><td>Ordering the call list</td><td><ul class="alts"><li>Sort by churn probability <span class="tag base">baseline</span></li></ul></td><td class="chosen">LambdaMART on revenue at risk</td><td>Two members with the same probability are not worth the same call.</td><td>ADR-004 (planned)</td></tr>
       </tbody>
     </table>
   </div>
+  <p class="table-note">Rejected: ruled out, with the reason in the ADR. Baseline: kept as the comparison the chosen method must beat. Secondary: reported, but not used for decisions. Deferred / later: a planned extension. Reference only: reported once to show what lead time costs.</p>
 </section>
 
 <!-- 3. METHODOLOGY -->

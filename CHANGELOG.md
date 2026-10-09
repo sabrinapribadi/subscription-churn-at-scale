@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.3.1] — 2026-10-09 — Explicit status labels in the alternatives table
+**Files:** docs/index.html
+- **Situation:** The "Why this methodology" table marked rejected options with strikethrough. A first reader did not know what it meant, and it was inconsistent: options kept as baselines looked the same as unmarked rejected ones.
+- **Task:** Make each alternative's fate readable without explanation.
+- **Action:** Replaced strikethrough with labelled tags (rejected, baseline, secondary, deferred, reference only) and added a one-line key under the table.
+- **Result:** Every alternative now states its role; "sort by probability" and "RFM only" read correctly as baselines the chosen methods must beat.
+- **Talking point:** "A rejected option and a baseline are different things, so the page says which is which."
+
 ## [0.3.0] — 2026-10-09 — Showcase page with interactive method simulations
 **Files:** docs/index.html
 - **Situation:** The methodology lived in ADRs and code. A hiring manager or interviewer would need to read Markdown and Python to understand why each choice was made.
