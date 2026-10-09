@@ -1,0 +1,56 @@
+"""Leakage guard (ADR-001): rows on or after the snapshot date must not change any feature."""
+
+import pytest
+
+pytest.importorskip("pyspark")
+
+from src.features.build import add_snapshot, build_features  # noqa: E402
+from src.spark_session import get_spark  # noqa: E402
+
+TX = ["msno", "payment_method_id", "payment_plan_days", "plan_list_price", "actual_amount_paid",
+      "is_auto_renew", "transaction_date", "membership_expire_date", "is_cancel"]
+UL = ["msno", "date", "num_25", "num_50", "num_75", "num_985", "num_100", "num_unq", "total_secs", "year_month"]
+MB = ["msno", "city", "bd", "gender", "registered_via", "registration_init_time"]
+
+
+@pytest.fixture(scope="module")
+def spark():
+    s = get_spark("test-features", driver_memory="1g")
+    yield s
+    s.stop()
+
+
+def _frames(spark, extra_tx=(), extra_ul=()):
+    tx = [("a", 41, 30, 149, 149, 1, 20161215, 20170115, 0),
+          ("a", 41, 30, 149, 149, 1, 20170114, 20170215, 0)] + list(extra_tx)
+    ul = [("a", d, 1, 0, 0, 0, 10, 8, 2400.0, d // 100) for d in (20170105, 20170120, 20170128)] + list(extra_ul)
+    mb = [("a", 1, 30, "female", 7, 20150101)]
+    cohort = spark.createDataFrame([("a", 201702, 20170215, 0, "official")],
+                                   ["msno", "cohort", "last_expire", "label", "label_source"])
+    cohort = add_snapshot(cohort, lead_days=14)  # snapshot = 2017-02-01
+    return (spark.createDataFrame(tx, TX), spark.createDataFrame(ul, UL), spark.createDataFrame(mb, MB), cohort)
+
+
+def test_snapshot_is_expiry_minus_k(spark):
+    *_, cohort = _frames(spark)
+    assert cohort.first().snapshot == 20170201
+
+
+def test_rows_after_snapshot_do_not_change_features(spark):
+    clean = build_features(*_frames(spark), window_days=120).first().asDict()
+    leaked = build_features(
+        *_frames(
+            spark,
+            extra_tx=[("a", 99, 410, 1788, 0, 0, 20170201, 20180301, 1), ("a", 99, 7, 0, 0, 0, 20170210, 20170217, 1)],
+            extra_ul=[("a", 20170201, 999, 0, 0, 0, 999, 999, 86400.0, 201702), ("a", 20170214, 0, 0, 0, 0, 0, 1, 50.0, 201702)],
+        ),
+        window_days=120,
+    ).first().asDict()
+    assert leaked == clean
+
+
+def test_recent_window_and_counts(spark):
+    f = build_features(*_frames(spark), window_days=120).first()
+    assert f.tx_count == 2 and f.last_plan_days == 30 and f.last_auto_renew == 1
+    assert f.use_active_days == 3 and f.use_active_days_recent == 2  # 01-20 and 01-28 fall in [01-18, 02-01)
+    assert f.days_since_last_play == 4 and f.gender == 2

@@ -76,6 +76,7 @@ td.chosen { color: var(--stay); font-weight: 600; }
 .chip.use { background: var(--stay-soft); color: var(--stay); }
 .chip.decided { background: var(--accent-soft); color: var(--accent); }
 .chip.planned { background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
+.chip.pass { background: var(--stay-soft); color: var(--stay); }
 .chip.fail { background: var(--churn-soft); color: var(--churn); }
 .chip.run { background: var(--tint); color: var(--amber); box-shadow: inset 0 0 0 1px var(--line); }
 
@@ -158,6 +159,9 @@ a.node:hover { border-color: var(--accent); }
 .take { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
 .take > div { display: grid; gap: 10px; align-content: start; }
 
+.results-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px; align-items: start; }
+.results-grid .explain { display: grid; gap: 12px; min-width: 0; }
+@media (max-width: 860px) { .results-grid { grid-template-columns: minmax(0, 1fr); } }
 .gates td:nth-child(3) { white-space: nowrap; }
 footer { margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--line); display: grid; gap: 10px; font-size: 13px; color: var(--muted); }
 footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
@@ -477,12 +481,29 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <thead><tr><th>Phase</th><th>Gate</th><th>Status</th><th>Result</th></tr></thead>
       <tbody>
         <tr><td>P0 · Labels</td><td>Reconstructed labels agree with official labels on ≥ 99% of members (Feb + Mar 2017)</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>Agreement: <b>98.8%</b> Feb · <b>97.0%</b> Mar</li><li>Cause: the shipped transactions show renewals the official labels count as churn</li><li>Decision: official labels = test truth; rebuilt labels must earn a place in training (ADR-001 Amendment 2)</li></ul></td></tr>
-        <tr><td>P1 · Baseline</td><td>Out-of-time PR-AUC reported; leakage tests pass</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
+        <tr><td>P1 · Baseline</td><td>Out-of-time PR-AUC reported; leakage tests pass</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>PR-AUC <b>0.568</b> vs rule <b>0.342</b></li><li>Top 10% of the list catches <b>65%</b> of churners</li><li>Leakage tests: 3/3 pass</li></ul></td></tr>
         <tr><td>P2 · Window</td><td>Window curve and knee reported for each k</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
         <tr><td>P3 · Embeddings</td><td>PR-AUC(GBM + embeddings) ≥ PR-AUC(GBM) + 0.02 out-of-time</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
         <tr><td>P4 · Ranking</td><td>profit@10%(LambdaMART) &gt; profit@10%(probability sort)</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
       </tbody>
     </table>
+  </div>
+  <div class="results-grid">
+    <div class="sim">
+      <span class="simtag">P1 · March 2017 cohort · 862,158 members · 7.26% churn · scored 14 days before expiry</span>
+      <svg class="plot" id="res-svg" viewBox="0 0 640 230" role="img" aria-label="PR-AUC by training setup"></svg>
+      <div class="legend"><span><i style="background:var(--muted)"></i>Rule baseline</span><span><i style="background:var(--amber)"></i>Realistic: only labels known at prediction time</span><span><i style="background:var(--accent)"></i>Model</span></div>
+    </div>
+    <div class="explain">
+      <span class="eyebrow">What P1 showed</span>
+      <ol class="steps">
+        <li><b>The model beats the rule.</b> PR-AUC 0.568 vs 0.342.</li>
+        <li><b>Benchmark setups overstate.</b> Training only on labels a team would have costs 0.063 PR-AUC.</li>
+        <li><b>Rebuilt labels did not help.</b> Adding them scored 0.561, so they are dropped.</li>
+        <li><b>Payment behaviour dominates.</b> Auto-renew, payment method and cancels carry most of the signal; listening about 6%.</li>
+      </ol>
+      <p class="muted" style="font-size:13px">Test covers 88.8% of official March members (those with a known expiry date). Source: <span class="mono">data/outputs/p1_baseline.json</span></p>
+    </div>
   </div>
 </section>
 
@@ -491,8 +512,8 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <span class="eyebrow">5 · Our take</span>
   <h2>Working view, revised as results come in</h2>
   <div class="take">
-    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
-    <div><span class="eyebrow">What would change our mind</span><ul class="points"><li>Lead time costs little (P2) → predict <b>30 days</b> out, not 14.</li><li>Embeddings miss their gate (P3) → keep them for <b>personas only</b>.</li></ul></div>
+    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark scores overstate:</b> a realistic setup loses 0.06 PR-AUC versus training on labels that arrive too late.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
+    <div><span class="eyebrow">What would change our mind</span><ul class="points"><li>Lead time costs little (P2) → predict <b>30 days</b> out, not 14.</li><li>Embeddings miss their gate (P3) → keep them for <b>personas only</b>. Likely, since listening carries only ~6% of the signal so far.</li></ul></div>
   </div>
 </section>
 
@@ -542,6 +563,16 @@ function path(pts, sx, sy) { return pts.map((p, i) => (i ? "L" : "M") + sx(p[0])
 function bindOut(id, f) { const el = $(id), out = $(id + "-o"); const show = () => { if (out) out.textContent = f ? f(+el.value) : el.value; }; el.addEventListener("input", show); show(); }
 function on(ids, fn) { ids.forEach((id) => $(id).addEventListener("input", fn)); fn(); }
 const dayFmt = (base, off) => { const d = new Date(base + off * 864e5); return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }); };
+
+/* results: P1 PR-AUC bars (values from data/outputs/p1_baseline.json) */
+(function () {
+  const rows = [["Rule baseline", 0.342, 0.393, "f-muted"], ["E2 realistic · Nov–Jan", 0.505, 0.406, "f-amber"], ["E3 combined · Nov–Feb", 0.561, 0.467, "f-accent"], ["E1 benchmark · Feb", 0.568, 0.476, "f-accent"]];
+  const svg = $("res-svg"), x0 = 200, x1 = 560, max = 0.7, sx = (v) => x0 + (x1 - x0) * v / max;
+  const g = S("g", { class: "ax" }, svg);
+  [0, 0.2, 0.4, 0.6].forEach((v) => { S("line", { x1: sx(v), x2: sx(v), y1: 26, y2: 200 }, g); T(v.toFixed(1), { x: sx(v), y: 216, "text-anchor": "middle" }, g); });
+  T("PR-AUC on March 2017 (precision in top 10% in brackets)", { x: x0, y: 14, class: "svgtxt" }, svg);
+  rows.forEach(([name, v, p10, cls], i) => { const y = 36 + i * 42; T(name, { x: 8, y: y + 15, class: "svgtxt" }, svg); S("rect", { x: x0, y, width: sx(v) - x0, height: 22, class: cls, rx: 3 }, svg); T(`${v.toFixed(3)}  (${(p10 * 100).toFixed(0)}%)`, { x: sx(v) + 6, y: y + 15, class: "svglab" }, svg); });
+})();
 
 /* 3.1 label rule */
 (function () {

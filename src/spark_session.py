@@ -11,8 +11,11 @@ DEFAULT_JAVA_HOME = "/opt/homebrew/opt/openjdk@17"
 
 
 def get_spark(app_name: str = "churn-at-scale", driver_memory: str = "8g") -> SparkSession:
-    if Path(DEFAULT_JAVA_HOME).exists():
-        os.environ.setdefault("JAVA_HOME", DEFAULT_JAVA_HOME)
+    # Override, not setdefault: a shell-wide JAVA_HOME (e.g. JDK 20) would otherwise win,
+    # and Spark 4 supports only Java 17/21. CHURN_JAVA_HOME lets other machines choose.
+    java_home = os.environ.get("CHURN_JAVA_HOME", DEFAULT_JAVA_HOME)
+    if Path(java_home).exists():
+        os.environ["JAVA_HOME"] = java_home
     return (
         SparkSession.builder.appName(app_name)
         .master("local[*]")

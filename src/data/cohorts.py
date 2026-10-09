@@ -144,3 +144,22 @@ def build_cohort_labels(transactions: DataFrame, year: int, month: int) -> DataF
     return joined.groupBy("msno").applyInPandas(
         _label, schema="msno string, last_expire int, is_churn int"
     )
+
+
+def last_expiry_before(transactions: DataFrame, year: int, month: int) -> DataFrame:
+    """msno, last_expire from all transactions before the target month (official ordering).
+
+    Used to place official-label members on a snapshot date; members whose expiry falls
+    outside the target month are dropped and counted as a coverage loss (ADR-001 Am. 2).
+    """
+    start, _ = month_bounds(year, month)
+    last_first = Window.partitionBy("msno").orderBy(
+        F.col("transaction_date").desc(), F.col("_sig").asc(), F.col("is_cancel").desc(), F.col("_kexp").desc()
+    )
+    return (
+        _with_order_key(transactions)
+        .filter(F.col("transaction_date") < start)
+        .withColumn("_rn", F.row_number().over(last_first))
+        .filter(F.col("_rn") == 1)
+        .select("msno", F.col("membership_expire_date").alias("last_expire"))
+    )

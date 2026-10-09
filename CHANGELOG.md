@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.6.0] — 2026-10-09 — P1 baseline: LightGBM out-of-time, three training setups
+**Files:** src/features/build.py, src/data/cohorts.py, src/spark_session.py, scripts/build_dataset.py, scripts/train_model.py, tests/test_features.py, docs/index.html, docs/adr/ADR-001-task-framing.md, docs/PRD.md, data/outputs/p1_dataset.json, data/outputs/p1_baseline.json, .gitignore, .env.example
+- **Situation:** Labels were settled (P0) but no model existed. The benchmark trains on February labels to predict March, yet those labels are not known when March predictions must be made.
+- **Task:** Build point-in-time features at scale, train a baseline, and measure it honestly against a simple rule and against a setup a real team could run.
+- **Action:** Built 30 point-in-time features for 5 monthly cohorts (~4.3M member-snapshots from 410M log rows) with a leakage test that injects post-snapshot rows. Trained LightGBM with member-level early stopping, tracked in MLflow (SQLite store). Ran three setups: benchmark (Feb official), realistic (Nov–Jan rebuilt), combined. Found and fixed Spark silently running on Java 20 instead of 17.
+- **Result:** On official March labels (862,158 members, 7.26% churn, k = 14): PR-AUC 0.568 vs rule 0.342; top 10% catches 65% of churners. Realistic setup 0.505 (label-maturity cost 0.063). Rebuilt labels lowered the score (0.561) and were dropped. Payment and renewal features carry most of the signal; listening ~6%.
+- **Talking point:** "The headline number is 0.568, but I also report 0.505 — what you'd get if you only trained on labels you actually have on prediction day."
+
 ## [0.5.0] — 2026-10-09 — P0 result: label gate failed, cause found, decision recorded
 **Files:** src/data/cohorts.py, scripts/validate_labels.py, scripts/stream_user_logs_to_parquet.py, tests/test_cohorts_spark.py, docs/adr/ADR-001-task-framing.md, docs/adr/ADR-002-validation-strategy.md, docs/adr/README.md, docs/PRD.md, docs/index.html, data/outputs/p0_label_agreement.json
 - **Situation:** The per-member Python labeller had run for 75+ minutes without finishing; the P0 gate (≥ 99% agreement with official labels) was still unanswered. The 30 GB user-log CSV would not fit on disk next to its Parquet copy.

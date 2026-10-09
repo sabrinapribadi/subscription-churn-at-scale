@@ -1,0 +1,42 @@
+{
+  "k14_w120:201703": {
+    "members": 862158,
+    "churn_rate": 0.07263,
+    "label_source": "official",
+    "official_members": 970960,
+    "official_coverage": 0.88794,
+    "seconds": 335
+  },
+  "k14_w120:201702": {
+    "members": 879478,
+    "churn_rate": 0.05545,
+    "label_source": "official",
+    "official_members": 992931,
+    "official_coverage": 0.88574,
+    "seconds": 376
+  },
+  "k14_w120:201701": {
+    "members": 844756,
+    "churn_rate": 0.03927,
+    "label_source": "reconstructed",
+    "official_members": null,
+    "official_coverage": null,
+    "seconds": 307
+  },
+  "k14_w120:201612": {
+    "members": 858982,
+    "churn_rate": 0.07657,
+    "label_source": "reconstructed",
+    "official_members": null,
+    "official_coverage": null,
+    "seconds": 265
+  },
+  "k14_w120:201611": {
+    "members": 871553,
+    "churn_rate": 0.08671,
+    "label_source": "reconstructed",
+    "official_members": null,
+    "official_coverage": null,
+    "seconds": 263
+  }
+}

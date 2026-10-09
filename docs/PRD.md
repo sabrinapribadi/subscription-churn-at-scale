@@ -1,9 +1,9 @@
 PRODUCT REQUIREMENT DOCUMENT (PRD)
 Project: Subscription Churn at Scale — Who Leaves, When, Why, and Who to Call First
-Version: 0.3 (P0 gate failed and diagnosed; official labels = test truth)
+Version: 0.4 (P1 baseline: PR-AUC 0.568 out-of-time vs rule 0.342)
 Author: Sabrina Pribadi
 Date: October 9, 2026
-Status: Active — P0 complete (gate failed, documented); P1 next
+Status: Active — P0 (failed, documented) and P1 (passed) complete; P2 next
 
 
 1. EXECUTIVE SUMMARY

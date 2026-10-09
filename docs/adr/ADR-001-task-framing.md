@@ -76,6 +76,8 @@ Official cohort facts (from `train.csv` / `train_v2.csv`): Feb-2017 = 992,931 me
 2. **Reconstructed labels are training augmentation only** for earlier cohorts, and must earn their place: P1 compares OOT PR-AUC on official Mar-2017 labels with vs. without the earlier reconstructed cohorts.
 3. Validation becomes: train ≤ Jan-2017 (reconstructed) + Feb-2017 (official), test Mar-2017 (official).
 
+**Test result (P1, 2026-10-09):** adding rebuilt Nov–Jan cohorts to official Feb training gave PR-AUC 0.561 on official March vs 0.568 without them. Rebuilt labels did not earn their place and are **dropped from training**. They remain useful for one purpose: the realistic setup (train only on labels known at prediction time) scores 0.505, which measures the cost of label maturity.
+
 **Rejected alternatives:** relaxing the gate after seeing results (defeats pre-registration); using only reconstructed labels (systematically under-counts churn by ~3 points vs. the benchmark).
 
 ## Positive Consequences
