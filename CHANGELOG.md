@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.7.1] — 2026-10-09 — Hover details on charts; "churner" wording
+**Files:** docs/index.html
+- **Situation:** The budget dial showed numbers only at the slider position; reading other points meant dragging. The page said "leavers", which is not the term practitioners use. The rule's curve had an unexplained kink, and the legend's "Random" swatch did not match its dashed line.
+- **Task:** Let readers inspect any point directly and use industry vocabulary.
+- **Action:** Added a hover tooltip on the budget dial (share reached, churner count, and churners per 100 calls for model, day-one model, rule and random) with click-to-set; hover/focus tooltips on calibration points; labelled the kink where the rule runs out of manual renewers (~12%); fixed the legend; replaced "leaver" with "churner" and defined it once.
+- **Result:** Every point on the two practitioner charts is readable on hover or keyboard focus; terminology matches telecom and subscription practice.
+- **Talking point:** "Practitioners should be able to point at a budget on the chart and read the answer, in their own words."
+
 ## [0.7.0] — 2026-10-09 — Practitioner view, budget dial, and an appendix of secondary metrics
 **Files:** scripts/train_model.py, scripts/practitioner_report.py, data/outputs/p1_practitioner.json, docs/index.html, docs/adr/ADR-002-validation-strategy.md
 - **Situation:** Results were reported in ML metrics only. Practitioners ask how many calls reach a leaver, whether it beats today's rule, and what happens on a smaller budget. A consultant recommended Gini.
