@@ -1,0 +1,783 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Subscription Churn at Scale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+/* Layout: one reading column for argument, a wider two-column bench for each method (logic + math | live simulation). */
+:root {
+  --bg: #f5f7fa; --surface: #ffffff; --fg: #16202a; --muted: #5a6573; --line: #dde2e9; --tint: #eef1f7;
+  --accent: #3b4fd8; --accent-soft: #e3e7fc;
+  --stay: #13836f; --stay-soft: #dff2ec; --churn: #c2452d; --churn-soft: #f8e4df; --amber: #b7791f;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-math: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141a; --surface: #161d25; --fg: #e6ebf0; --muted: #98a3b0; --line: #2a333e; --tint: #1b2430;
+  --accent: #8e9cff; --accent-soft: #252c55;
+  --stay: #3cc5a6; --stay-soft: #133a32; --churn: #f07a5f; --churn-soft: #43231c; --amber: #e0a542;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f141a; --surface: #161d25; --fg: #e6ebf0; --muted: #98a3b0; --line: #2a333e; --tint: #1b2430;
+  --accent: #8e9cff; --accent-soft: #252c55;
+  --stay: #3cc5a6; --stay-soft: #133a32; --churn: #f07a5f; --churn-soft: #43231c; --amber: #e0a542;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.6 var(--font-body); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(30px, 4.4vw, 46px); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 19px; font-weight: 600; }
+p { margin: 0; }
+.prose { max-width: 68ch; display: grid; gap: 12px; }
+.eyebrow { font: 600 12px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+header.top { display: grid; gap: 14px; padding-block: 8px 28px; border-bottom: 1px solid var(--line); }
+header.top .lede { font-size: 18px; max-width: 62ch; color: var(--fg); }
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 500 13px var(--font-mono); }
+nav.toc a { text-decoration: none; color: var(--muted); }
+nav.toc a:hover { color: var(--accent); }
+nav.toc .step { color: var(--accent); margin-right: 6px; }
+
+section.block { display: grid; gap: 22px; padding-block: 44px 8px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+.fact { border-left: 3px solid var(--line); padding: 2px 0 2px 14px; display: grid; gap: 2px; }
+.fact b { font: 600 24px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
+.fact span { font-size: 13px; color: var(--muted); }
+.fact.churn { border-left-color: var(--churn); }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 760px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+th { font: 600 12px var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); background: var(--tint); }
+tr:last-child td { border-bottom: 0; }
+td.chosen { color: var(--stay); font-weight: 600; }
+td .rej { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+
+.chip { display: inline-block; font: 600 11px/1 var(--font-mono); letter-spacing: 0.04em; padding: 5px 8px; border-radius: 999px; white-space: nowrap; }
+.chip.use { background: var(--stay-soft); color: var(--stay); }
+.chip.decided { background: var(--accent-soft); color: var(--accent); }
+.chip.planned { background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
+.chip.run { background: var(--tint); color: var(--amber); box-shadow: inset 0 0 0 1px var(--line); }
+
+.method { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 28px; padding-block: 34px; border-top: 1px solid var(--line); }
+.method:first-of-type { border-top: 0; }
+.method .explain { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.method .head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.method .num { font: 600 13px var(--font-mono); color: var(--muted); }
+.formula { font-family: var(--font-math); font-size: 18px; line-height: 1.7; background: var(--tint); border-radius: 6px; padding: 12px 14px; overflow-x: auto; }
+.formula i { font-style: italic; }
+.formula .lbl { font: 500 11px var(--font-mono); color: var(--muted); display: block; letter-spacing: 0.04em; text-transform: uppercase; }
+.why-here { font-size: 14px; color: var(--muted); }
+.why-here b { color: var(--fg); font-weight: 600; }
+
+.sim { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; min-width: 0; align-content: start; }
+.sim .simtag { font: 600 11px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; }
+.ctl { display: grid; gap: 2px; flex: 1 1 160px; min-width: 0; font-size: 12.5px; color: var(--muted); }
+.ctl .row { display: flex; justify-content: space-between; gap: 8px; }
+.ctl output { font: 600 12.5px var(--font-mono); color: var(--fg); font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--accent); margin: 4px 0 0; }
+.check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fg); cursor: pointer; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: 500 13px var(--font-body); color: var(--fg); background: var(--tint); border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+button:hover { border-color: var(--accent); color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+button.primary:hover { color: var(--surface); filter: brightness(1.08); }
+svg.plot { width: 100%; height: auto; display: block; }
+.readout { font: 13px/1.55 var(--font-mono); font-variant-numeric: tabular-nums; background: var(--tint); border-radius: 6px; padding: 10px 12px; }
+.readout b { font-weight: 600; }
+.pill { display: inline-block; font: 600 12px var(--font-mono); padding: 3px 9px; border-radius: 999px; }
+.pill.churn { background: var(--churn-soft); color: var(--churn); }
+.pill.stay { background: var(--stay-soft); color: var(--stay); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+/* SVG theme classes */
+.ax line, .ax path { stroke: var(--line); }
+.ax text, .svgtxt { fill: var(--muted); font: 11px var(--font-mono); }
+.svglab { fill: var(--fg); font: 600 11.5px var(--font-mono); }
+.f-accent { fill: var(--accent); } .s-accent { stroke: var(--accent); }
+.f-stay { fill: var(--stay); } .s-stay { stroke: var(--stay); }
+.f-churn { fill: var(--churn); } .s-churn { stroke: var(--churn); }
+.f-amber { fill: var(--amber); } .s-amber { stroke: var(--amber); }
+.f-muted { fill: var(--muted); } .s-muted { stroke: var(--muted); }
+.f-line { fill: var(--line); } .s-fg { stroke: var(--fg); }
+.f-stay-soft { fill: var(--stay-soft); } .f-churn-soft { fill: var(--churn-soft); } .f-accent-soft { fill: var(--accent-soft); } .f-tint { fill: var(--tint); }
+
+/* LambdaMART list */
+.rank { display: grid; gap: 4px; }
+.rank .r { display: grid; grid-template-columns: 26px 70px 64px 56px minmax(0, 1fr); gap: 8px; align-items: center; font: 12.5px var(--font-mono); font-variant-numeric: tabular-nums; padding: 4px 6px; border-radius: 5px; }
+.rank .r.cut { box-shadow: 0 -2px 0 var(--accent); }
+.rank .r:nth-child(odd) { background: var(--tint); }
+.rank .head { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; background: transparent !important; }
+.grade { display: inline-flex; gap: 2px; }
+.grade i { width: 9px; height: 9px; border-radius: 2px; background: var(--line); display: inline-block; }
+.grade i.on { background: var(--churn); }
+.lam { position: relative; height: 10px; background: transparent; }
+.lam::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--line); }
+.lam span { position: absolute; top: 0; height: 10px; border-radius: 2px; }
+
+.gates td:nth-child(3) { white-space: nowrap; }
+footer { margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--line); display: grid; gap: 10px; font-size: 13px; color: var(--muted); }
+footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+
+@media (max-width: 860px) {
+  .method { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .rank .r { grid-template-columns: 22px 62px 56px 50px minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">Portfolio · Commercial / Churn · CHN-1</span>
+  <h1>Subscription Churn at Scale</h1>
+  <p class="lede">Who leaves, when, why, and who to call first. A churn system built on ~400 million daily listening records from a public music-streaming dataset, designed to warn a retention team before renewal instead of after it.</p>
+  <nav class="toc" aria-label="Sections">
+    <a href="#problem"><span class="step">1</span>Problem</a>
+    <a href="#why"><span class="step">2</span>Why this methodology</a>
+    <a href="#method"><span class="step">3</span>Methodology, simulated</a>
+    <a href="#results"><span class="step">4</span>Results</a>
+    <a href="#take"><span class="step">5</span>Our take</a>
+  </nav>
+</header>
+
+<!-- 1. PROBLEM -->
+<section class="block" id="problem">
+  <span class="eyebrow">1 · Problem statement</span>
+  <h2>A subscription business learns a customer has left only after the renewal date has passed</h2>
+  <div class="prose">
+    <p>By the time a member fails to renew, there is nothing left for a retention team to do. The best-known public benchmark for this problem, the WSDM Cup 2018 KKBox challenge, predicts churn <em>at</em> the expiry date and is usually scored on random splits by log-loss. That setup is fine for a leaderboard. A retention team works differently: it needs a short list of members to contact <b>days before</b> renewal, ordered by how much revenue is at stake, with a reason it can act on.</p>
+    <p>This project changes the question from "will this member churn?" to "who should we call two weeks before renewal, and in what order?"</p>
+  </div>
+  <div class="facts">
+    <div class="fact"><b>992,931</b><span>members expiring Feb 2017 (official labels)</span></div>
+    <div class="fact churn"><b>6.39%</b><span>churned in the Feb 2017 cohort</span></div>
+    <div class="fact"><b>970,960</b><span>members expiring Mar 2017</span></div>
+    <div class="fact churn"><b>8.99%</b><span>churned one month later: +2.6 points of drift</span></div>
+  </div>
+  <p class="muted" style="font-size:13px">Churn definition (official): no new valid subscription within 30 days after the membership expires. Figures counted from the competition's <span class="mono">train.csv</span> and <span class="mono">train_v2.csv</span>.</p>
+</section>
+
+<!-- 2. WHY -->
+<section class="block" id="why">
+  <span class="eyebrow">2 · Why this methodology</span>
+  <h2>Every choice was made against a named alternative, before any model was trained</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Decision</th><th>Alternatives considered</th><th>Chosen</th><th>Why</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr><td>When to predict</td><td><span class="rej">At expiry (competition)</span>, <span class="rej">fixed calendar date</span>, continuous survival (deferred)</td><td class="chosen">Expiry − k days</td><td>A prediction is only useful if it leaves time to act. Lead time k is reported with every result.</td><td><a href="https://arxiv.org/abs/2606.06776">arXiv 2606.06776</a> (2026)</td></tr>
+        <tr><td>How much history</td><td>Fixed 30 days by habit</td><td class="chosen">Measure a window curve W ∈ 30…180</td><td>How much history is enough depends on how the task is set up, so it has to be measured.</td><td><a href="https://arxiv.org/abs/2607.00473">arXiv 2607.00473</a> (2026, KKBox)</td></tr>
+        <tr><td>Labels for more months</td><td><span class="rej">Only the 2 official months</span>, <span class="rej">own churn rule</span></td><td class="chosen">Port the official labeller</td><td>More cohorts for out-of-time tests, with a ≥ 99% parity check against official labels.</td><td>Competition's <span class="mono">WSDMChurnLabeller.scala</span></td></tr>
+        <tr><td>Train / test split</td><td><span class="rej">Random rows</span>, <span class="rej">group by member</span></td><td class="chosen">Out-of-time by expiry cohort</td><td>Churn rate moved 2.6 points in one month. A random split hides that drift.</td><td>ADR-002</td></tr>
+        <tr><td>Primary metric</td><td><span class="rej">Accuracy</span>, ROC-AUC (kept as secondary)</td><td class="chosen">PR-AUC + profit@top-10%</td><td>Churn is a minority class, and the team only works the top of the list.</td><td>ADR-002</td></tr>
+        <tr><td>Baseline model</td><td>Logistic regression, deep sequence model first</td><td class="chosen">Gradient boosting on RFM features</td><td>The strongest model family on this benchmark; it sets the bar the deep model must beat.</td><td><a href="https://arxiv.org/abs/1802.03396">arXiv 1802.03396</a></td></tr>
+        <tr><td>Behaviour signal</td><td>Hand-crafted RFM only</td><td class="chosen">Self-supervised embeddings, as an ablation</td><td>They are added only if they beat RFM by +0.02 PR-AUC out-of-time.</td><td><a href="https://doi.org/10.1007/s10479-023-05259-9">Annals of OR (2023)</a></td></tr>
+        <tr><td>Ordering the call list</td><td>Sort by churn probability</td><td class="chosen">LambdaMART on revenue at risk</td><td>Two members with the same probability are not worth the same call.</td><td>ADR-004 (planned)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 3. METHODOLOGY -->
+<section class="block" id="method">
+  <span class="eyebrow">3 · Methodology, simulated</span>
+  <h2>Each method, its logic, its math, and a simulation you can move</h2>
+  <p class="muted prose">Simulations run in your browser on synthetic data generated to show how each method behaves. They are not project results; those are in section 4.</p>
+
+  <!-- M1 -->
+  <article class="method" id="m-label">
+    <div class="explain">
+      <div class="head"><span class="num">3.1</span><h3>Churn label rule</h3><span class="chip use">In use · P0</span></div>
+      <p>A member is a candidate if their last expiry, worked out from the previous month's transactions, falls in the target month. A cancellation can only move that expiry earlier. The first renewal after it decides the label.</p>
+      <div class="formula">
+        <span class="lbl">Effective expiry</span><i>E′</i> = min(<i>E</i>, <i>E</i><sub>cancel</sub>)
+        <span class="lbl">Renewal gap</span><i>g</i> = <i>t</i><sub>renew</sub> − <i>E′</i>
+        <span class="lbl">Label</span><i>y</i> = 1 ⟺ no renewal ∨ <i>g</i> ≥ 30
+      </div>
+      <p class="why-here"><b>Why it matters:</b> we need labels for more than the two official months. Porting the organiser's own labeller lets us build new cohorts and check them against official labels (gate ≥ 99%).</p>
+    </div>
+    <div class="sim">
+      <span class="simtag">Simulation · one member, expiry 15 Feb 2017</span>
+      <div class="controls">
+        <label class="ctl" for="lr-renew"><span class="row">Renewal, days after expiry <output id="lr-renew-o"></output></span><input type="range" id="lr-renew" min="-10" max="60" value="12"></label>
+        <label class="ctl" for="lr-cancelto"><span class="row">Cancel moves expiry earlier by <output id="lr-cancelto-o"></output></span><input type="range" id="lr-cancelto" min="1" max="25" value="10"></label>
+      </div>
+      <div class="btns">
+        <label class="check" for="lr-none"><input type="checkbox" id="lr-none"> No renewal at all</label>
+        <label class="check" for="lr-cancel"><input type="checkbox" id="lr-cancel"> Member cancels before renewing</label>
+      </div>
+      <svg class="plot" id="lr-svg" viewBox="0 0 640 190" role="img" aria-label="Timeline of expiry, cancellation and renewal"></svg>
+      <div class="readout" id="lr-out"></div>
+    </div>
+  </article>
+
+  <!-- M2 -->
+  <article class="method" id="m-pit">
+    <div class="explain">
+      <div class="head"><span class="num">3.2</span><h3>Point-in-time snapshot</h3><span class="chip decided">Decided · ADR-001</span></div>
+      <p>For every member we freeze the clock at a snapshot date k days before expiry. Features may only use the W days before the snapshot. Anything on or after the snapshot is invisible to the model; using it would be leakage.</p>
+      <div class="formula">
+        <span class="lbl">Snapshot</span><i>S</i> = <i>E</i> − <i>k</i>
+        <span class="lbl">Feature window</span><i>x</i> = <i>f</i>( events with <i>t</i> ∈ [<i>S</i> − <i>W</i>, <i>S</i>) )
+        <span class="lbl">Leakage test</span>∀ event used: <i>t</i> &lt; <i>S</i>
+      </div>
+      <p class="why-here"><b>Why it matters:</b> the competition version predicts at k = 0, which leaves no time to act. A unit test fails the build if any feature row is dated on or after its snapshot.</p>
+    </div>
+    <div class="sim">
+      <span class="simtag">Simulation · daily listening minutes of one member who is fading out</span>
+      <div class="controls">
+        <label class="ctl" for="pt-k"><span class="row">Lead time k (days) <output id="pt-k-o"></output></span><input type="range" id="pt-k" min="0" max="30" value="14"></label>
+        <label class="ctl" for="pt-w"><span class="row">Observation window W (days) <output id="pt-w-o"></output></span><input type="range" id="pt-w" min="30" max="180" step="10" value="120"></label>
+      </div>
+      <svg class="plot" id="pt-svg" viewBox="0 0 640 220" role="img" aria-label="Daily usage with snapshot and window"></svg>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Used by the model</span><span><i style="background:var(--line)"></i>Outside the window</span><span><i style="background:var(--churn-soft)"></i>Hidden: after the snapshot</span></div>
+      <div class="readout" id="pt-out"></div>
+    </div>
+  </article>
+
+  <!-- M3 -->
+  <article class="method" id="m-window">
+    <div class="explain">
+      <div class="head"><span class="num">3.3</span><h3>Observation-window sufficiency</h3><span class="chip planned">Planned · P2</span></div>
+      <p>How much history does the model need? We compute a decline feature (recent 14-day usage divided by the window average) for every window length W and measure how well it separates churners from stayers. The point where the curve flattens is the window we keep.</p>
+      <div class="formula">
+        <span class="lbl">Decline ratio</span><i>r</i><sub>W</sub> = mean<sub>[S−14, S)</sub> / mean<sub>[S−W, S)</sub>
+        <span class="lbl">Separation</span>AUC(<i>W</i>) = P( <i>r</i><sub>W</sub><sup>stay</sup> &gt; <i>r</i><sub>W</sub><sup>churn</sup> )
+        <span class="lbl">Knee</span><i>W</i>* = min <i>W</i> with gain ≥ 95% of max
+      </div>
+      <p class="why-here"><b>Why it matters:</b> a 2026 study on this dataset found the knee moves between 30 and 120 days depending on the setup. Move the sliders and the knee moves too.</p>
+    </div>
+    <div class="sim">
+      <span class="simtag">Simulation · 800 synthetic members, half of them churners</span>
+      <div class="controls">
+        <label class="ctl" for="ws-onset"><span class="row">Churners start fading, mean days before expiry <output id="ws-onset-o"></output></span><input type="range" id="ws-onset" min="10" max="120" step="5" value="45"></label>
+        <label class="ctl" for="ws-k"><span class="row">Lead time k (days) <output id="ws-k-o"></output></span><input type="range" id="ws-k" min="0" max="30" value="14"></label>
+      </div>
+      <svg class="plot" id="ws-svg" viewBox="0 0 640 240" role="img" aria-label="AUC by observation window"></svg>
+      <div class="readout" id="ws-out"></div>
+    </div>
+  </article>
+
+  <!-- M4 -->
+  <article class="method" id="m-split">
+    <div class="explain">
+      <div class="head"><span class="num">3.4</span><h3>Out-of-time validation</h3><span class="chip decided">Decided · ADR-002</span></div>
+      <p>We train on earlier expiry cohorts, tune on the next one and test on the one after. A random split mixes months, so the test set looks like the training set, and the score is optimistic whenever behaviour drifts.</p>
+      <div class="formula">
+        <span class="lbl">Out-of-time</span>train: <i>c</i> ≤ <i>t</i> · val: <i>c</i> = <i>t</i>+1 · test: <i>c</i> = <i>t</i>+2
+        <span class="lbl">Drift in the simulation</span>logit <i>p</i><sub>m</sub> = <i>a</i><sub>m</sub> + β<sub>1,m</sub><i>x</i><sub>1</sub> + β<sub>2,m</sub><i>x</i><sub>2</sub>, &nbsp;β<sub>1</sub>↓ β<sub>2</sub>↑
+      </div>
+      <p class="why-here"><b>Why it matters:</b> real churn moved from 6.39% to 8.99% in one month. When behaviour shifts, the out-of-time score is the honest one.</p>
+    </div>
+    <div class="sim">
+      <span class="simtag">Simulation · 8 monthly cohorts × 1,200 members, logistic model</span>
+      <div class="controls">
+        <label class="ctl" for="oot-drift"><span class="row">Drift between months <output id="oot-drift-o"></output></span><input type="range" id="oot-drift" min="0" max="1" step="0.05" value="0.6"></label>
+      </div>
+      <div class="btns"><button id="oot-resample" type="button">Resample data</button></div>
+      <svg class="plot" id="oot-svg" viewBox="0 0 640 240" role="img" aria-label="Feature weights by month and PR-AUC by split"></svg>
+      <div class="readout" id="oot-out"></div>
+    </div>
+  </article>
+
+  <!-- M5 -->
+  <article class="method" id="m-prauc">
+    <div class="explain">
+      <div class="head"><span class="num">3.5</span><h3>PR-AUC under class imbalance</h3><span class="chip decided">Decided · ADR-002</span></div>
+      <p>ROC-AUC asks whether a churner usually scores above a stayer, and it ignores how rare churners are. PR-AUC asks how clean the top of the list is, and that drops sharply when churn is rare. The retention team only ever sees the top of the list.</p>
+      <div class="formula">
+        <span class="lbl">Scores</span>churn ~ 𝒩(<i>d</i>, 1), stay ~ 𝒩(0, 1)
+        <span class="lbl">Precision at threshold τ</span><i>P</i>(τ) = π·TPR / (π·TPR + (1−π)·FPR)
+        <span class="lbl">ROC-AUC</span>Φ(<i>d</i> / √2) — independent of π
+      </div>
+      <p class="why-here"><b>Why it matters:</b> at 6–9% churn, a model can look strong on ROC-AUC while a third of its top calls go to members who would have stayed anyway.</p>
+    </div>
+    <div class="sim">
+      <span class="simtag">Simulation · analytic curves, same model, different churn rates</span>
+      <div class="controls">
+        <label class="ctl" for="pr-pi"><span class="row">Churn rate π <output id="pr-pi-o"></output></span><input type="range" id="pr-pi" min="0.01" max="0.5" step="0.005" value="0.064"></label>
+        <label class="ctl" for="pr-d"><span class="row">Model separation d <output id="pr-d-o"></output></span><input type="range" id="pr-d" min="0.3" max="3" step="0.05" value="1.4"></label>
+      </div>
+      <div class="btns"><button type="button" data-pi="0.064">Feb 2017 · 6.4%</button><button type="button" data-pi="0.09">Mar 2017 · 9.0%</button><button type="button" data-pi="0.5">Balanced · 50%</button></div>
+      <svg class="plot" id="pr-svg" viewBox="0 0 640 250" role="img" aria-label="ROC and precision-recall curves"></svg>
+      <div class="readout" id="pr-out"></div>
+    </div>
+  </article>
+
+  <!-- M6 -->
+  <article class="method" id="m-gbm">
+    <div class="explain">
+      <div class="head"><span class="num">3.6</span><h3>Gradient boosting baseline</h3><span class="chip planned">Planned · P1</span></div>
+      <p>Boosting builds the model one small tree at a time. Each new tree fits what the current model still gets wrong (the pseudo-residuals), and its vote is shrunk by a learning rate so no single tree dominates.</p>
+      <div class="formula">
+        <span class="lbl">Additive model</span><i>F</i><sub>m</sub>(<i>x</i>) = <i>F</i><sub>m−1</sub>(<i>x</i>) + η · <i>h</i><sub>m</sub>(<i>x</i>)
+        <span class="lbl">Pseudo-residual (log-loss)</span><i>r</i><sub>i</sub> = <i>y</i><sub>i</sub> − σ(<i>F</i><sub>m−1</sub>(<i>x</i><sub>i</sub>))
+        <span class="lbl">Leaf value (Newton step)</span>γ = Σ<i>r</i><sub>i</sub> / Σ<i>p</i><sub>i</sub>(1 − <i>p</i><sub>i</sub>)
+      </div>
+      <p class="why-here"><b>Why it matters:</b> gradient boosting is the strongest family on this benchmark, so it is the bar every deeper idea has to clear.</p>
+    </div>
+    <div class="sim">
+      <span class="simtag">Simulation · 160 members, one feature, depth-1 trees</span>
+      <div class="controls">
+        <label class="ctl" for="gb-m"><span class="row">Trees M <output id="gb-m-o"></output></span><input type="range" id="gb-m" min="0" max="150" value="12"></label>
+        <label class="ctl" for="gb-eta"><span class="row">Learning rate η <output id="gb-eta-o"></output></span><input type="range" id="gb-eta" min="0.05" max="1" step="0.05" value="0.3"></label>
+      </div>
+      <svg class="plot" id="gb-svg" viewBox="0 0 640 240" role="img" aria-label="Boosted probability curve versus true curve"></svg>
+      <div class="legend"><span><i style="background:var(--muted)"></i>True churn probability</span><span><i style="background:var(--accent)"></i>Boosted model</span><span><i style="background:var(--churn)"></i>Churned</span><span><i style="background:var(--stay)"></i>Stayed</span></div>
+      <div class="readout" id="gb-out"></div>
+    </div>
+  </article>
+
+  <!-- M7 -->
+  <article class="method" id="m-embed">
+    <div class="explain">
+      <div class="head"><span class="num">3.7</span><h3>Behavioural embeddings</h3><span class="chip planned">Planned · P3</span></div>
+      <p>An encoder reads a member's daily usage, hides part of it, and learns to fill the gap. To do that it has to compress habits (commuter, weekend binger, fading, sporadic) into a short vector. Those vectors become features and personas.</p>
+      <div class="formula">
+        <span class="lbl">Masked reconstruction</span>ℒ = Σ<sub><i>t</i> ∈ 𝓜</sub> ( <i>x</i><sub>t</sub> − <i>x̂</i><sub>t</sub> )²,&nbsp; <i>x̂</i> = dec(enc(<i>x</i><sub>∖𝓜</sub>))
+        <span class="lbl">Linear special case</span>a linear auto-encoder with squared loss spans the top principal components
+      </div>
+      <p class="why-here"><b>Why it matters:</b> the simulation uses the linear case (PCA) so it runs in the browser. The project uses a non-linear sequence encoder, and it stays only if it beats RFM features by +0.02 PR-AUC out-of-time.</p>
+    </div>
+    <div class="sim">
+      <span class="simtag">Simulation · 320 members × 28 days, 2-D embedding</span>
+      <div class="controls">
+        <label class="ctl" for="em-noise"><span class="row">Day-to-day noise <output id="em-noise-o"></output></span><input type="range" id="em-noise" min="0.1" max="2" step="0.05" value="0.6"></label>
+      </div>
+      <svg class="plot" id="em-svg" viewBox="0 0 640 260" role="img" aria-label="Two-dimensional embedding of members coloured by persona"></svg>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Weekday commuter</span><span><i style="background:var(--stay)"></i>Weekend binger</span><span><i style="background:var(--churn)"></i>Fading out</span><span><i style="background:var(--amber)"></i>Sporadic</span></div>
+      <div class="readout" id="em-out"></div>
+    </div>
+  </article>
+
+  <!-- M8 -->
+  <article class="method" id="m-profit">
+    <div class="explain">
+      <div class="head"><span class="num">3.8</span><h3>Profit at k</h3><span class="chip decided">Decided · ADR-002</span></div>
+      <p>A call costs money and only sometimes saves the member. Profit counts the revenue saved from the churners you actually reach, minus the cost of every call. Sorting by expected value (probability × revenue) beats sorting by probability alone.</p>
+      <div class="formula">
+        <span class="lbl">Realised profit of the top k</span>Π(<i>k</i>) = Σ<sub><i>i</i> ∈ top <i>k</i></sub> ( <i>s</i> · <i>y</i><sub>i</sub> · <i>r</i><sub>i</sub> − <i>c</i> )
+        <span class="lbl">Expected value per member</span>𝔼[Π<sub>i</sub>] = <i>s</i> · <i>p̂</i><sub>i</sub> · <i>r</i><sub>i</sub> − <i>c</i>
+      </div>
+      <p class="why-here"><b>Why it matters:</b> save rate <i>s</i> and call cost <i>c</i> are stated assumptions in the config and are varied in a sensitivity table. The headline uses the top 10%.</p>
+    </div>
+    <div class="sim">
+      <span class="simtag">Simulation · 3,000 members, synthetic plan prices</span>
+      <div class="controls">
+        <label class="ctl" for="pk-s"><span class="row">Save rate s <output id="pk-s-o"></output></span><input type="range" id="pk-s" min="0.05" max="0.6" step="0.05" value="0.2"></label>
+        <label class="ctl" for="pk-c"><span class="row">Cost per call c <output id="pk-c-o"></output></span><input type="range" id="pk-c" min="0" max="40" step="1" value="6"></label>
+        <label class="ctl" for="pk-n"><span class="row">Model noise <output id="pk-n-o"></output></span><input type="range" id="pk-n" min="0" max="1.5" step="0.05" value="0.5"></label>
+      </div>
+      <svg class="plot" id="pk-svg" viewBox="0 0 640 240" role="img" aria-label="Cumulative profit by share of list contacted"></svg>
+      <div class="legend"><span><i style="background:var(--muted)"></i>Sort by churn probability</span><span><i style="background:var(--accent)"></i>Sort by probability × revenue</span></div>
+      <div class="readout" id="pk-out"></div>
+    </div>
+  </article>
+
+  <!-- M9 -->
+  <article class="method" id="m-lambda">
+    <div class="explain">
+      <div class="head"><span class="num">3.9</span><h3>LambdaMART ranking</h3><span class="chip planned">Planned · P4</span></div>
+      <p>LambdaMART learns the order of the list directly. For every pair in the wrong order, it computes a push (λ) scaled by how much swapping them would improve NDCG at the top of the list. Trees are fit to those pushes, so mistakes near the top cost more than mistakes lower down.</p>
+      <div class="formula">
+        <span class="lbl">Pair push, for grade<sub>i</sub> &gt; grade<sub>j</sub></span>λ<sub>ij</sub> = σ · |ΔNDCG<sub>ij</sub>| / (1 + e<sup>σ(<i>s</i><sub>i</sub> − <i>s</i><sub>j</sub>)</sup>)
+        <span class="lbl">Per member</span>λ<sub>i</sub> = Σ<sub>j</sub> λ<sub>ij</sub> − Σ<sub>j</sub> λ<sub>ji</sub>
+        <span class="lbl">Quality</span>NDCG@5 = DCG@5 / IDCG@5,&nbsp; DCG = Σ (2<sup>g</sup> − 1) / log₂(rank + 1)
+      </div>
+      <p class="why-here"><b>Why it matters:</b> grades are revenue-at-risk tiers. A trained tree would fit the λ values; here they are applied straight to the scores so you can watch the list reorder.</p>
+    </div>
+    <div class="sim">
+      <span class="simtag">Simulation · 8 members, grade = revenue-at-risk tier (0–3)</span>
+      <div class="btns"><button class="primary" id="lm-step" type="button">Take one gradient step</button><button id="lm-reset" type="button">Shuffle scores</button></div>
+      <div class="rank" id="lm-list"></div>
+      <div class="readout" id="lm-out"></div>
+    </div>
+  </article>
+</section>
+
+<!-- 4. RESULTS -->
+<section class="block" id="results">
+  <span class="eyebrow">4 · Results</span>
+  <h2>Gates were fixed before training. Results go here as each phase finishes, including failures.</h2>
+  <div class="table-wrap">
+    <table class="gates">
+      <thead><tr><th>Phase</th><th>Gate</th><th>Status</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>P0 · Labels</td><td>Reconstructed labels agree with official labels on ≥ 99% of members (Feb + Mar 2017)</td><td><span class="chip run">Running</span></td><td>Label port passes 12 unit and Spark tests; full-data check in progress</td></tr>
+        <tr><td>P1 · Baseline</td><td>Out-of-time PR-AUC reported; leakage tests pass</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
+        <tr><td>P2 · Window</td><td>Window curve and knee reported for each k</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
+        <tr><td>P3 · Embeddings</td><td>PR-AUC(GBM + embeddings) ≥ PR-AUC(GBM) + 0.02 out-of-time</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
+        <tr><td>P4 · Ranking</td><td>profit@10%(LambdaMART) &gt; profit@10%(probability sort)</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 5. TAKE -->
+<section class="block" id="take">
+  <span class="eyebrow">5 · Our take</span>
+  <h2>Working view, to be revised once results are in</h2>
+  <div class="prose">
+    <p>The most important decision so far was the framing. The benchmark predicts at expiry and scores log-loss; a retention team needs lead time and a list ordered by value. The 2.6-point jump in churn between two consecutive months tells us any random-split score would overstate what next month's list will deliver.</p>
+    <p>What would change our mind: if lead time costs little accuracy (P2), we will recommend predicting 30 days out rather than 14. If behavioural embeddings fail their gate (P3), we will keep them for personas only and say so here.</p>
+  </div>
+</section>
+
+<footer>
+  <span class="eyebrow">Sources</span>
+  <ol>
+    <li>WSDM Cup 2018 — KKBox's Churn Prediction Challenge, data and official labeller. <a href="https://www.kaggle.com/c/kkbox-churn-prediction-challenge">kaggle.com/c/kkbox-churn-prediction-challenge</a></li>
+    <li>How Early Is Early Enough? Design-dependent observation-window sufficiency in subscription churn prediction (2026). <a href="https://arxiv.org/abs/2607.00473">arXiv 2607.00473</a></li>
+    <li>A rolling-window framework for churn prediction and behavioral driver identification (2026). <a href="https://arxiv.org/abs/2606.06776">arXiv 2606.06776</a></li>
+    <li>Predicting customer churn: extreme gradient boosting with temporal data (2018). <a href="https://arxiv.org/abs/1802.03396">arXiv 1802.03396</a></li>
+    <li>Exploiting time-varying RFM measures for customer churn prediction with deep neural networks. Annals of Operations Research (2023). <a href="https://doi.org/10.1007/s10479-023-05259-9">doi:10.1007/s10479-023-05259-9</a></li>
+  </ol>
+  <p>Simulations use synthetic data generated in the browser. Sabrina Pribadi · last updated 9 Oct 2026 · see CHANGELOG.md</p>
+</footer>
+</div>
+
+<script>
+(() => {
+"use strict";
+const NS = "http://www.w3.org/2000/svg";
+const $ = (id) => document.getElementById(id);
+function S(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function T(text, attrs, parent) { const e = S("text", attrs, parent); e.textContent = text; return e; }
+function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function randn(r) { let u = 0; while (u === 0) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); }
+function erf(x) { const s = Math.sign(x); x = Math.abs(x); const t = 1 / (1 + 0.3275911 * x); const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return s * y; }
+const Phi = (x) => 0.5 * (1 + erf(x / Math.SQRT2));
+const sig = (z) => 1 / (1 + Math.exp(-z));
+const fmt = (v, d = 3) => Number(v).toFixed(d);
+function ap(scores, labels) { const idx = scores.map((_, i) => i).sort((a, b) => scores[b] - scores[a]); let tp = 0, sum = 0, P = labels.reduce((a, b) => a + b, 0); idx.forEach((i, rank) => { if (labels[i]) { tp++; sum += tp / (rank + 1); } }); return P ? sum / P : 0; }
+function auc(pos, neg) { const all = pos.map(v => [v, 1]).concat(neg.map(v => [v, 0])).sort((a, b) => a[0] - b[0]); let rankSum = 0; all.forEach((d, i) => { if (d[1]) rankSum += i + 1; }); return (rankSum - pos.length * (pos.length + 1) / 2) / (pos.length * neg.length); }
+
+/* frame: draws axes, returns scale functions */
+function frame(svg, o) {
+  const g = S("g", { class: "ax" }, svg);
+  const sx = (v) => o.l + (v - o.x0) / (o.x1 - o.x0) * (o.r - o.l);
+  const sy = (v) => o.b - (v - o.y0) / (o.y1 - o.y0) * (o.b - o.t);
+  (o.yt || []).forEach((v) => { S("line", { x1: o.l, x2: o.r, y1: sy(v), y2: sy(v) }, g); T(o.yf ? o.yf(v) : v, { x: o.l - 6, y: sy(v) + 4, "text-anchor": "end" }, g); });
+  (o.xt || []).forEach((v) => { S("line", { x1: sx(v), x2: sx(v), y1: o.b, y2: o.b + 4 }, g); T(o.xf ? o.xf(v) : v, { x: sx(v), y: o.b + 16, "text-anchor": "middle" }, g); });
+  S("line", { x1: o.l, x2: o.r, y1: o.b, y2: o.b, style: "stroke: var(--muted)" }, g);
+  if (o.xl) T(o.xl, { x: (o.l + o.r) / 2, y: o.b + 32, "text-anchor": "middle" }, g);
+  if (o.yl) T(o.yl, { x: o.l, y: o.t - 8, "text-anchor": "start" }, g);
+  return { sx, sy };
+}
+function path(pts, sx, sy) { return pts.map((p, i) => (i ? "L" : "M") + sx(p[0]).toFixed(1) + "," + sy(p[1]).toFixed(1)).join(""); }
+function bindOut(id, f) { const el = $(id), out = $(id + "-o"); const show = () => { if (out) out.textContent = f ? f(+el.value) : el.value; }; el.addEventListener("input", show); show(); }
+function on(ids, fn) { ids.forEach((id) => $(id).addEventListener("input", fn)); fn(); }
+const dayFmt = (base, off) => { const d = new Date(base + off * 864e5); return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }); };
+
+/* 3.1 label rule */
+(function () {
+  const E = Date.UTC(2017, 1, 15);
+  bindOut("lr-renew", (v) => (v >= 0 ? "+" : "") + v + " d"); bindOut("lr-cancelto", (v) => v + " d");
+  function draw() {
+    const svg = $("lr-svg"); clear(svg);
+    const none = $("lr-none").checked, cancel = $("lr-cancel").checked;
+    const renew = +$("lr-renew").value, back = +$("lr-cancelto").value;
+    $("lr-renew").disabled = none; $("lr-cancelto").disabled = !cancel;
+    const Ep = cancel ? -back : 0;
+    const l = 20, r = 620, x0 = -30, x1 = 65, sx = (v) => l + (v - x0) / (x1 - x0) * (r - l), y = 110;
+    S("rect", { x: sx(Ep), y: 40, width: sx(Ep + 30) - sx(Ep), height: 100, class: "f-stay-soft" }, svg);
+    S("rect", { x: sx(Ep + 30), y: 40, width: Math.max(0, r - sx(Ep + 30)), height: 100, class: "f-churn-soft" }, svg);
+    T("30-day grace: renewal here keeps the member", { x: sx(Ep) + 6, y: 54, class: "svgtxt" }, svg);
+    T("churn zone", { x: sx(Ep + 30) + 6, y: 54, class: "svgtxt" }, svg);
+    const g = S("g", { class: "ax" }, svg);
+    S("line", { x1: l, x2: r, y1: y, y2: y, style: "stroke: var(--muted)" }, g);
+    for (let d = -30; d <= 60; d += 10) { S("line", { x1: sx(d), x2: sx(d), y1: y, y2: y + 5 }, g); T(dayFmt(E, d), { x: sx(d), y: y + 20, "text-anchor": "middle" }, g); }
+    S("line", { x1: sx(0), x2: sx(0), y1: 30, y2: y, class: "s-fg", "stroke-width": 1.5 }, svg);
+    T("E  expiry", { x: sx(0) + 4, y: 26, class: "svglab" }, svg);
+    if (cancel) {
+      S("line", { x1: sx(Ep), x2: sx(Ep), y1: 62, y2: y, class: "s-amber", "stroke-width": 1.5, "stroke-dasharray": "4 3" }, svg);
+      T("E′ after cancel", { x: sx(Ep) - 4, y: 74, class: "svgtxt", "text-anchor": "end" }, svg);
+    }
+    let gap = 9999;
+    if (!none) {
+      gap = renew - Ep;
+      S("circle", { cx: sx(renew), cy: y, r: 7, class: "f-accent" }, svg);
+      T("renewal", { x: sx(renew), y: y - 14, class: "svglab", "text-anchor": "middle" }, svg);
+      const yb = 160; S("path", { d: `M${sx(Ep)},${yb - 5}V${yb}H${sx(renew)}V${yb - 5}`, fill: "none", class: "s-accent", "stroke-width": 1.5 }, svg);
+      T(`gap = ${gap} d`, { x: (sx(Ep) + sx(renew)) / 2, y: yb + 16, class: "svglab", "text-anchor": "middle" }, svg);
+    }
+    const churn = none || gap >= 30;
+    const why = none ? "no renewal transaction" : `g = t_renew − E′ = ${renew} − (${Ep}) = ${gap} days ${gap >= 30 ? "≥" : "<"} 30`;
+    $("lr-out").innerHTML = `${why}<br>label: <span class="pill ${churn ? "churn" : "stay"}">${churn ? "CHURN  y = 1" : "RETAINED  y = 0"}</span>`;
+  }
+  on(["lr-renew", "lr-cancelto", "lr-none", "lr-cancel"], draw);
+  ["lr-none", "lr-cancel"].forEach((id) => $(id).addEventListener("change", draw));
+})();
+
+/* 3.2 point-in-time */
+(function () {
+  const E = Date.UTC(2017, 1, 15), r = rng(7), days = [];
+  for (let d = -220; d <= 30; d++) { let base = 55 + 15 * Math.sin(d / 9); if (d > -40) base *= Math.exp((-40 - d) / 22); const wk = ((d % 7) + 7) % 7 >= 5 ? 1.35 : 1; days.push([d, Math.max(0, base * wk * Math.exp(0.35 * randn(r)) * (d > 0 ? 0.15 : 1))]); }
+  bindOut("pt-k"); bindOut("pt-w");
+  function draw() {
+    const svg = $("pt-svg"); clear(svg); const k = +$("pt-k").value, W = +$("pt-w").value, Sd = -k;
+    const o = { l: 40, r: 625, t: 30, b: 175, x0: -220, x1: 31, y0: 0, y1: 160, yt: [0, 50, 100, 150], xt: [-210, -180, -150, -120, -90, -60, -30, 0, 30], xf: (v) => dayFmt(E, v) };
+    const { sx, sy } = frame(svg, o);
+    S("rect", { x: sx(Sd), y: o.t, width: o.r - sx(Sd), height: o.b - o.t, class: "f-churn-soft" }, svg);
+    const bw = (o.r - o.l) / 251;
+    days.forEach(([d, v]) => { const inW = d >= Sd - W && d < Sd; S("rect", { x: sx(d) - bw * 0.4, y: sy(Math.min(v, 160)), width: Math.max(1, bw * 0.8), height: o.b - sy(Math.min(v, 160)), class: inW ? "f-accent" : (d >= Sd ? "f-muted" : "f-line"), opacity: d >= Sd ? 0.45 : 1 }, svg); });
+    S("line", { x1: sx(Sd), x2: sx(Sd), y1: o.t - 6, y2: o.b, class: "s-accent", "stroke-width": 1.5 }, svg);
+    T("S snapshot", { x: sx(Sd) - 4, y: o.t - 10, class: "svglab", "text-anchor": "end" }, svg);
+    S("line", { x1: sx(0), x2: sx(0), y1: o.t, y2: o.b, class: "s-fg", "stroke-dasharray": "3 3" }, svg);
+    T("E", { x: sx(0) + 4, y: o.t + 12, class: "svglab" }, svg);
+    S("path", { d: `M${sx(Sd - W)},${o.b + 2}v-6M${sx(Sd - W)},${o.b - 1}H${sx(Sd)}`, class: "s-accent", fill: "none" }, svg);
+    T("min / day", { x: 6, y: o.t - 10, class: "svgtxt" }, svg);
+    const used = days.filter(([d]) => d >= Sd - W && d < Sd), mean = used.reduce((a, b) => a + b[1], 0) / used.length;
+    const recent = days.filter(([d]) => d >= Sd - 14 && d < Sd), rmean = recent.reduce((a, b) => a + b[1], 0) / recent.length;
+    $("pt-out").innerHTML = `S = E − ${k} = <b>${dayFmt(E, Sd)} 2017</b> · window ${dayFmt(E, Sd - W)} → ${dayFmt(E, Sd - 1)} (${W} days)<br>decline ratio seen by the model r = ${fmt(rmean, 1)} / ${fmt(mean, 1)} = <b>${fmt(rmean / mean, 2)}</b> · hidden from the model: last ${k} days + the 30-day label window`;
+  }
+  on(["pt-k", "pt-w"], draw);
+})();
+
+/* 3.3 window sufficiency */
+(function () {
+  const N = 800, H = 240, r = rng(11), lam = [], u = [], noise = [];
+  for (let i = 0; i < N; i++) { lam.push(20 + 50 * r()); u.push(Math.max(1e-6, r())); const row = new Float32Array(H); for (let d = 0; d < H; d++) row[d] = Math.exp(0.5 * randn(r)); noise.push(row); }
+  const Ws = [21, 30, 45, 60, 90, 120, 150, 180];
+  bindOut("ws-onset"); bindOut("ws-k");
+  function draw() {
+    const onset = +$("ws-onset").value, k = +$("ws-k").value, aucs = [];
+    for (const W of Ws) {
+      const pos = [], neg = [];
+      for (let i = 0; i < N; i++) {
+        const churn = i % 2 === 0, D = churn ? -onset * Math.log(u[i]) : Infinity;
+        let rec = 0, all = 0;
+        for (let back = 1; back <= W; back++) { const day = -k - back; const fade = churn && -day < D ? Math.exp(-(D + day) / 15) : 1; const v = lam[i] * fade * noise[i][H - k - back]; all += v; if (back <= 14) rec += v; }
+        const ratio = (rec / 14) / (all / W + 1e-9);
+        (churn ? pos : neg).push(-ratio);
+      }
+      aucs.push(auc(pos, neg));
+    }
+    const svg = $("ws-svg"); clear(svg);
+    const lo = Math.min(0.5, ...aucs), hi = Math.max(...aucs);
+    const o = { l: 48, r: 620, t: 26, b: 190, x0: 15, x1: 185, y0: Math.floor(lo * 20) / 20, y1: Math.min(1, Math.ceil((hi + 0.02) * 20) / 20), xt: Ws, xl: "observation window W (days)", yl: "AUC" };
+    o.yt = []; for (let v = o.y0; v <= o.y1 + 1e-9; v += 0.05) o.yt.push(+v.toFixed(2)); o.yf = (v) => v.toFixed(2);
+    const { sx, sy } = frame(svg, o);
+    const base = aucs[0], gain = hi - base, knee = Ws[aucs.findIndex((a) => a - base >= 0.95 * gain)];
+    S("line", { x1: sx(knee), x2: sx(knee), y1: o.t, y2: o.b, class: "s-amber", "stroke-dasharray": "4 3" }, svg);
+    T(`knee W* = ${knee}`, { x: sx(knee) + 6, y: o.t + 12, class: "svglab" }, svg);
+    S("path", { d: path(Ws.map((w, i) => [w, aucs[i]]), sx, sy), fill: "none", class: "s-accent", "stroke-width": 2.2 }, svg);
+    Ws.forEach((w, i) => S("circle", { cx: sx(w), cy: sy(aucs[i]), r: 3.5, class: "f-accent" }, svg));
+    $("ws-out").innerHTML = `AUC at W=21: <b>${fmt(aucs[0])}</b> → best <b>${fmt(hi)}</b> · knee at <b>W* = ${knee} days</b><br>Longer windows help until they reach back past the point where churners start fading. Raise k and part of the fade happens after the snapshot, so the whole curve drops.`;
+  }
+  on(["ws-onset", "ws-k"], draw);
+})();
+
+/* 3.4 out-of-time */
+(function () {
+  let seed = 3;
+  bindOut("oot-drift", (v) => v.toFixed(2));
+  function fit(X, y) { let w = [0, 0, 0]; const n = y.length; for (let it = 0; it < 250; it++) { const g = [0, 0, 0]; for (let i = 0; i < n; i++) { const p = sig(w[0] + w[1] * X[i][0] + w[2] * X[i][1]); const e = p - y[i]; g[0] += e; g[1] += e * X[i][0]; g[2] += e * X[i][1]; } for (let j = 0; j < 3; j++) w[j] -= 1.5 * g[j] / n; } return w; }
+  function draw() {
+    const drift = +$("oot-drift").value, r = rng(seed), months = [], b1 = [], b2 = [];
+    for (let m = 0; m < 8; m++) { const t = m / 7, B1 = 2 * (1 - drift * t), B2 = 0.2 + 1.8 * drift * t, rate = 0.064 + 0.03 * t; b1.push(B1); b2.push(B2); const a = Math.log(rate / (1 - rate)) - 0.5 * (B1 * B1 + B2 * B2) * 0.35; const X = [], y = []; for (let i = 0; i < 1200; i++) { const x = [randn(r), randn(r)]; X.push(x); y.push(r() < sig(a + B1 * x[0] + B2 * x[1]) ? 1 : 0); } months.push({ X, y }); }
+    const score = (w, X) => X.map((x) => w[0] + w[1] * x[0] + w[2] * x[1]);
+    const poolX = [], poolY = []; months.forEach((mo) => { poolX.push(...mo.X); poolY.push(...mo.y); });
+    const idx = poolX.map((_, i) => i); for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    const cut = Math.floor(idx.length * 0.8), trI = idx.slice(0, cut), teI = idx.slice(cut);
+    const wR = fit(trI.map((i) => poolX[i]), trI.map((i) => poolY[i]));
+    const apRandom = ap(score(wR, teI.map((i) => poolX[i])), teI.map((i) => poolY[i]));
+    const trX = [], trY = []; months.slice(0, 6).forEach((mo) => { trX.push(...mo.X); trY.push(...mo.y); });
+    const wT = fit(trX, trY);
+    const apVal = ap(score(wT, months[6].X), months[6].y), apTest = ap(score(wT, months[7].X), months[7].y);
+    const svg = $("oot-svg"); clear(svg);
+    const A = frame(svg, { l: 40, r: 290, t: 30, b: 190, x0: 1, x1: 8, y0: 0, y1: 2.2, xt: [1, 2, 3, 4, 5, 6, 7, 8], yt: [0, 1, 2], xl: "cohort month", yl: "true feature weight" });
+    S("rect", { x: A.sx(6.5), y: 30, width: A.sx(8) - A.sx(6.5) + 4, height: 160, class: "f-tint" }, svg);
+    S("path", { d: path(b1.map((v, i) => [i + 1, v]), A.sx, A.sy), fill: "none", class: "s-accent", "stroke-width": 2 }, svg);
+    S("path", { d: path(b2.map((v, i) => [i + 1, v]), A.sx, A.sy), fill: "none", class: "s-amber", "stroke-width": 2 }, svg);
+    T("β₁", { x: A.sx(1) + 4, y: A.sy(b1[0]) - 6, class: "svglab" }, svg); T("β₂", { x: A.sx(8) - 4, y: A.sy(b2[7]) - 6, class: "svglab", "text-anchor": "end" }, svg);
+    T("val · test", { x: A.sx(7.25), y: 44, class: "svgtxt", "text-anchor": "middle" }, svg);
+    const bars = [["random split", apRandom, "f-muted"], ["OOT val (m7)", apVal, "f-accent"], ["OOT test (m8)", apTest, "f-accent"]];
+    const x0 = 420, x1 = 620, yTop = 50, mx = Math.max(...bars.map((b) => b[1])) * 1.1;
+    T("PR-AUC", { x: 330, y: 26, class: "svgtxt" }, svg);
+    bars.forEach(([name, v, cls], i) => { const yy = yTop + i * 46; T(name, { x: 330, y: yy + 14, class: "svgtxt" }, svg); S("rect", { x: x0, y: yy, width: (x1 - x0) * v / mx, height: 20, class: cls, rx: 3 }, svg); T(fmt(v), { x: x0 + (x1 - x0) * v / mx + 6, y: yy + 14, class: "svglab" }, svg); });
+    const gap = apRandom - apTest;
+    $("oot-out").innerHTML = `random split says <b>${fmt(apRandom)}</b> · next month actually delivers <b>${fmt(apTest)}</b> · optimism ${gap >= 0 ? "+" : ""}${fmt(gap)}<br>Set drift to 0 and the two agree. Raise it and the random split keeps reporting a score that later months will not reach.`;
+  }
+  on(["oot-drift"], draw);
+  $("oot-resample").addEventListener("click", () => { seed++; draw(); });
+})();
+
+/* 3.5 PR vs ROC */
+(function () {
+  bindOut("pr-pi", (v) => (v * 100).toFixed(1) + "%"); bindOut("pr-d", (v) => v.toFixed(2));
+  function draw() {
+    const pi = +$("pr-pi").value, d = +$("pr-d").value, roc = [], pr = [];
+    for (let t = 8; t >= -6; t -= 0.04) { const tpr = 1 - Phi(t - d), fpr = 1 - Phi(t); roc.push([fpr, tpr]); const den = pi * tpr + (1 - pi) * fpr; pr.push([tpr, den > 0 ? pi * tpr / den : 1]); }
+    let apv = 0; for (let i = 1; i < pr.length; i++) apv += (pr[i][0] - pr[i - 1][0]) * pr[i][1];
+    const rocAuc = Phi(d / Math.SQRT2);
+    const svg = $("pr-svg"); clear(svg);
+    const t01 = [0, 0.5, 1], f = (v) => v.toFixed(1);
+    const A = frame(svg, { l: 40, r: 290, t: 26, b: 200, x0: 0, x1: 1, y0: 0, y1: 1, xt: t01, yt: t01, xf: f, yf: f, xl: "false positive rate", yl: "ROC · true positive rate" });
+    S("line", { x1: A.sx(0), y1: A.sy(0), x2: A.sx(1), y2: A.sy(1), class: "s-muted", "stroke-dasharray": "3 3" }, svg);
+    S("path", { d: path(roc, A.sx, A.sy), fill: "none", class: "s-accent", "stroke-width": 2.2 }, svg);
+    const B = frame(svg, { l: 370, r: 620, t: 26, b: 200, x0: 0, x1: 1, y0: 0, y1: 1, xt: t01, yt: t01, xf: f, yf: f, xl: "recall", yl: "PR · precision" });
+    S("line", { x1: B.sx(0), y1: B.sy(pi), x2: B.sx(1), y2: B.sy(pi), class: "s-churn", "stroke-dasharray": "3 3" }, svg);
+    T(`baseline π = ${(pi * 100).toFixed(1)}%`, { x: B.sx(1) - 2, y: B.sy(pi) - 5, class: "svgtxt", "text-anchor": "end" }, svg);
+    S("path", { d: path(pr, B.sx, B.sy), fill: "none", class: "s-accent", "stroke-width": 2.2 }, svg);
+    const at = pr.find((p) => p[0] >= 0.3) || pr[pr.length - 1];
+    $("pr-out").innerHTML = `ROC-AUC = Φ(d/√2) = <b>${fmt(rocAuc)}</b> (unchanged by π) · PR-AUC = <b>${fmt(apv)}</b><br>at 30% recall, precision = <b>${(at[1] * 100).toFixed(1)}%</b>, so ${(100 - at[1] * 100).toFixed(0)}% of calls reach members who would have stayed`;
+  }
+  on(["pr-pi", "pr-d"], draw);
+  document.querySelectorAll("[data-pi]").forEach((b) => b.addEventListener("click", () => { $("pr-pi").value = b.dataset.pi; $("pr-pi").dispatchEvent(new Event("input")); }));
+})();
+
+/* 3.6 gradient boosting */
+(function () {
+  const r = rng(5), N = 160, X = [], Y = [], P = [];
+  const truth = (x) => sig(2.6 * Math.sin(2 * Math.PI * x * 1.1) - 1.2 + 1.5 * x);
+  for (let i = 0; i < N; i++) { const x = (i + r()) / N; X.push(x); const p = truth(x); P.push(p); Y.push(r() < p ? 1 : 0); }
+  const cuts = Array.from({ length: 39 }, (_, i) => (i + 1) / 40);
+  bindOut("gb-m"); bindOut("gb-eta", (v) => v.toFixed(2));
+  function draw() {
+    const M = +$("gb-m").value, eta = +$("gb-eta").value;
+    const ybar = Y.reduce((a, b) => a + b, 0) / N, F0 = Math.log(ybar / (1 - ybar)), F = new Array(N).fill(F0), stumps = [];
+    for (let m = 0; m < M; m++) {
+      const p = F.map(sig), res = Y.map((y, i) => y - p[i]), w = p.map((v) => v * (1 - v));
+      let best = null;
+      for (const c of cuts) { let rl = 0, wl = 0, rr = 0, wr = 0; for (let i = 0; i < N; i++) { if (X[i] < c) { rl += res[i]; wl += w[i]; } else { rr += res[i]; wr += w[i]; } } if (wl < 1e-6 || wr < 1e-6) continue; const gain = rl * rl / wl + rr * rr / wr; if (!best || gain > best.gain) best = { c, gain, gl: rl / wl, gr: rr / wr }; }
+      stumps.push(best); for (let i = 0; i < N; i++) F[i] += eta * (X[i] < best.c ? best.gl : best.gr);
+    }
+    let ll = 0; for (let i = 0; i < N; i++) { const p = Math.min(1 - 1e-9, Math.max(1e-9, sig(F[i]))); ll -= Y[i] ? Math.log(p) : Math.log(1 - p); } ll /= N;
+    const svg = $("gb-svg"); clear(svg);
+    const { sx, sy } = frame(svg, { l: 40, r: 620, t: 22, b: 196, x0: 0, x1: 1, y0: 0, y1: 1, xt: [0, 0.25, 0.5, 0.75, 1], yt: [0, 0.5, 1], xf: (v) => v.toFixed(2), yf: (v) => v.toFixed(1), xl: "behaviour feature (scaled)", yl: "P(churn)" });
+    X.forEach((x, i) => S("circle", { cx: sx(x), cy: sy(Y[i] ? 0.97 : 0.03) + (r() - 0.5) * 6, r: 2.4, class: Y[i] ? "f-churn" : "f-stay", opacity: 0.7 }, svg));
+    const grid = Array.from({ length: 201 }, (_, i) => i / 200);
+    S("path", { d: path(grid.map((x) => [x, truth(x)]), sx, sy), fill: "none", class: "s-muted", "stroke-width": 1.5, "stroke-dasharray": "5 4" }, svg);
+    S("path", { d: path(grid.map((x) => { let f = F0; stumps.forEach((s) => { f += eta * (x < s.c ? s.gl : s.gr); }); return [x, sig(f)]; }), sx, sy), fill: "none", class: "s-accent", "stroke-width": 2.4 }, svg);
+    $("gb-out").innerHTML = `trees: <b>${M}</b> · learning rate η = <b>${eta.toFixed(2)}</b> · training log-loss = <b>${fmt(ll)}</b><br>Few trees underfit the shape. Many trees with a high η start chasing individual members (overfitting), which is why P1 tunes both on the next month's cohort.`;
+  }
+  on(["gb-m", "gb-eta"], draw);
+})();
+
+/* 3.7 embeddings via PCA */
+(function () {
+  const r0 = rng(21), N = 320, D = 28, persona = [], base = [], eps = [];
+  for (let i = 0; i < N; i++) {
+    const p = i % 4; persona.push(p); const v = new Float32Array(D), e = new Float32Array(D);
+    const spikes = new Set(); if (p === 3) while (spikes.size < 4) spikes.add(Math.floor(r0() * D));
+    for (let d = 0; d < D; d++) { const wkend = d % 7 >= 5; v[d] = p === 0 ? (wkend ? 12 : 48) : p === 1 ? (wkend ? 70 : 12) : p === 2 ? 55 * Math.exp(-d / 9) + 3 : (spikes.has(d) ? 85 : 6); e[d] = randn(r0); }
+    base.push(v); eps.push(e);
+  }
+  bindOut("em-noise", (v) => v.toFixed(2));
+  function topPCs(Xc, k) {
+    const C = Array.from({ length: D }, () => new Float64Array(D));
+    Xc.forEach((x) => { for (let a = 0; a < D; a++) for (let b = a; b < D; b++) C[a][b] += x[a] * x[b]; });
+    for (let a = 0; a < D; a++) for (let b = 0; b < a; b++) C[a][b] = C[b][a];
+    let total = 0; for (let a = 0; a < D; a++) total += C[a][a];
+    const vecs = [], vals = [], r = rng(99);
+    for (let c = 0; c < k; c++) {
+      let v = Array.from({ length: D }, () => r() - 0.5);
+      for (let it = 0; it < 200; it++) { const w = new Array(D).fill(0); for (let a = 0; a < D; a++) for (let b = 0; b < D; b++) w[a] += C[a][b] * v[b]; vecs.forEach((u) => { const dot = w.reduce((s, x, i) => s + x * u[i], 0); for (let a = 0; a < D; a++) w[a] -= dot * u[a]; }); const n = Math.hypot(...w); v = w.map((x) => x / n); }
+      const Cv = new Array(D).fill(0); for (let a = 0; a < D; a++) for (let b = 0; b < D; b++) Cv[a] += C[a][b] * v[b];
+      vals.push(Cv.reduce((s, x, i) => s + x * v[i], 0)); vecs.push(v);
+    }
+    return { vecs, share: vals.reduce((a, b) => a + b, 0) / total };
+  }
+  function draw() {
+    const s = +$("em-noise").value * 22;
+    const X = base.map((v, i) => Array.from(v, (x, d) => Math.log1p(Math.max(0, x + s * eps[i][d]))));
+    const mean = new Array(D).fill(0); X.forEach((x) => x.forEach((v, d) => (mean[d] += v / N)));
+    const Xc = X.map((x) => x.map((v, d) => v - mean[d]));
+    const { vecs, share } = topPCs(Xc, 2);
+    const Z = Xc.map((x) => [x.reduce((a, v, d) => a + v * vecs[0][d], 0), x.reduce((a, v, d) => a + v * vecs[1][d], 0)]);
+    const xs = Z.map((z) => z[0]), ys = Z.map((z) => z[1]);
+    const pad = (lo, hi) => [lo - (hi - lo) * 0.08, hi + (hi - lo) * 0.08];
+    const [x0, x1] = pad(Math.min(...xs), Math.max(...xs)), [y0, y1] = pad(Math.min(...ys), Math.max(...ys));
+    const svg = $("em-svg"); clear(svg);
+    const { sx, sy } = frame(svg, { l: 24, r: 620, t: 22, b: 222, x0, x1, y0, y1, xl: "embedding dimension 1", yl: "embedding dimension 2" });
+    const cls = ["f-accent", "f-stay", "f-churn", "f-amber"];
+    Z.forEach((z, i) => S("circle", { cx: sx(z[0]), cy: sy(z[1]), r: 3.4, class: cls[persona[i]], opacity: 0.8 }, svg));
+    const cent = [0, 1, 2, 3].map((p) => { const pts = Z.filter((_, i) => persona[i] === p); return [pts.reduce((a, b) => a + b[0], 0) / pts.length, pts.reduce((a, b) => a + b[1], 0) / pts.length]; });
+    let within = 0; Z.forEach((z, i) => { const c = cent[persona[i]]; within += (z[0] - c[0]) ** 2 + (z[1] - c[1]) ** 2; });
+    const gm = [xs.reduce((a, b) => a + b, 0) / N, ys.reduce((a, b) => a + b, 0) / N]; let tot = 0; Z.forEach((z) => (tot += (z[0] - gm[0]) ** 2 + (z[1] - gm[1]) ** 2));
+    $("em-out").innerHTML = `2 dimensions keep <b>${(share * 100).toFixed(0)}%</b> of the variance in 28 days of usage · persona separation (between ÷ total) = <b>${fmt(1 - within / tot, 2)}</b><br>The "fading out" group forms its own region without ever seeing a churn label. That is the signal the P3 gate tests.`;
+  }
+  on(["em-noise"], draw);
+})();
+
+/* 3.8 profit@k */
+(function () {
+  const r = rng(31), N = 3000, plans = [[99, 0.3], [129, 0.15], [149, 0.35], [298, 0.12], [536, 0.06], [1788, 0.02]], p = [], rev = [], y = [], z = [];
+  for (let i = 0; i < N; i++) { const lp = -2.6 + 1.1 * randn(r); p.push(sig(lp)); let u = r(), pr = plans[0][0]; for (const [v, w] of plans) { if (u < w) { pr = v; break; } u -= w; } rev.push(pr); y.push(r() < p[i] ? 1 : 0); z.push(randn(r)); }
+  bindOut("pk-s", (v) => v.toFixed(2)); bindOut("pk-c"); bindOut("pk-n", (v) => v.toFixed(2));
+  function curve(order, s, c) { const out = [[0, 0]]; let cum = 0; order.forEach((i, k) => { cum += s * y[i] * rev[i] - c; if ((k + 1) % 15 === 0 || k === N - 1) out.push([(k + 1) / N, cum]); }); return out; }
+  function draw() {
+    const s = +$("pk-s").value, c = +$("pk-c").value, nz = +$("pk-n").value;
+    const ph = p.map((v, i) => sig(Math.log(v / (1 - v)) + nz * z[i]));
+    const idx = p.map((_, i) => i), byP = idx.slice().sort((a, b) => ph[b] - ph[a]), byEV = idx.slice().sort((a, b) => ph[b] * rev[b] - ph[a] * rev[a]);
+    const cP = curve(byP, s, c), cE = curve(byEV, s, c);
+    const all = cP.concat(cE).map((q) => q[1]); let lo = Math.min(0, ...all), hi = Math.max(...all);
+    const step = Math.pow(10, Math.floor(Math.log10(Math.max(1, hi - lo)))) / 2; lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+    const yt = []; for (let v = lo; v <= hi + 1e-9; v += step * Math.max(1, Math.round((hi - lo) / step / 4))) yt.push(v);
+    const svg = $("pk-svg"); clear(svg);
+    const { sx, sy } = frame(svg, { l: 58, r: 620, t: 24, b: 196, x0: 0, x1: 1, y0: lo, y1: hi, xt: [0, 0.1, 0.25, 0.5, 0.75, 1], yt, xf: (v) => (v * 100) + "%", yf: (v) => Math.round(v).toLocaleString("en-US"), xl: "share of list contacted (top k)", yl: "cumulative profit" });
+    S("line", { x1: sx(0.1), x2: sx(0.1), y1: 24, y2: 196, class: "s-amber", "stroke-dasharray": "4 3" }, svg);
+    T("top 10%", { x: sx(0.1) + 4, y: 36, class: "svgtxt" }, svg);
+    if (lo < 0) S("line", { x1: sx(0), x2: sx(1), y1: sy(0), y2: sy(0), class: "s-muted" }, svg);
+    S("path", { d: path(cP, sx, sy), fill: "none", class: "s-muted", "stroke-width": 2 }, svg);
+    S("path", { d: path(cE, sx, sy), fill: "none", class: "s-accent", "stroke-width": 2.4 }, svg);
+    const at = (cv) => cv.reduce((best, q) => (Math.abs(q[0] - 0.1) < Math.abs(best[0] - 0.1) ? q : best))[1];
+    const a = at(cP), b = at(cE), bestK = cE.reduce((m, q) => (q[1] > m[1] ? q : m));
+    $("pk-out").innerHTML = `profit@10%: probability sort <b>${Math.round(a).toLocaleString("en-US")}</b> · expected-value sort <b>${Math.round(b).toLocaleString("en-US")}</b> (${a !== 0 ? ((b - a) / Math.abs(a) * 100 >= 0 ? "+" : "") + ((b - a) / Math.abs(a) * 100).toFixed(0) + "%" : "n/a"})<br>best stopping point for the value sort: top <b>${(bestK[0] * 100).toFixed(0)}%</b>. Past it, each extra call costs more than it saves.`;
+  }
+  on(["pk-s", "pk-c", "pk-n"], draw);
+})();
+
+/* 3.9 LambdaMART */
+(function () {
+  const ids = ["M-1041", "M-2210", "M-0387", "M-5512", "M-0904", "M-7731", "M-3368", "M-6125"], grades = [3, 0, 2, 1, 3, 0, 2, 1], K = 5, sigma = 1, eta = 2.5;
+  let scores = [], seed = 4, steps = 0;
+  const dcg = (order) => order.slice(0, K).reduce((s, i, r) => s + (Math.pow(2, grades[i]) - 1) / Math.log2(r + 2), 0);
+  const idcg = dcg(grades.map((_, i) => i).sort((a, b) => grades[b] - grades[a]));
+  const ndcg = (order) => dcg(order) / idcg;
+  function reset() { const r = rng(seed++); scores = grades.map(() => +(randn(r) * 0.8).toFixed(3)); steps = 0; render(); }
+  function lambdas() {
+    const order = scores.map((_, i) => i).sort((a, b) => scores[b] - scores[a]), pos = []; order.forEach((i, r) => (pos[i] = r));
+    const base = ndcg(order), lam = new Array(8).fill(0);
+    for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
+      if (grades[i] <= grades[j]) continue;
+      const sw = order.slice(); [sw[pos[i]], sw[pos[j]]] = [sw[pos[j]], sw[pos[i]]];
+      const dN = Math.abs(ndcg(sw) - base), rho = 1 / (1 + Math.exp(sigma * (scores[i] - scores[j])));
+      lam[i] += sigma * rho * dN; lam[j] -= sigma * rho * dN;
+    }
+    return { order, lam, base };
+  }
+  function render() {
+    const { order, lam, base } = lambdas(), mx = Math.max(0.02, ...lam.map(Math.abs)), list = $("lm-list");
+    list.innerHTML = `<div class="r head"><span>#</span><span>member</span><span>grade</span><span>score</span><span>λ push (← down · up →)</span></div>`;
+    order.forEach((i, rnk) => {
+      const row = document.createElement("div"); row.className = "r" + (rnk === K ? " cut" : "");
+      const w = Math.abs(lam[i]) / mx * 50, left = lam[i] >= 0 ? 50 : 50 - w, col = lam[i] >= 0 ? "var(--accent)" : "var(--churn)";
+      row.innerHTML = `<span>${rnk + 1}</span><span>${ids[i]}</span><span class="grade" aria-label="grade ${grades[i]}">${[0, 1, 2].map((g) => `<i class="${g < grades[i] ? "on" : ""}"></i>`).join("")}</span><span>${scores[i].toFixed(2)}</span><span class="lam"><span style="left:${left}%;width:${w}%;background:${col}"></span></span>`;
+      list.appendChild(row);
+    });
+    $("lm-out").innerHTML = `NDCG@5 = <b>${fmt(base)}</b> after <b>${steps}</b> step${steps === 1 ? "" : "s"} · the line under rank 5 is the call-list cut-off<br>${base > 0.999 ? "Perfect order: every high-tier member is above every lower-tier one inside the top 5." : "Members with long blue bars are pushed up and red bars pushed down; pairs that straddle the cut-off get the largest pushes."}`;
+  }
+  $("lm-step").addEventListener("click", () => { const { lam } = lambdas(); scores = scores.map((s, i) => s + eta * lam[i]); steps++; render(); });
+  $("lm-reset").addEventListener("click", reset);
+  reset();
+})();
+})();
+</script>

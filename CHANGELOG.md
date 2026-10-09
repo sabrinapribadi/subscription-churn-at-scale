@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.3.0] — 2026-10-09 — Showcase page with interactive method simulations
+**Files:** docs/index.html
+- **Situation:** The methodology lived in ADRs and code. A hiring manager or interviewer would need to read Markdown and Python to understand why each choice was made.
+- **Task:** One self-contained HTML page, uploadable anywhere, that walks Problem → Why this methodology → Methodology → Results → Our take, and lets a reader move each method's logic and math by hand.
+- **Action:** Built `docs/index.html` with nine in-browser simulations on synthetic data: the official churn label rule, point-in-time snapshots, window sufficiency, out-of-time vs random split, PR-AUC vs ROC-AUC under imbalance, gradient boosting, behavioural embeddings (linear case = PCA), profit@k, and LambdaMART λ-gradients. Every method shows its formula and its status (in use / decided / planned). No server, no data files; fonts fall back to system faces offline. Results section shows the pre-registered gates and marks P0 as running.
+- **Result:** One file (~65 KB) that works from disk, GitHub Pages, or a shared link. The PR-AUC simulation reproduces the analytic result that ROC-AUC stays at 0.839 while PR-AUC falls from 0.834 to 0.341 when churn drops from 50% to 6.4%.
+- **Talking point:** "Instead of telling interviewers why I chose PR-AUC, I let them drag the churn rate and watch ROC-AUC stay flat while the call list fills with false alarms."
+
 ## [0.2.0] — 2026-10-09 — Label reconstruction ported from the official labeller
 **Files:** src/data/labels.py, src/data/cohorts.py, src/spark_session.py, scripts/convert_to_parquet.py, tests/test_labels.py, tests/test_cohorts_spark.py, docs/adr/ADR-001-task-framing.md
 - **Situation:** ADR-001 needs labels for more cohorts than the two official months, validated at >= 99% agreement. The competition ships its labeller as Scala source, with undocumented ordering rules.
