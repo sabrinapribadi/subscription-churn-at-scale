@@ -45,6 +45,15 @@ For each member *m* with a membership expiring on date *E* in cohort month *c*:
 | PR-AUC at k = 14 ≪ k = 0 (drop > 0.10) | Most signal arrives in the final two weeks | Report the trade-off curve; let the business pick k |
 | Window curve flat beyond W = 30 | Long history adds nothing for this design | Use W = 30; cheaper features and serving |
 
+## Amendment 1 (2026-10-09) — What the official labeller actually does
+
+Reading `WSDMChurnLabeller.scala` (shipped with the competition data) changed two assumptions:
+
+1. **Candidates come from the previous calendar month only.** A member is in cohort *M* only if they had a transaction in month *M − 1* whose (ordered) last expiry lands in *M*. Members on long plans (e.g. 180/365 days) with no transaction in *M − 1* are not in any official cohort. We keep this rule for label parity (P0 gate) and **report how many expiring members it excludes** as a coverage finding.
+2. **Same-day transactions are ordered by a string comparison** of `plan_list_price + payment_plan_days + payment_method_id` (descending), then cancel/renew rules. This is quirky — "99…" sorts above "149…" — but changing it would break parity, so `src/data/labels.py` reproduces it exactly and a unit test pins the behaviour.
+
+Official cohort facts (from `train.csv` / `train_v2.csv`): Feb-2017 = 992,931 members, 6.39% churn; Mar-2017 = 970,960 members, 8.99% churn; 881,701 members appear in both. The +2.6 pp month-on-month shift is direct evidence for out-of-time validation (ADR-002).
+
 ## Positive Consequences
 
 - Every result is reported with an explicit lead time — directly usable by a retention team

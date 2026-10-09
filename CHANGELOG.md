@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.2.0] — 2026-10-09 — Label reconstruction ported from the official labeller
+**Files:** src/data/labels.py, src/data/cohorts.py, src/spark_session.py, scripts/convert_to_parquet.py, tests/test_labels.py, tests/test_cohorts_spark.py, docs/adr/ADR-001-task-framing.md
+- **Situation:** ADR-001 needs labels for more cohorts than the two official months, validated at >= 99% agreement. The competition ships its labeller as Scala source, with undocumented ordering rules.
+- **Task:** Reproduce the official labels exactly, at Spark scale, so new cohorts can be trusted.
+- **Action:** Read the Scala labeller line by line and ported it to a pure-Python core (testable without Spark) plus a Spark `applyInPandas` wrapper. Kept its quirks for parity — history is the previous month only, and same-day transactions sort by a string signature. Wrote 10 unit tests (one per rule in the Scala comments) and a Spark end-to-end test. Moved to PySpark 4.0 (matches Databricks serverless; 3.5 fails on Python 3.12). Raw data kept in ~/data/kkbox, outside cloud sync.
+- **Result:** 12/12 tests pass. Official cohorts profiled: Feb-2017 6.39% churn, Mar-2017 8.99%, 881,701 members in both — a 2.6 pp shift that justifies out-of-time testing. Agreement gate not yet run (waiting for the 7 GB user_logs download).
+- **Talking point:** "I didn't guess the label definition — I ported the organiser's own labeller, quirks included, and unit-tested every rule before touching a model."
+
 ## [0.1.0] — 2026-10-09 — Project design: framing, validation, phases
 **Files:** README.md, docs/PRD.md, docs/adr/README.md, docs/adr/ADR-001-task-framing.md, docs/adr/ADR-002-validation-strategy.md, configs/default_config.yaml, Makefile, .gitignore, .env.example
 - **Situation:** The best-known public churn benchmark (WSDM Cup 2018) predicts churn at the expiry date, ranks by probability, and is usually evaluated on random splits — none of which match how a retention team works.

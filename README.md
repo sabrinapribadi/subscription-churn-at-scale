@@ -67,7 +67,13 @@ subscription-churn-at-scale/
 
 ## Setup
 
-*Pending (Phase 0).* Raw data lives outside the repo at `~/data/kkbox/` (configurable).
+Python 3.12, PySpark 4.0, Java 17 (`brew install openjdk@17`). Raw data lives outside the repo at `~/data/kkbox/` (configurable in `configs/default_config.yaml`).
+
+```bash
+kaggle competitions download kkbox-churn-prediction-challenge -p ~/data/kkbox/raw   # accept rules first
+python scripts/convert_to_parquet.py
+pytest tests/ -q
+```
 
 ## Data Source
 
