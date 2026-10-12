@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.11.3] — 2026-10-12 — Full audit of the published page: numbers, controls, links, sources
+**Files:** docs/index.html, tests/browser/controls_test.js, Makefile
+- **Situation:** The page had grown over five phases; it needed a check that every number is right, every control works, and nothing is stale on either the artifact or GitHub Pages.
+- **Task:** Audit content and behaviour end to end, the way a reviewer would.
+- **Action:** Confirmed the artifact body and the live Pages file are byte-identical to the repo. Checked 36 numeric claims against the result files (all match). Exercised every control in Chrome (15 sliders, 2 checkboxes, 6 buttons, click-to-set, tabs by mouse and keyboard, 7 FAQs, 10 in-page links) and every external link. Fixed: the "Feb 2017 · 6.4%" preset showed 6.5% (slider step 0.005 → 0.001); a P2 claim ("within 0.3 points") that was true for PR-AUC but not churners reached; stale status tags (3.2–3.6), a Why-table row still naming LambdaMART as the chosen order, record count (~410M), date, and a leakage-test count; added the real profit peak to the FAQ and 10 primary sources used on the page. Added the control audit to the repo.
+- **Result:** 36/36 numbers match; 37/37 control checks and 48/48 tooltip checks pass; all external links resolve; no JS errors.
+- **Talking point:** "Before calling the page done, I audited it like a reviewer: every number traced to its result file, every button clicked by a test."
+
 ## [0.11.2] — 2026-10-12 — Every tooltip checked on desktop (light and dark) and phone
 **Files:** docs/index.html, tests/browser/hover_test.js, Makefile
 - **Situation:** After the hide fix, a full visual review found long values overlapping their labels, an 8-row persona tooltip, tooltips covering 72–128% of the chart on phones, a wrong year ("Nov 2017" for Nov 2016), and a chart label running into the next zone.

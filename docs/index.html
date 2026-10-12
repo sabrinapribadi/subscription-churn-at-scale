@@ -214,7 +214,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 <header class="top">
   <span class="eyebrow">Portfolio · Commercial / Churn · CHN-1</span>
   <h1>Subscription Churn at Scale</h1>
-  <p class="lede">A churn system on ~400 million daily listening records that warns a retention team <b>before</b> renewal, not after.</p>
+  <p class="lede">A churn system on ~410 million daily listening records that warns a retention team <b>before</b> renewal, not after.</p>
   <nav class="toc" aria-label="Sections">
     <a href="#problem"><span class="step">1</span>Problem</a>
     <a href="#why"><span class="step">2</span>Why this methodology</a>
@@ -265,12 +265,12 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <tbody>
         <tr><td>When to predict</td><td><ul class="alts"><li>At expiry (competition) <span class="tag ref">reference only</span></li><li>Fixed calendar date <span class="tag rej">rejected</span></li><li>Continuous survival model <span class="tag later">deferred</span></li></ul></td><td class="chosen">Expiry − k days</td><td>A prediction is only useful if it leaves time to act. Lead time k is reported with every result.</td><td><a href="https://arxiv.org/abs/2606.06776">arXiv 2606.06776</a> (2026)</td></tr>
         <tr><td>How much history</td><td><ul class="alts"><li>Fixed 30 days by habit <span class="tag rej">rejected</span></li></ul></td><td class="chosen">Measure a window curve W ∈ 30…180</td><td>How much history is enough depends on how the task is set up, so it has to be measured.</td><td><a href="https://arxiv.org/abs/2607.00473">arXiv 2607.00473</a> (2026, KKBox)</td></tr>
-        <tr><td>Labels for more months</td><td><ul class="alts"><li>Only the 2 official months <span class="tag rej">rejected</span></li><li>Our own churn rule <span class="tag rej">rejected</span></li></ul></td><td class="chosen">Port the official labeller</td><td>More cohorts for out-of-time tests, with a ≥ 99% parity check against official labels.</td><td>Competition's <span class="mono">WSDMChurnLabeller.scala</span></td></tr>
+        <tr><td>Labels for more months</td><td><ul class="alts"><li>Only the 2 official months <span class="tag rej">rejected</span></li><li>Our own churn rule <span class="tag rej">rejected</span></li></ul></td><td class="chosen">Port the official labeller</td><td>More cohorts for out-of-time tests, with a ≥ 99% parity check against official labels. <b>P0:</b> 98.8%, so official labels stay the test truth.</td><td>Competition's <span class="mono">WSDMChurnLabeller.scala</span></td></tr>
         <tr><td>Train / test split</td><td><ul class="alts"><li>Random rows <span class="tag rej">rejected</span></li><li>Group by member <span class="tag rej">rejected</span></li></ul></td><td class="chosen">Out-of-time by expiry cohort</td><td>Churn rate moved 2.6 points in one month. A random split hides that drift.</td><td>ADR-002</td></tr>
         <tr><td>Primary metric</td><td><ul class="alts"><li>Accuracy <span class="tag rej">rejected</span></li><li>ROC-AUC <span class="tag base">secondary</span></li></ul></td><td class="chosen">PR-AUC + profit@top-10%</td><td>Churn is a minority class, and the team only works the top of the list.</td><td>ADR-002</td></tr>
         <tr><td>Baseline model</td><td><ul class="alts"><li>Logistic regression <span class="tag rej">rejected</span></li><li>Deep sequence model first <span class="tag later">later, P3</span></li></ul></td><td class="chosen">Gradient boosting on RFM features</td><td>The strongest model family on this benchmark; it sets the bar the deep model must beat.</td><td><a href="https://arxiv.org/abs/1802.03396">arXiv 1802.03396</a></td></tr>
-        <tr><td>Behaviour signal</td><td><ul class="alts"><li>Hand-crafted RFM only <span class="tag base">baseline</span></li></ul></td><td class="chosen">Self-supervised embeddings, as an ablation</td><td>They are added only if they beat RFM by +0.02 PR-AUC out-of-time.</td><td><a href="https://doi.org/10.1007/s10479-023-05259-9">Annals of OR (2023)</a></td></tr>
-        <tr><td>Ordering the call list</td><td><ul class="alts"><li>Sort by churn probability <span class="tag base">baseline</span></li></ul></td><td class="chosen">LambdaMART on revenue at risk</td><td>Two members with the same probability are not worth the same call.</td><td>ADR-004 (planned)</td></tr>
+        <tr><td>Behaviour signal</td><td><ul class="alts"><li>Hand-crafted RFM only <span class="tag base">baseline</span></li></ul></td><td class="chosen">Self-supervised embeddings, as an ablation</td><td>They are added only if they beat RFM by +0.02 PR-AUC out-of-time. <b>P3:</b> +0.004, so kept for personas only.</td><td><a href="https://doi.org/10.1007/s10479-023-05259-9">Annals of OR (2023)</a></td></tr>
+        <tr><td>Ordering the call list</td><td><ul class="alts"><li>Sort by churn probability <span class="tag base">baseline</span></li><li>LambdaMART <span class="tag rej">tested, lost 22%</span></li></ul></td><td class="chosen">Probability × member value</td><td>Two members with the same probability are not worth the same call. <b>P4:</b> won all 9 cost scenarios.</td><td>ADR-004</td></tr>
       </tbody>
     </table>
   </div>
@@ -327,7 +327,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <!-- M2 -->
   <article class="method" id="m-pit">
     <div class="explain">
-      <div class="head"><span class="num">3.2</span><h3>Point-in-time snapshot</h3><span class="chip decided">Decided · ADR-001</span></div>
+      <div class="head"><span class="num">3.2</span><h3>Point-in-time snapshot</h3><span class="chip use">In use · P1</span></div>
       <ol class="steps"><li>Freeze the clock <b>k days</b> before expiry.</li><li>Build features from the <b>W days</b> before the freeze.</li><li>Anything after the freeze is invisible. A unit test enforces it.</li></ol>
       <div class="formula">
         <span class="lbl">Snapshot</span><i>S</i> = <i>E</i> − <i>k</i>
@@ -351,7 +351,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <!-- M3 -->
   <article class="method" id="m-window">
     <div class="explain">
-      <div class="head"><span class="num">3.3</span><h3>Observation-window sufficiency</h3><span class="chip planned">Planned · P2</span></div>
+      <div class="head"><span class="num">3.3</span><h3>Observation-window sufficiency</h3><span class="chip pass">Tested · P2</span></div>
       <ol class="steps"><li>For each window W: recent 14-day use ÷ window average.</li><li>Measure how well that separates churners from stayers (AUC).</li><li>Keep the shortest W past the <b>knee</b>.</li></ol>
       <div class="formula">
         <span class="lbl">Decline ratio</span><i>r</i><sub>W</sub> = mean<sub>[S−14, S)</sub> / mean<sub>[S−W, S)</sub>
@@ -374,7 +374,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <!-- M4 -->
   <article class="method" id="m-split">
     <div class="explain">
-      <div class="head"><span class="num">3.4</span><h3>Out-of-time validation</h3><span class="chip decided">Decided · ADR-002</span></div>
+      <div class="head"><span class="num">3.4</span><h3>Out-of-time validation</h3><span class="chip use">In use · P1</span></div>
       <ol class="steps"><li><b>Train</b> on older monthly cohorts.</li><li><b>Tune</b> on the next month.</li><li><b>Test</b> on the month after.</li></ol>
       <div class="formula">
         <span class="lbl">Out-of-time</span>train: <i>c</i> ≤ <i>t</i> · val: <i>c</i> = <i>t</i>+1 · test: <i>c</i> = <i>t</i>+2
@@ -408,7 +408,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
     <div class="sim">
       <span class="simtag">Simulation · analytic curves, same model, different churn rates</span>
       <div class="controls">
-        <label class="ctl" for="pr-pi"><span class="row">Churn rate π <output id="pr-pi-o"></output></span><input type="range" id="pr-pi" min="0.01" max="0.5" step="0.005" value="0.064"></label>
+        <label class="ctl" for="pr-pi"><span class="row">Churn rate π <output id="pr-pi-o"></output></span><input type="range" id="pr-pi" min="0.01" max="0.5" step="0.001" value="0.064"></label>
         <label class="ctl" for="pr-d"><span class="row">Model separation d <output id="pr-d-o"></output></span><input type="range" id="pr-d" min="0.3" max="3" step="0.05" value="1.4"></label>
       </div>
       <div class="btns"><button type="button" data-pi="0.064">Feb 2017 · 6.4%</button><button type="button" data-pi="0.09">Mar 2017 · 9.0%</button><button type="button" data-pi="0.5">Balanced · 50%</button></div>
@@ -420,7 +420,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <!-- M6 -->
   <article class="method" id="m-gbm">
     <div class="explain">
-      <div class="head"><span class="num">3.6</span><h3>Gradient boosting baseline</h3><span class="chip planned">Planned · P1</span></div>
+      <div class="head"><span class="num">3.6</span><h3>Gradient boosting baseline</h3><span class="chip use">In use · P1</span></div>
       <ol class="steps"><li>Start from the average churn rate.</li><li>Fit a small tree to what the model still gets wrong.</li><li>Add it, shrunk by learning rate η. Repeat.</li></ol>
       <div class="formula">
         <span class="lbl">Additive model</span><i>F</i><sub>m</sub>(<i>x</i>) = <i>F</i><sub>m−1</sub>(<i>x</i>) + η · <i>h</i><sub>m</sub>(<i>x</i>)
@@ -551,7 +551,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <span class="eyebrow">What P2 showed</span>
       <ol class="steps">
         <li><b>Every week of warning costs churners.</b> Calling 30 days ahead instead of 14 reaches about 3,600 fewer churners a month (60% vs 65%). 7 days reaches about 1,600 more (68%).</li>
-        <li><b>30 days of history is enough.</b> 30 to 180 days of listening history all land within 0.3 points of each other, which is run-to-run noise.</li>
+        <li><b>30 days of history is enough.</b> At our 14-day lead, 30 to 180 days of history reach churners within half a point of each other (0.003 PR-AUC), which is run-to-run noise.</li>
         <li><b>Scoring on the renewal date looks best (74%)</b> only because the renewal is already visible. It leaves no time to act.</li>
       </ol>
     </div>
@@ -611,7 +611,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <span class="eyebrow">Questions practitioners ask</span>
       <details><summary>Isn't this just "members without auto-renew"?</summary><p>That is today's rule, and it only ever calls manual renewers. The model reaches 11 points more churners with the same calls, and finds 1 in 4 auto-renew churners the rule never calls.</p></details>
       <details><summary>Did it use information from the future?</summary><p>No. Every input is built from data dated before the snapshot, 14 days ahead of renewal. An automated test fails if any later record changes a score.</p></details>
-      <details><summary>How many members should we call?</summary><p>Profit keeps rising past 10% under our central assumptions (1 in 5 saved, 20 per call), but each extra call earns less. Hover the "What is the call list worth?" chart to see the gain for any budget.</p></details>
+      <details><summary>How many members should we call?</summary><p>Under our central assumptions (1 in 5 saved, 20 per call), profit keeps rising until about 22% of members (≈13.9M a month, vs ≈12.5M at 10%), and each extra call earns less. Hover the "What is the call list worth?" chart to see the gain for any budget.</p></details>
       <details><summary>Should we order the list by member value?</summary><p>Yes, but expect little: plans cost 99–149, so ordering by probability × value adds about 0.1%. A learned ranker (LambdaMART) did worse.</p></details>
       <details><summary>Why is this member on the list?</summary><p>The strongest signals: manual renewal, payment method, a recent cancellation, days since the last payment, and tenure. Per-member reasons come in Phase 5.</p></details>
       <details><summary>Should we just call the riskiest members?</summary><p>Not always. Some will leave whatever we offer (Ascarza, JMR 2018). Finding members who respond to an offer is the next project (uplift modelling).</p></details>
@@ -625,7 +625,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <thead><tr><th>Phase</th><th>Gate</th><th>Status</th><th>Result</th></tr></thead>
       <tbody>
         <tr><td>P0 · Labels</td><td>Reconstructed labels agree with official labels on ≥ 99% of members (Feb + Mar 2017)</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>Agreement: <b>98.8%</b> Feb · <b>97.0%</b> Mar</li><li>Cause: the shipped transactions show renewals the official labels count as churn</li><li>Decision: official labels = test truth; rebuilt labels must earn a place in training (ADR-001 Amendment 2)</li></ul></td></tr>
-        <tr><td>P1 · Baseline</td><td>Out-of-time PR-AUC reported; leakage tests pass</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>PR-AUC <b>0.568</b> vs rule <b>0.342</b></li><li>Top 10% of the list catches <b>65%</b> of churners</li><li>Leakage tests: 3/3 pass</li></ul></td></tr>
+        <tr><td>P1 · Baseline</td><td>Out-of-time PR-AUC reported; leakage tests pass</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>PR-AUC <b>0.568</b> vs rule <b>0.342</b></li><li>Top 10% of the list catches <b>65%</b> of churners</li><li>Leakage tests pass</li></ul></td></tr>
         <tr><td>P2 · Window</td><td>Window curve and knee reported for each k</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>Lead time: PR-AUC 0.676 (0 d) → 0.602 (7 d) → 0.561 (14 d) → 0.476 (30 d)</li><li>History: flat from 30 to 180 days → use 30</li></ul></td></tr>
         <tr><td>P3 · Embeddings</td><td>PR-AUC(GBM + embeddings) ≥ PR-AUC(GBM) + 0.02 out-of-time</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>Best: shape statistics +0.004; encoder +0.002; Mantis +0.003 (sample)</li><li>Kept for personas only (ADR-003)</li></ul></td></tr>
         <tr><td>P4 · Ranking</td><td>profit@10%(LambdaMART) &gt; profit@10%(probability sort); ECE ≤ 0.010</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>LambdaMART −22% vs probability sort</li><li>Probability × value wins all 9 scenarios (+0.1%) → recommended</li><li>ECE 0.0158 → 0.0128 (gate 0.010)</li></ul></td></tr>
@@ -711,8 +711,18 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
     <li>A rolling-window framework for churn prediction and behavioral driver identification (2026). <a href="https://arxiv.org/abs/2606.06776">arXiv 2606.06776</a></li>
     <li>Predicting customer churn: extreme gradient boosting with temporal data (2018). <a href="https://arxiv.org/abs/1802.03396">arXiv 1802.03396</a></li>
     <li>Exploiting time-varying RFM measures for customer churn prediction with deep neural networks. Annals of Operations Research (2023). <a href="https://doi.org/10.1007/s10479-023-05259-9">doi:10.1007/s10479-023-05259-9</a></li>
+    <li>Neslin, Gupta, Kamakura, Lu & Mason (2006). Defection detection: measuring and understanding the predictive accuracy of customer churn models. Journal of Marketing Research 43(2) — top-decile lift and Gini. <a href="https://doi.org/10.1509/jmkr.43.2.204">doi:10.1509/jmkr.43.2.204</a></li>
+    <li>Hand (2009). Measuring classifier performance: a coherent alternative to the area under the ROC curve. Machine Learning 77 — H-measure. <a href="https://doi.org/10.1007/s10994-009-5119-5">doi:10.1007/s10994-009-5119-5</a></li>
+    <li>Verbeke, Dejaeger, Martens, Hur & Baesens (2012). New insights into churn prediction in the telecommunication sector: a profit driven data mining approach. EJOR 218(1). <a href="https://doi.org/10.1016/j.ejor.2011.09.031">doi:10.1016/j.ejor.2011.09.031</a></li>
+    <li>Verbraken, Verbeke & Baesens (2013). A novel profit maximizing metric for measuring classification performance of customer churn prediction models. IEEE TKDE 25(5) — EMPC. <a href="https://doi.org/10.1109/TKDE.2012.50">doi:10.1109/TKDE.2012.50</a></li>
+    <li>Ti-MAE: self-supervised masked time series autoencoders. <a href="https://arxiv.org/abs/2301.08871">arXiv 2301.08871</a> — P3 arm B.</li>
+    <li>Mantis: lightweight foundation model for time series classification (2025). <a href="https://arxiv.org/abs/2502.15637">arXiv 2502.15637</a> — P3 arm C.</li>
+    <li>Saerens, Latinne & Decaestecker (2002). Adjusting the outputs of a classifier to new a priori probabilities. Neural Computation 14(1) — prior-shift EM. <a href="https://doi.org/10.1162/089976602753284446">doi:10.1162/089976602753284446</a></li>
+    <li>Alexandari, Kundaje & Shrikumar (2020). Maximum likelihood with bias-corrected calibration is hard-to-beat at label shift adaptation. ICML. <a href="https://arxiv.org/abs/1901.06852">arXiv 1901.06852</a></li>
+    <li>Burges (2010). From RankNet to LambdaRank to LambdaMART: an overview. Microsoft Research MSR-TR-2010-82. <a href="https://www.microsoft.com/en-us/research/publication/from-ranknet-to-lambdarank-to-lambdamart-an-overview/">microsoft.com/research</a></li>
+    <li>Ascarza (2018). Retention futility: targeting high-risk customers might be ineffective. Journal of Marketing Research 55(1). <a href="https://doi.org/10.1509/jmr.16.0163">doi:10.1509/jmr.16.0163</a></li>
   </ol>
-  <p>Simulations use synthetic data generated in the browser. Sabrina Pribadi · last updated 9 Oct 2026 · code and change log: <a href="https://github.com/sabrinapribadi/subscription-churn-at-scale">github.com/sabrinapribadi/subscription-churn-at-scale</a></p>
+  <p>Simulations use synthetic data generated in the browser. Sabrina Pribadi · last updated 12 Oct 2026 · code and change log: <a href="https://github.com/sabrinapribadi/subscription-churn-at-scale">github.com/sabrinapribadi/subscription-churn-at-scale</a></p>
 </footer>
 </div>
 
