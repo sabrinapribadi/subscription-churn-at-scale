@@ -1,6 +1,6 @@
 """MCP gateway (ADR-005/006): exposes the shared tool registry to AI agents.
 
-Local (stdio, for Claude Desktop / IDE agents):
+Local (stdio, for desktop AI assistants and IDE agents):
     SERVING_DIR=~/data/kkbox/serving python -m src.gateway.mcp_server
 Containers (streamable HTTP, talking to the services):
     MCP_TRANSPORT=streamable-http SCORING_URL=http://scoring:8000 EXPLAIN_URL=http://explain:8000 python -m src.gateway.mcp_server
