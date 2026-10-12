@@ -28,3 +28,4 @@ htmlcov/
 .DS_Store
 !docs/index.html
 mlflow.db
+tests/browser/node_modules/

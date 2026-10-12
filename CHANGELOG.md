@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.11.1] — 2026-10-12 — Tooltips that hide, stay small, and stay out of the way
+**Files:** docs/index.html, tests/browser/hover_test.js, Makefile, .gitignore
+- **Situation:** On GitHub Pages, tooltips stayed on screen after the pointer left and covered the charts; the appendix tab was also always visible. The artifact preview hid the bug because it adds a global "hidden" reset.
+- **Task:** Make tooltips appear only while hovering, keep them small and inside the chart, and catch this class of bug before publishing.
+- **Action:** Added an explicit `[hidden]` rule (component `display` styles were overriding it); shrank tooltips and placed them in the quadrant away from the cursor, clamped inside the chart; hide all tips on scroll, window blur, leaving the page, or tapping elsewhere; fixed the LambdaMART row tooltip (its container was created during the first hover, which fired an immediate "leave"). Added a real-Chrome test (puppeteer) that hovers every chart, checks the tooltip is inside it, then checks it disappears — the earlier jsdom test could not see CSS.
+- **Result:** 15/15 charts and the ranking rows pass in Chrome: visible on hover, inside the chart, hidden after leaving; no tooltips on load; appendix hidden until clicked. Budget-dial tooltip 246 → 176 px tall.
+- **Talking point:** "My first hover test passed while users saw broken tooltips — it couldn't see CSS. I replaced it with a real-browser test that checks what a person actually sees."
+
 ## [0.11.0] — 2026-10-12 — P4: call list ordered by money at stake; honest look at calibration
 **Files:** src/models/ranking.py, src/models/baseline.py, scripts/rank_and_calibrate.py, tests/test_ranking.py, configs/default_config.yaml, docs/adr/ADR-004-ranking-and-calibration.md, docs/adr/README.md, docs/index.html, docs/PRD.md, README.md, data/outputs/p4_rank_calibrate.json
 - **Situation:** Scores ran low (top group predicted 37%, observed 48%) because March churned more than February; the list ignored that members are worth different amounts.

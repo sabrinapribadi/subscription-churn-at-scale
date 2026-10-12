@@ -27,3 +27,7 @@ lint:
 
 test:
 	poetry run pytest tests/ -v
+
+# Real-browser tooltip check for docs/index.html (Node + Google Chrome)
+hover-test:
+	cd tests/browser && (test -d node_modules/puppeteer-core || npm i --no-save puppeteer-core@23) && node hover_test.js $(CURDIR)/docs/index.html /tmp
