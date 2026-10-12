@@ -1,0 +1,25 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17" }
+      - run: pip install -r requirements-ci.txt
+      - name: Unit, Spark, contract, GenAI and MCP tests (P5 gate)
+        env: { CHURN_JAVA_HOME: "${{ env.JAVA_HOME }}" }
+        run: pytest tests/ -q
+      - name: LLM evaluation set (template provider; no API key in CI)
+        run: python scripts/llm_eval.py
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the serving image
+        run: docker build -t churn-serving .
+      - name: Image imports every service
+        run: docker run --rm churn-serving python -c "import src.services.apps, src.gateway.mcp_server, src.genai.explain; print('ok')"

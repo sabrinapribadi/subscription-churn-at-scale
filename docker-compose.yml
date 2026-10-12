@@ -1,0 +1,25 @@
+# Four services from one image (ADR-005). Serving artefacts come from scripts/export_serving_artifacts.py.
+#   SERVING_DIR_HOST=~/data/kkbox/serving docker compose up --build
+x-base: &base
+  build: .
+  volumes: ["${SERVING_DIR_HOST:-./serving}:/serving:ro"]
+  env_file: [{ path: .env, required: false }]   # OPENAI_API_KEY lives here, never in the image
+services:
+  features:
+    <<: *base
+    environment: { SERVICE: features }
+    ports: ["8001:8000"]
+  scoring:
+    <<: *base
+    environment: { SERVICE: scoring }
+    ports: ["8002:8000"]
+  explain:
+    <<: *base
+    environment: { SERVICE: explain, SCORING_URL: "http://scoring:8000" }
+    ports: ["8003:8000"]
+    depends_on: [scoring]
+  mcp:
+    <<: *base
+    environment: { SERVICE: mcp, MCP_TRANSPORT: streamable-http, SCORING_URL: "http://scoring:8000", EXPLAIN_URL: "http://explain:8000" }
+    ports: ["8004:8000"]
+    depends_on: [scoring, explain]

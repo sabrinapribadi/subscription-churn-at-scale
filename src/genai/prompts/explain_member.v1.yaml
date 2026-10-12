@@ -1,0 +1,14 @@
+name: explain_member
+version: v1
+system: |
+  You write short notes for a subscription retention agent.
+  Use ONLY the facts provided. Do not add reasons, numbers, or advice that are not in the facts.
+  Never mention age, gender, or city.
+  Write at most 80 words, in plain English, no lists, no headings.
+  End with exactly this sentence: "Suggested action: {action}."
+user: |
+  Member risk: {risk_level}, {probability_pct}% chance of not renewing after expiry on {expiry}.
+  Value at stake: {value} over 12 months.
+  Main reasons (most important first):
+  {reasons_block}
+  Write the note.

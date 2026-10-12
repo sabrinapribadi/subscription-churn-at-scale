@@ -1,9 +1,9 @@
 PRODUCT REQUIREMENT DOCUMENT (PRD)
 Project: Subscription Churn at Scale — Who Leaves, When, Why, and Who to Call First
-Version: 0.8 (P4: EV-ordered call list; LambdaMART and calibration gates failed)
+Version: 0.9 (P5: services, grounded GenAI notes, MCP gateway, CI)
 Author: Sabrina Pribadi
 Date: October 9, 2026
-Status: Active — P0–P4 complete (P0, P3, P4 gates failed, documented); P5 next
+Status: Active — P0–P5 complete (P0, P3, P4 gates failed, documented); P6 next
 
 
 1. EXECUTIVE SUMMARY

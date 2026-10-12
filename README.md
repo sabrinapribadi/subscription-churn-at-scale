@@ -31,7 +31,7 @@ Churner: a member who does not renew within 30 days after their membership expir
 | P2 · Timing | How early can we call? How much history? | Curve and knee per lead time | **Passed** — lead time costs, history does not |
 | P3 · Behaviour | Do listening habits help, esp. auto-renew cancellers? | +0.02 PR-AUC | **Failed** — best +0.004; kept as 5 personas for messaging |
 | P4 · Call list | Who to call first, given revenue at risk? | LambdaMART profit beats probability sort; ECE ≤ 0.010 | **Failed** — LambdaMART −22%; probability × value wins all 9 scenarios (+0.1%) and is adopted |
-| P5 · Services + GenAI | Can apps and agents use it? | Contract tests + LLM eval in CI | Planned |
+| P5 · Services + GenAI | Can apps and agents use it? | Contract tests + LLM eval in CI | **Passed** — 4 services + MCP gateway; notes 100% grounded; ≈ $0.10 per 1,000 AI notes |
 | P6 · Databricks | Does it run on a real platform? | Same metrics on Databricks | Planned |
 
 ## How it works
@@ -68,6 +68,25 @@ for k in 0 7 14 30; do python scripts/build_dataset.py --k $k --windows 30 60 90
 python scripts/window_curve.py                         # P2
 pytest tests/ -q
 ```
+
+## Use it: services and AI assistants
+
+```bash
+python scripts/export_serving_artifacts.py                     # model + calibration + scored cohort → ~/data/kkbox/serving
+SERVICE=scoring SERVING_DIR=~/data/kkbox/serving uvicorn src.services.apps:app --port 8002
+SERVING_DIR=~/data/kkbox/serving python -m src.gateway.mcp_server   # MCP over stdio for an AI assistant
+SERVING_DIR_HOST=~/data/kkbox/serving docker compose up --build    # all four services
+python scripts/llm_eval.py                                     # grounding, cost and latency report
+```
+
+| Tool (MCP) | Answers |
+|---|---|
+| `member_risk` | Calibrated churn probability, member value, call-list rank |
+| `why_at_risk` | Plain-language note, checked against the model's facts, plus one suggested action |
+| `call_list` | Top members by expected value at risk, with expected churners and profit |
+| `what_if` | Best share to call for any save rate and cost per call |
+
+An OpenAI key (in a local `.env`, never committed) switches notes from the template to `gpt-6-luna`; every note is still graded and falls back to the template if it invents anything.
 
 ## Data
 

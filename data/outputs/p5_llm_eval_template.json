@@ -1,0 +1,16 @@
+{
+ "provider": "template",
+ "model": "template-v1",
+ "cases": 12,
+ "raw_pass_rate": 1.0,
+ "grounded_after_guard": 1.0,
+ "action_accuracy": 1.0,
+ "latency_ms_p50": 0.0,
+ "latency_ms_p95": 0.0,
+ "avg_input_tokens": 0.0,
+ "avg_output_tokens": 0.0,
+ "cost_per_1000_usd": 0.0,
+ "budget_cost_per_1000_usd": 0.2,
+ "budget_p95_ms": 50,
+ "passed": true
+}

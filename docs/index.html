@@ -178,6 +178,7 @@ td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; whit
 .faq details { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 10px 14px; }
 .faq summary { cursor: pointer; font-weight: 600; }
 .faq details p { margin-top: 8px; color: var(--muted); max-width: 72ch; }
+@media (min-width: 900px) { .faq { grid-template-columns: 1fr 1fr; align-items: start; } .faq > .eyebrow { grid-column: 1 / -1; } }
 
 .chart-wrap { position: relative; }
 .chart-wrap svg { touch-action: pan-y; cursor: crosshair; }
@@ -213,6 +214,13 @@ details.more > summary small { grid-column: 2; color: var(--muted); font-size: 1
 details.more > summary:hover span { color: var(--accent); }
 details.more > .more-body { display: grid; gap: 24px; padding: 4px 18px 22px; border-top: 1px solid var(--line); }
 #deep-dives { gap: 14px; }
+.chat { display: grid; gap: 10px; }
+.msg { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); display: grid; gap: 6px; font-size: 14px; }
+.msg .who { font: 600 11px var(--font-mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.msg.ask { background: var(--tint); }
+.msg.tool { background: var(--surface); border-left: 3px solid var(--accent); }
+.msg code { font: 600 11px var(--font-mono); color: var(--accent); text-transform: none; }
+
 /* grid children may shrink below their content, so wide tables scroll inside their own box on phones */
 section.block > *, .more-body > *, .pane > *, .results-grid > * { min-width: 0; }
 
@@ -319,6 +327,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <tr><td><b>Model</b></td><td>Today's rule · LightGBM · + 3 kinds of listening embeddings</td><td class="chosen">LightGBM</td><td>48 vs 39 churners per 100 calls; embeddings +0.004 (not worth it)</td></tr>
       <tr><td><b>Order of the call list</b></td><td>Probability · probability × value · LambdaMART</td><td class="chosen">Probability × value</td><td>Won all <a href="#p4-scenarios">9 cost scenarios</a>; LambdaMART −22%</td></tr>
       <tr><td><b>Labels</b></td><td>Rebuild from transactions · official</td><td class="chosen">Official</td><td>Rebuilt labels matched only 98.8%</td></tr>
+      <tr><td><b>Serving</b></td><td>One API · four services + MCP gateway</td><td class="chosen">Four services + MCP</td><td>80 ms first answer, 7 ms repeat; ≈ $0.10 per 1,000 AI notes</td></tr>
       <tr><td><b>Score accuracy</b></td><td>Raw · isotonic · prior-shift correction</td><td class="chosen">Prior-shift</td><td>Better, still runs low → check last month's outcomes</td></tr>
     </tbody></table></div>
   <p class="muted" style="font-size:13px">Every bar was set before training; three of five phases failed theirs, and the page reports them. Details in the deep dives below.</p>
@@ -368,20 +377,34 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       </div>
     </div>
 
-    <div class="results-grid">
-      <div class="explain">
-        <span class="eyebrow">Where the calls go · top 10% list</span>
-        <div class="table-wrap"><table class="compact">
-          <thead><tr><th>Segment</th><th>Members</th><th>Churn rate</th><th>Share of calls</th><th>Churners reached</th></tr></thead>
-          <tbody><tr><td>Manual renewal</td><td class='num'>104,817</td><td class='num'>38.4%</td><td class='num'>87%</td><td class='num'>89%</td></tr><tr><td>Auto-renew</td><td class='num'>757,218</td><td class='num'>2.9%</td><td class='num'>13%</td><td class='num'>23%</td></tr><tr><td>New (< 6 months)</td><td class='num'>139,067</td><td class='num'>9.7%</td><td class='num'>33%</td><td class='num'>81%</td></tr><tr><td>Established (≥ 6 months)</td><td class='num'>722,968</td><td class='num'>6.8%</td><td class='num'>67%</td><td class='num'>61%</td></tr></tbody></table></div>
-      </div>
-      <div class="explain">
+    <div class="explain">
         <span class="eyebrow">Before you rely on it</span>
         <ol class="steps">
           <li><b>Fresh outcomes matter.</b> With only outcomes known on the day, the list beats the rule at small budgets (top 5%: 45% vs 30% of churners), not at 10%+.</li>
           <li><b>Scores run low.</b> Members scored ~37% actually left 48% of the time. Recalibrate monthly before using scores in offers.</li>
           <li><b>Auto-renew churners are mostly missed.</b> About 22,000, a third of churners; the list reaches 1 in 4.</li>
           <li><b>Coverage.</b> The test covers 89% of March members, those with a known renewal date.</li>
+        </ol>
+      </div>
+
+    <div class="results-grid">
+      <div class="sim">
+        <span class="simtag">P5 · What a CRM agent or AI assistant gets back · real output, March 2017 cohort</span>
+        <div class="chat">
+          <div class="msg ask"><span class="who">Agent asks</span>Why is the top member on today's list at risk?</div>
+          <div class="msg tool"><span class="who">Assistant calls <code>why_at_risk</code></span>
+            <p>High risk: 96% chance of not renewing after expiry on 2017-03-10. Main reasons: last transaction was a cancellation (yes), days since last payment (7) and days since last listened (30). Suggested action: send a re-engagement message.</p>
+            <div class="legend"><span class="chip pass">grounded</span><span>80 ms first time · 7 ms when asked again · $0.0001 with an LLM, $0 with the template</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="explain">
+        <span class="eyebrow">What P5 delivered</span>
+        <ol class="steps">
+          <li><b>Answers on demand.</b> Four services (features, scoring, explanation, MCP gateway) give apps and AI assistants the same answers.</li>
+          <li><b>Notes that cannot invent facts.</b> Every number and reason is checked against the model's output; if an LLM adds anything, the safe template note is used instead.</li>
+          <li><b>Cost and speed known up front.</b> ≈ $0.10 per 1,000 AI notes; repeat questions are cached and free; demographic reasons are never quoted to agents.</li>
+          <li><b>Forecasts are conservative.</b> The service expects 10.4M a month from the top 10%; March actually delivered 12.5M, because scores still run low.</li>
         </ol>
       </div>
     </div>
@@ -393,13 +416,21 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <details><summary>How many members should we call?</summary><p>Under our central assumptions (1 in 5 saved, 20 per call), profit keeps rising until about 22% of members (≈13.9M a month, vs ≈12.5M at 10%). Try your own save rate and call cost on the "What is the call list worth?" chart: it shows the best share to call for those numbers. Hover the "What is the call list worth?" chart to see the gain for any budget.</p></details>
       <details><summary>Should we order the list by member value?</summary><p>Yes, but expect little: plans cost 99–149, so ordering by probability × value adds about 0.1%. A learned ranker (LambdaMART) did worse.</p></details>
       <details><summary>Why is this member on the list?</summary><p>The strongest signals: manual renewal, payment method, a recent cancellation, days since the last payment, and tenure. Per-member reasons come in Phase 5.</p></details>
+      <details><summary>Can our CRM or AI assistant use this?</summary><p>Yes. The scoring and explanation services answer over HTTP, and an MCP gateway exposes four tools (member risk, why at risk, call list, what-if) to any MCP-capable assistant. Every note is checked against the model's facts before it is shown.</p></details>
       <details><summary>Should we just call the riskiest members?</summary><p>Not always. Some will leave whatever we offer (Ascarza, JMR 2018). Finding members who respond to an offer is the next project (uplift modelling).</p></details>
       <details><summary>How often does it need refreshing?</summary><p>Monthly: retrain on the latest outcomes and recalibrate. Drift monitoring is covered in the MLOps project.</p></details>
     </div>
 
   <details class="more">
-    <summary><span>More findings</span><small>How early can we call · how much history · five member personas</small></summary>
+    <summary><span>More findings</span><small>Where the calls go · how early can we call · how much history · five member personas</small></summary>
     <div class="more-body">
+    <div class="explain">
+        <span class="eyebrow">Where the calls go · top 10% list</span>
+        <div class="table-wrap"><table class="compact">
+          <thead><tr><th>Segment</th><th>Members</th><th>Churn rate</th><th>Share of calls</th><th>Churners reached</th></tr></thead>
+          <tbody><tr><td>Manual renewal</td><td class='num'>104,817</td><td class='num'>38.4%</td><td class='num'>87%</td><td class='num'>89%</td></tr><tr><td>Auto-renew</td><td class='num'>757,218</td><td class='num'>2.9%</td><td class='num'>13%</td><td class='num'>23%</td></tr><tr><td>New (< 6 months)</td><td class='num'>139,067</td><td class='num'>9.7%</td><td class='num'>33%</td><td class='num'>81%</td></tr><tr><td>Established (≥ 6 months)</td><td class='num'>722,968</td><td class='num'>6.8%</td><td class='num'>67%</td><td class='num'>61%</td></tr></tbody></table></div>
+      </div>
+
     <div class="results-grid even">
       <div class="sim">
         <span class="simtag">P2 · How early can we call?</span>
@@ -680,6 +711,57 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   </article>
 </div>
   </details>
+  <details class="more" id="d-serving">
+    <summary><span>How it is served</span><small>Four services, an MCP gateway, grounding checks, cost and latency budgets, tests</small></summary>
+    <div class="more-body">
+      <div class="flow">
+        <div class="lane"><span class="who">Request path</span>
+          <span class="node">CRM screen or AI assistant</span><span class="arrow" aria-hidden="true">→</span>
+          <span class="node">MCP gateway <small>4 tools</small></span><span class="arrow" aria-hidden="true">→</span>
+          <span class="node">explain-svc <small>note + grader</small></span><span class="arrow" aria-hidden="true">→</span>
+          <span class="node">scoring-svc <small>model + calibration</small></span><span class="arrow" aria-hidden="true">→</span>
+          <span class="node">feature-svc <small>point-in-time rows</small></span></div>
+      </div>
+      <div class="table-wrap"><table class="compact">
+        <thead><tr><th>Service</th><th>Owns</th><th>Answers</th></tr></thead>
+        <tbody>
+          <tr><td><b>feature-svc</b></td><td>Features per member, dated before the scoring day</td><td><span class="mono">GET /members/{id}/features</span></td></tr>
+          <tr><td><b>scoring-svc</b></td><td>LightGBM, calibration, member value, call order, per-member reasons (TreeSHAP)</td><td><span class="mono">/score · /reasons · POST /call-list · /what-if</span></td></tr>
+          <tr><td><b>explain-svc</b></td><td>Plain-language note, grounding grader, cache</td><td><span class="mono">GET /members/{id}/explanation</span></td></tr>
+          <tr><td><b>mcp-gateway</b></td><td>The same four tools for AI assistants (MCP)</td><td><span class="mono">member_risk · why_at_risk · call_list · what_if</span></td></tr>
+        </tbody></table></div>
+      <div class="results-grid even">
+        <div class="explain">
+          <span class="eyebrow">Cost and latency (rule: budget before building)</span>
+          <div class="table-wrap"><table class="compact">
+            <thead><tr><th>Budget</th><th>Target</th><th>Measured</th></tr></thead>
+            <tbody>
+              <tr><td>Cost per 1,000 AI notes</td><td class="num">≤ $0.20</td><td class="num">≈ $0.10 (gpt-6-luna, list prices) · $0 template</td></tr>
+              <tr><td>Repeat question (cached), p95</td><td class="num">≤ 50 ms</td><td class="num">0.13 ms in-process · 7 ms over HTTP</td></tr>
+              <tr><td>First answer, template note, p95</td><td class="num">≤ 50 ms</td><td class="num">49 ms in-process · 80 ms over HTTP</td></tr>
+              <tr><td>First answer, live LLM, p95</td><td class="num">≤ 2 s</td><td class="num">measured when an API key is set</td></tr>
+              <tr><td>Whole monthly call list as a nightly batch</td><td class="num">—</td><td class="num">≈ $4 (Batch API price)</td></tr>
+            </tbody></table></div>
+        </div>
+        <div class="explain">
+          <span class="eyebrow">Why agents can trust the note</span>
+          <ul class="points">
+            <li>Every number in the note must appear in the model's facts.</li>
+            <li>The top reason must be named; no other feature may be.</li>
+            <li>Age, gender and city are never quoted to agents.</li>
+            <li>The note ends with one action from a fixed list.</li>
+            <li>If an LLM's text fails any check, the template note is shown instead, and the response says so.</li>
+          </ul>
+          <span class="eyebrow">Tested on every push</span>
+          <ul class="points">
+            <li>Contract tests for every endpoint; MCP tools over the real protocol</li>
+            <li>12-case evaluation set: 100% grounded, 100% correct actions</li>
+            <li>Docker image built in CI; no API key needed to test</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </details>
   <details class="more" id="d-decisions">
     <summary><span>Decision log</span><small>Every alternative considered, and why it was chosen or rejected</small></summary>
     <div class="more-body">
@@ -719,6 +801,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
         <tr><td>P1 · Baseline</td><td>Out-of-time PR-AUC reported; leakage tests pass</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>PR-AUC <b>0.568</b> vs rule <b>0.342</b></li><li>Top 10% of the list catches <b>65%</b> of churners</li><li>Leakage tests pass</li></ul></td></tr>
         <tr><td>P2 · Window</td><td>Window curve and knee reported for each k</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>Lead time: PR-AUC 0.676 (0 d) → 0.602 (7 d) → 0.561 (14 d) → 0.476 (30 d)</li><li>History: flat from 30 to 180 days → use 30</li></ul></td></tr>
         <tr><td>P3 · Embeddings</td><td>PR-AUC(GBM + embeddings) ≥ PR-AUC(GBM) + 0.02 out-of-time</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>Best: shape statistics +0.004; encoder +0.002; Mantis +0.003 (sample)</li><li>Kept for personas only (ADR-003)</li></ul></td></tr>
+        <tr><td>P5 · Serving</td><td>Contract tests and LLM evaluation set pass in CI</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>56/56 tests; 12/12 evaluation cases grounded</li><li>≈ $0.10 per 1,000 AI notes; cached answers free</li></ul></td></tr>
         <tr><td>P4 · Ranking</td><td>profit@10%(LambdaMART) &gt; profit@10%(probability sort); ECE ≤ 0.010</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>LambdaMART −22% vs probability sort</li><li>Probability × value wins all 9 scenarios (+0.1%) → recommended</li><li>ECE 0.0158 → 0.0128 (gate 0.010)</li></ul></td></tr>
       </tbody>
     </table>
@@ -808,6 +891,10 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
     <li>Saerens, Latinne & Decaestecker (2002). Adjusting the outputs of a classifier to new a priori probabilities. Neural Computation 14(1) — prior-shift EM. <a href="https://doi.org/10.1162/089976602753284446">doi:10.1162/089976602753284446</a></li>
     <li>Alexandari, Kundaje & Shrikumar (2020). Maximum likelihood with bias-corrected calibration is hard-to-beat at label shift adaptation. ICML. <a href="https://arxiv.org/abs/1901.06852">arXiv 1901.06852</a></li>
     <li>Burges (2010). From RankNet to LambdaRank to LambdaMART: an overview. Microsoft Research MSR-TR-2010-82. <a href="https://www.microsoft.com/en-us/research/publication/from-ranknet-to-lambdarank-to-lambdamart-an-overview/">microsoft.com/research</a></li>
+    <li>Zytek et al. (2024). Explingo: explaining AI predictions using large language models — narrator plus grader. <a href="https://arxiv.org/abs/2412.05145">arXiv 2412.05145</a></li>
+    <li>Quality without usefulness: LLM-generated XAI narratives as trust heuristics rather than decision aids (2026). <a href="https://arxiv.org/abs/2605.26770">arXiv 2605.26770</a></li>
+    <li>OpenAI API pricing (read 12 Oct 2026). <a href="https://developers.openai.com/api/docs/pricing">developers.openai.com/api/docs/pricing</a></li>
+    <li>Model Context Protocol. <a href="https://modelcontextprotocol.io">modelcontextprotocol.io</a></li>
     <li>Ascarza (2018). Retention futility: targeting high-risk customers might be ineffective. Journal of Marketing Research 55(1). <a href="https://doi.org/10.1509/jmr.16.0163">doi:10.1509/jmr.16.0163</a></li>
   </ol>
   <p>Simulations use synthetic data generated in the browser. Sabrina Pribadi · last updated 12 Oct 2026 · code and change log: <a href="https://github.com/sabrinapribadi/subscription-churn-at-scale">github.com/sabrinapribadi/subscription-churn-at-scale</a></p>
@@ -921,7 +1008,7 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
     hover = S("g", { "pointer-events": "none", visibility: "hidden" }, svg);
     S("line", { y1: 22, y2: 200, class: "s-muted", "stroke-width": 1 }, hover);
     ["f-accent", "f-amber", "f-muted"].forEach((cls) => S("circle", { r: 3.5, class: cls }, hover));
-    $("bd-out").innerHTML = `calling <b>${n(N * f)}</b> members (${Math.round(f * 100)}%) reaches <b>${n(L * m)}</b> churners (${(m * 100).toFixed(0)}%) · rule ${n(L * r)} (${(r * 100).toFixed(0)}%) · random ${n(L * f)}<br>extra vs today: <b>${m >= r ? "+" : ""}${n(L * (m - r))}</b> churners · trained on day-one outcomes only: ${(e * 100).toFixed(0)}% · at a 1-in-5 save rate: <b>${n(L * m * 0.2)}</b> saves vs ${n(L * r * 0.2)}`;
+    $("bd-out").innerHTML = `calling <b>${n(Math.floor(N * f))}</b> members (${Math.round(f * 100)}%) reaches <b>${n(L * m)}</b> churners (${(m * 100).toFixed(0)}%) · rule ${n(L * r)} (${(r * 100).toFixed(0)}%) · random ${n(L * f)}<br>extra vs today: <b>${m >= r ? "+" : ""}${n(L * (m - r))}</b> churners · trained on day-one outcomes only: ${(e * 100).toFixed(0)}% · at a 1-in-5 save rate: <b>${n(L * m * 0.2)}</b> saves vs ${n(L * r * 0.2)}`;
   }
   function pick(ev) {
     const box = svg.getBoundingClientRect(), vx = (ev.clientX - box.left) * 640 / box.width;
@@ -934,7 +1021,7 @@ const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0
     const [ln, ...dots] = hover.children; ln.setAttribute("x1", sx(f)); ln.setAttribute("x2", sx(f));
     dots.forEach((d, i) => { d.setAttribute("cx", sx(f)); d.setAttribute("cy", sy(vals[i][1])); });
     const prec = (v) => (L * v / (N * f) * 100).toFixed(0);
-    tip.innerHTML = `<b>Call ${Math.round(f * 100)}% · ${n(N * f)} members</b><div class="muted">churners reached · per 100 calls</div>` + vals.map(([name, v, c]) => `<div class="tip-row"><i style="background:${c}"></i><span>${name}</span><span>${(v * 100).toFixed(0)}% · ${prec(v)}</span></div>`).join("") + (f >= 0.13 ? `<div class="muted tip-hint">Rule has called every manual renewer; now auto-renew (~3% churn)</div>` : "") + `<div class="muted tip-hint">Click to set the dial</div>`;
+    tip.innerHTML = `<b>Call ${Math.round(f * 100)}% · ${n(Math.floor(N * f))} members</b><div class="muted">churners reached · per 100 calls</div>` + vals.map(([name, v, c]) => `<div class="tip-row"><i style="background:${c}"></i><span>${name}</span><span>${(v * 100).toFixed(0)}% · ${prec(v)}</span></div>`).join("") + (f >= 0.13 ? `<div class="muted tip-hint">Rule has called every manual renewer; now auto-renew (~3% churn)</div>` : "") + `<div class="muted tip-hint">Click to set the dial</div>`;
     tip.hidden = false;
     const x = ev.clientX - box.left, w = tip.offsetWidth;
     place(tip, x, ev.clientY - box.top, box.width, box.height);
@@ -1012,9 +1099,9 @@ const P4R = {"v":{"probability":[[0.005,6344448.0],[0.01,11566257.0],[0.015,1688
     S("circle", { cx: A.sx(best[0]), cy: A.sy(best[1]), r: 5, class: "f-accent" }, svg);
     T(`best: top ${Math.round(best[0] * 100)}%`, { x: A.sx(best[0]), y: A.sy(best[1]) - 10, class: "svglab", "text-anchor": "middle" }, svg);
     const at10 = (k) => cur[k][19][1], ev = at10("expected_value"), pr = at10("probability"), lm = at10("lambdamart");
-    $("pf-out").innerHTML = `top 10% (${n(P4R.N * 0.1)} calls): probability × value <b>${m(ev)}</b> · probability ${m(pr)} (${((ev / pr - 1) * 100).toFixed(2)}% less) · LambdaMART ${m(lm)} (${((lm / pr - 1) * 100).toFixed(0)}%)<br>best budget for probability × value: <b>top ${Math.round(best[0] * 100)}%</b> (${n(P4R.N * best[0])} calls) → <b>${m(best[1])}</b> a month${best[1] <= 0 ? " — calls cost more than they save at these numbers" : ""}`;
+    $("pf-out").innerHTML = `top 10% (${n(Math.floor(P4R.N * 0.1))} calls): probability × value <b>${m(ev)}</b> · probability ${m(pr)} (${((ev / pr - 1) * 100).toFixed(2)}% less) · LambdaMART ${m(lm)} (${((lm / pr - 1) * 100).toFixed(0)}%)<br>best budget for probability × value: <b>top ${Math.round(best[0] * 100)}%</b> (${n(Math.floor(P4R.N * best[0]))} calls) → <b>${m(best[1])}</b> a month${best[1] <= 0 ? " — calls cost more than they save at these numbers" : ""}`;
   }
-  svg._hover = (vx) => { const i = Math.max(0, Math.min(cur.expected_value.length - 1, Math.round(A.ix(vx) / 0.005) - 1)), f = cur.expected_value[i][0], calls = P4R.N * f;
+  svg._hover = (vx) => { const i = Math.max(0, Math.min(cur.expected_value.length - 1, Math.round(A.ix(vx) / 0.005) - 1)), f = cur.expected_value[i][0], calls = Math.floor(P4R.N * f);
     return { at: [A.sx(f), A.sy(cur.expected_value[i][1])], html: `<b>Call ${(f * 100).toFixed(1).replace(/\.0$/, "")}% · ${n(calls)} members</b>` + tipRows([["probability × value", n(cur.expected_value[i][1]), "var(--accent)"], ["probability", n(cur.probability[i][1]), "var(--muted)"], ["LambdaMART", n(cur.lambdamart[i][1]), "var(--churn)"], ["of which call costs", n(calls * +$("pf-c").value)]]) +
       `<div class="muted tip-hint">save rate ${Math.round($("pf-s").value * 100)}% · ${$("pf-c").value} per call</div>` }; };
   hoverable(svg);

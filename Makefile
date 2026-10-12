@@ -35,3 +35,16 @@ hover-test:
 # Real-browser check that every interactive control changes what it should
 controls-test:
 	cd tests/browser && (test -d node_modules/puppeteer-core || npm i --no-save puppeteer-core@23) && node controls_test.js $(CURDIR)/docs/index.html /tmp/links.txt $(CURDIR)/data/outputs/p4_rank_calibrate.json | grep -E "FAIL|control checks"
+
+# Phase 5: serving artefacts, services, LLM evaluation (cost + latency, rule R13)
+serving:
+	poetry run python scripts/export_serving_artifacts.py
+
+serve-scoring:
+	SERVICE=scoring SERVING_DIR=$(HOME)/data/kkbox/serving uvicorn src.services.apps:app --port 8002
+
+mcp:
+	SERVING_DIR=$(HOME)/data/kkbox/serving python -m src.gateway.mcp_server
+
+llm-eval:
+	python scripts/llm_eval.py $(if $(OPENAI_API_KEY),--provider openai,)

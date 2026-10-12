@@ -41,7 +41,17 @@ spark:
   driver_memory: 8g
   sample_fraction: 0.10              # dev sample of members; 1.0 for full runs
 
-# ----- LLM (ADR-006, pending) -----
+# ----- LLM (ADR-006; cost and latency per portfolio rule R13) -----
 llm:
-  provider: openai
-  model: gpt-4o-mini
+  provider: openai                   # used only when OPENAI_API_KEY is set; otherwise the template provider
+  model: gpt-6-luna
+  max_output_tokens: 160
+  temperature: 0.2
+  timeout_seconds: 8
+  # USD per 1M tokens, from developers.openai.com/api/docs/pricing (read 2026-10-12)
+  price_input_per_m: 0.10
+  price_cached_input_per_m: 0.01
+  price_output_per_m: 0.50
+  budget_cost_per_1000: 0.20         # USD
+  budget_p95_ms_live: 2000
+  budget_p95_ms_cached: 50

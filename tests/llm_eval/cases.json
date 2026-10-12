@@ -1,0 +1,448 @@
+[
+ {
+  "id": "auto_renew_off_high",
+  "p": 0.62,
+  "risk": "high",
+  "value": 1812,
+  "expiry": 20170315,
+  "reasons": [
+   {
+    "feature": "last_auto_renew",
+    "label": "auto-renew",
+    "value": "off",
+    "contribution": 1.9,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "days_since_last_tx",
+    "label": "days since last payment",
+    "value": "25",
+    "contribution": 0.6,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "tx_count",
+    "label": "payments to date",
+    "value": "4",
+    "contribution": 0.3,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   }
+  ],
+  "expected_action": "help switch to auto-renew",
+  "must_not_mention": []
+ },
+ {
+  "id": "cancelled_and_silent",
+  "p": 0.96,
+  "risk": "high",
+  "value": 2190,
+  "expiry": 20170310,
+  "reasons": [
+   {
+    "feature": "last_is_cancel",
+    "label": "last transaction was a cancellation",
+    "value": "yes",
+    "contribution": 4.0,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "days_since_last_tx",
+    "label": "days since last payment",
+    "value": "7",
+    "contribution": 0.79,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "days_since_last_play",
+    "label": "days since last listened",
+    "value": "30",
+    "contribution": 0.68,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   }
+  ],
+  "expected_action": "send a re-engagement message",
+  "must_not_mention": []
+ },
+ {
+  "id": "medium_reminder",
+  "p": 0.18,
+  "risk": "medium",
+  "value": 1204,
+  "expiry": 20170320,
+  "reasons": [
+   {
+    "feature": "days_since_last_tx",
+    "label": "days since last payment",
+    "value": "28",
+    "contribution": 0.7,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "tx_count_window",
+    "label": "payments in the last 30 days",
+    "value": "0",
+    "contribution": 0.4,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "tenure_days",
+    "label": "days as a paying member",
+    "value": "400",
+    "contribution": -0.2,
+    "direction": "lowers risk",
+    "shown_to_agent": true
+   }
+  ],
+  "expected_action": "send a renewal reminder",
+  "must_not_mention": []
+ },
+ {
+  "id": "low_no_call",
+  "p": 0.02,
+  "risk": "low",
+  "value": 1812,
+  "expiry": 20170305,
+  "reasons": [
+   {
+    "feature": "tx_auto_renew_share",
+    "label": "share of payments on auto-renew",
+    "value": "100%",
+    "contribution": -1.2,
+    "direction": "lowers risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "use_active_days",
+    "label": "listening days in the last 30",
+    "value": "28",
+    "contribution": -0.4,
+    "direction": "lowers risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "last_amount_paid",
+    "label": "last amount paid",
+    "value": "149",
+    "contribution": -0.1,
+    "direction": "lowers risk",
+    "shown_to_agent": true
+   }
+  ],
+  "expected_action": "no call needed",
+  "must_not_mention": []
+ },
+ {
+  "id": "demographics_hidden",
+  "p": 0.45,
+  "risk": "high",
+  "value": 1592,
+  "expiry": 20170312,
+  "reasons": [
+   {
+    "feature": "age",
+    "label": "age",
+    "value": "23",
+    "contribution": 0.9,
+    "direction": "raises risk",
+    "shown_to_agent": false
+   },
+   {
+    "feature": "gender",
+    "label": "gender",
+    "value": "female",
+    "contribution": 0.7,
+    "direction": "raises risk",
+    "shown_to_agent": false
+   },
+   {
+    "feature": "last_is_cancel",
+    "label": "last transaction was a cancellation",
+    "value": "yes",
+    "contribution": 0.6,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "tx_cancels",
+    "label": "cancellations to date",
+    "value": "2",
+    "contribution": 0.4,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "last_plan_days",
+    "label": "plan length in days",
+    "value": "30",
+    "contribution": 0.2,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   }
+  ],
+  "expected_action": "offer a discount on the next plan",
+  "must_not_mention": [
+   "age",
+   "female",
+   "gender",
+   "23"
+  ]
+ },
+ {
+  "id": "label_contains_label",
+  "p": 0.22,
+  "risk": "medium",
+  "value": 1812,
+  "expiry": 20170318,
+  "reasons": [
+   {
+    "feature": "tx_auto_renew_share",
+    "label": "share of payments on auto-renew",
+    "value": "40%",
+    "contribution": 0.8,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "last_auto_renew",
+    "label": "auto-renew",
+    "value": "on",
+    "contribution": 0.3,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "tx_mean_discount",
+    "label": "average discount per payment",
+    "value": "10",
+    "contribution": 0.1,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   }
+  ],
+  "expected_action": "send a renewal reminder",
+  "must_not_mention": []
+ },
+ {
+  "id": "decimals_and_percent",
+  "p": 0.51,
+  "risk": "high",
+  "value": 1204,
+  "expiry": 20170311,
+  "reasons": [
+   {
+    "feature": "use_decline_ratio",
+    "label": "recent vs usual listening",
+    "value": "0.27x",
+    "contribution": 1.1,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "use_skip_share",
+    "label": "songs skipped early",
+    "value": "45%",
+    "contribution": 0.5,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "use_unique_songs_mean",
+    "label": "unique songs per listening day",
+    "value": "12.4",
+    "contribution": 0.2,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   }
+  ],
+  "expected_action": "send a re-engagement message",
+  "must_not_mention": []
+ },
+ {
+  "id": "mostly_protective",
+  "p": 0.12,
+  "risk": "medium",
+  "value": 1812,
+  "expiry": 20170322,
+  "reasons": [
+   {
+    "feature": "tenure_days",
+    "label": "days as a paying member",
+    "value": "900",
+    "contribution": -0.6,
+    "direction": "lowers risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "tx_count",
+    "label": "payments to date",
+    "value": "28",
+    "contribution": -0.4,
+    "direction": "lowers risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "days_since_last_tx",
+    "label": "days since last payment",
+    "value": "31",
+    "contribution": 0.9,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   }
+  ],
+  "expected_action": "send a renewal reminder",
+  "must_not_mention": []
+ },
+ {
+  "id": "single_shown_reason",
+  "p": 0.37,
+  "risk": "high",
+  "value": 2190,
+  "expiry": 20170309,
+  "reasons": [
+   {
+    "feature": "city",
+    "label": "city",
+    "value": "code 13",
+    "contribution": 0.8,
+    "direction": "raises risk",
+    "shown_to_agent": false
+   },
+   {
+    "feature": "age",
+    "label": "age",
+    "value": "19",
+    "contribution": 0.6,
+    "direction": "raises risk",
+    "shown_to_agent": false
+   },
+   {
+    "feature": "last_is_cancel",
+    "label": "last transaction was a cancellation",
+    "value": "yes",
+    "contribution": 0.5,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   }
+  ],
+  "expected_action": "offer a discount on the next plan",
+  "must_not_mention": [
+   "city",
+   "age",
+   "13",
+   "19"
+  ]
+ },
+ {
+  "id": "missing_value",
+  "p": 0.33,
+  "risk": "high",
+  "value": 1812,
+  "expiry": 20170314,
+  "reasons": [
+   {
+    "feature": "days_since_last_play",
+    "label": "days since last listened",
+    "value": "no data",
+    "contribution": 0.9,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "last_is_cancel",
+    "label": "last transaction was a cancellation",
+    "value": "yes",
+    "contribution": 0.8,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "tx_count",
+    "label": "payments to date",
+    "value": "2",
+    "contribution": 0.3,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   }
+  ],
+  "expected_action": "send a re-engagement message",
+  "must_not_mention": []
+ },
+ {
+  "id": "low_but_auto_off",
+  "p": 0.06,
+  "risk": "low",
+  "value": 1204,
+  "expiry": 20170316,
+  "reasons": [
+   {
+    "feature": "last_auto_renew",
+    "label": "auto-renew",
+    "value": "off",
+    "contribution": 0.9,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "tenure_days",
+    "label": "days as a paying member",
+    "value": "700",
+    "contribution": -0.5,
+    "direction": "lowers risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "use_active_days",
+    "label": "listening days in the last 30",
+    "value": "25",
+    "contribution": -0.3,
+    "direction": "lowers risk",
+    "shown_to_agent": true
+   }
+  ],
+  "expected_action": "no call needed",
+  "must_not_mention": []
+ },
+ {
+  "id": "long_plan_member",
+  "p": 0.31,
+  "risk": "high",
+  "value": 1592,
+  "expiry": 20170319,
+  "reasons": [
+   {
+    "feature": "last_plan_days",
+    "label": "plan length in days",
+    "value": "410",
+    "contribution": 1.0,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "last_amount_paid",
+    "label": "last amount paid",
+    "value": "1788",
+    "contribution": 0.4,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   },
+   {
+    "feature": "tx_count_window",
+    "label": "payments in the last 30 days",
+    "value": "0",
+    "contribution": 0.2,
+    "direction": "raises risk",
+    "shown_to_agent": true
+   }
+  ],
+  "expected_action": "offer a discount on the next plan",
+  "must_not_mention": []
+ }
+]

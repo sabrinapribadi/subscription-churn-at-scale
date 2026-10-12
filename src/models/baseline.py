@@ -6,7 +6,7 @@ import lightgbm as lgb
 import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit
 
-from src.features.build import CATEGORICAL
+from src.features.schema import CATEGORICAL
 
 NON_FEATURES = {"msno", "cohort", "last_expire", "snapshot", "label", "label_source"}
 PARAMS = dict(objective="binary", learning_rate=0.05, num_leaves=63, min_child_samples=200,

@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.13.0] — 2026-10-12 — P5: services, grounded GenAI notes, MCP gateway, CI
+**Files:** src/services/ (contracts, store, clients, apps, artifacts), src/genai/ (providers, prompts, grader, explain, tools, dictionary), src/gateway/mcp_server.py, src/features/schema.py, scripts/export_serving_artifacts.py, scripts/llm_eval.py, tests/ (conftest, test_services, test_genai, test_gateway, llm_eval/cases.json, test_behaviour), Dockerfile, docker-compose.yml, requirements-serving.txt, requirements-ci.txt, .github/workflows/ci.yml, Makefile, configs/default_config.yaml, docs/adr/ADR-005, ADR-006, docs/index.html, README.md, docs/PRD.md
+- **Situation:** The model and call list lived in batch scripts. CRM screens and AI assistants need the same answers on demand, and a language model explaining a score can invent reasons, cost money, and be slow.
+- **Task:** Serve scores, reasons and call lists behind typed contracts; let AI assistants use them through MCP; make plain-language notes provably faithful; know their cost and latency (rule R13); gate it all in CI.
+- **Action:** Four services (features, scoring, explanation, MCP gateway) from one image; pydantic contracts; Local and HTTP clients with one interface. GenAI module: template and OpenAI providers with per-call metering, a versioned prompt, a rule-based grader (numbers, reasons, no demographics, length, fixed action list) with template fallback, and a cache checked before any expensive work. One tool registry served over MCP and exportable as OpenAI function schemas. Researched current methods (Explingo narrator + grader; 2026 evidence that fluent notes act as trust heuristics) and official OpenAI prices. Found and fixed: cache checked too late (37 ms → 0.13 ms), a rounding off-by-one in call counts, Spark leaking into the serving image, MCP SDK 2.x API changes.
+- **Result:** Serving reproduces P4 exactly (12,458,816). Real end-to-end over HTTP: 80 ms first answer, 7 ms repeat. 56/56 tests; 12/12 evaluation cases grounded with correct actions; ≈ $0.10 per 1,000 AI notes estimated; no API key needed in CI. Page: assistant example in the Solution section, serving deep dive with budgets; collapsed page 7.1 screens.
+- **Talking point:** "The AI note can't say anything the model didn't: every number and reason is checked, and if the LLM improvises, the agent gets the safe template — at about ten cents per thousand notes."
+
 ## [0.12.1] — 2026-10-12 — Full test suite runs in one command again
 **Files:** tests/test_behaviour.py
 - **Situation:** After P4 added LightGBM-based tests, running the whole suite segfaulted: the autoencoder test loads PyTorch in the same process, and on macOS their OpenMP runtimes clash (the issue already handled in the P3 pipeline).

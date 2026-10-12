@@ -13,7 +13,7 @@ from pyspark.sql import functions as F
 SECONDS_PER_DAY = 86_400
 RECENT_DAYS = 14
 
-CATEGORICAL = ["city", "gender", "registered_via", "last_payment_method"]
+from src.features.schema import CATEGORICAL  # noqa: F401  (re-exported for training code)
 
 
 def _d(col: str):
