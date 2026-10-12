@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.9.1] — 2026-10-12 — MIT license
+**Files:** LICENSE
+- **Situation:** The repository had no license file, so by default nobody else could legally reuse the code.
+- **Task:** Make the portfolio code reusable with credit, consistently across all portfolio repositories.
+- **Action:** Added the standard MIT license (© 2026 Sabrina Pribadi). Data sources keep their own terms; the license covers code only.
+- **Result:** GitHub now detects the license as MIT; no code changed.
+- **Talking point:** "All my portfolio code is MIT-licensed, so anyone can reuse it with attribution."
+
 ## [0.9.0] — 2026-10-09 — P2: how early can we call, how much history do we need
 **Files:** src/features/build.py, src/models/baseline.py, src/evaluation/metrics.py, scripts/build_dataset.py, scripts/train_model.py, scripts/window_curve.py, tests/test_features.py, configs/default_config.yaml, docs/index.html, docs/adr/ADR-001-task-framing.md, docs/PRD.md, README.md, data/outputs/p2_dataset.json, data/outputs/p2_window_curve.json
 - **Situation:** P1 used a 14-day lead time and 120 days of history by assumption. A 2026 study on this dataset found the history "knee" anywhere from 30 to 120 days depending on design.
