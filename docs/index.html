@@ -439,13 +439,13 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <!-- M7 -->
   <article class="method" id="m-embed">
     <div class="explain">
-      <div class="head"><span class="num">3.7</span><h3>Behavioural embeddings</h3><span class="chip planned">Planned · P3</span></div>
+      <div class="head"><span class="num">3.7</span><h3>Behavioural embeddings</h3><span class="chip fail">Tested · P3 gate failed</span></div>
       <ol class="steps"><li>Hide some days of a member's usage.</li><li>Train an encoder to fill them back in.</li><li>Its compressed vector becomes <b>features</b> and <b>personas</b>.</li></ol>
       <div class="formula">
         <span class="lbl">Masked reconstruction</span>ℒ = Σ<sub><i>t</i> ∈ 𝓜</sub> ( <i>x</i><sub>t</sub> − <i>x̂</i><sub>t</sub> )²,&nbsp; <i>x̂</i> = dec(enc(<i>x</i><sub>∖𝓜</sub>))
         <span class="lbl">Linear special case</span>a linear auto-encoder with squared loss spans the top principal components
       </div>
-      <p class="why-here"><b>Why it matters:</b> the demo uses the linear case (PCA). The real encoder stays only if it beats RFM by +0.02 PR-AUC.</p>
+      <p class="why-here"><b>Why it matters:</b> the demo uses the linear case (PCA). <b>Real data (P3):</b> best gain +0.004, so embeddings are kept for personas only.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · 320 members × 28 days, 2-D embedding</span>
@@ -552,6 +552,22 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
     </div>
 
     <div class="results-grid">
+      <div class="sim">
+        <span class="simtag">P3 · Who are our members? Five listening habits · March 2017</span>
+        <svg class="plot" id="ps-svg" viewBox="0 0 640 270" role="img" aria-label="Member groups by share of members and churn rate"></svg>
+        <div class="legend"><span>Circle size = number of members · hover a group for details</span></div>
+      </div>
+      <div class="explain">
+        <span class="eyebrow">What P3 showed</span>
+        <ol class="steps">
+          <li><b>Listening habits did not improve the list.</b> The best method added +0.004 PR-AUC against a +0.02 bar. The payment record already carries the signal.</li>
+          <li><b>Silent payers</b> (20% of members) pay automatically but have not listened in 60 days. The list reaches only 36% of the ones who leave: a re-engagement message, not a retention call.</li>
+          <li><b>Re-engaging members</b> churn most (11%). They are long-time members, a quarter on manual renewal. The list already reaches 82% of them.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="results-grid">
       <div class="explain">
         <span class="eyebrow">Where the calls go · top 10% list</span>
         <div class="table-wrap"><table class="compact">
@@ -588,7 +604,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
         <tr><td>P0 · Labels</td><td>Reconstructed labels agree with official labels on ≥ 99% of members (Feb + Mar 2017)</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>Agreement: <b>98.8%</b> Feb · <b>97.0%</b> Mar</li><li>Cause: the shipped transactions show renewals the official labels count as churn</li><li>Decision: official labels = test truth; rebuilt labels must earn a place in training (ADR-001 Amendment 2)</li></ul></td></tr>
         <tr><td>P1 · Baseline</td><td>Out-of-time PR-AUC reported; leakage tests pass</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>PR-AUC <b>0.568</b> vs rule <b>0.342</b></li><li>Top 10% of the list catches <b>65%</b> of churners</li><li>Leakage tests: 3/3 pass</li></ul></td></tr>
         <tr><td>P2 · Window</td><td>Window curve and knee reported for each k</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>Lead time: PR-AUC 0.676 (0 d) → 0.602 (7 d) → 0.561 (14 d) → 0.476 (30 d)</li><li>History: flat from 30 to 180 days → use 30</li></ul></td></tr>
-        <tr><td>P3 · Embeddings</td><td>PR-AUC(GBM + embeddings) ≥ PR-AUC(GBM) + 0.02 out-of-time</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
+        <tr><td>P3 · Embeddings</td><td>PR-AUC(GBM + embeddings) ≥ PR-AUC(GBM) + 0.02 out-of-time</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>Best: shape statistics +0.004; encoder +0.002; Mantis +0.003 (sample)</li><li>Kept for personas only (ADR-003)</li></ul></td></tr>
         <tr><td>P4 · Ranking</td><td>profit@10%(LambdaMART) &gt; profit@10%(probability sort)</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
       </tbody>
     </table>
@@ -618,6 +634,13 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <p class="muted" style="font-size:13px">Metrics disagree on the realistic model: PR-AUC and top-5% capture favour it; Gini, H-measure and EMPC favour the rule. It helps only at small call budgets. Profit assumptions: CLV 200, incentive 10, contact 1, accept rate ~ Beta(6, 14).</p>
     </div>
     <div class="explain">
+      <span class="eyebrow">P3 · Does listening shape add signal? · train Feb, test Mar 2017 · gate +0.02 PR-AUC</span>
+      <div class="table-wrap"><table class="compact">
+        <thead><tr><th>Setup</th><th>PR-AUC · all 862k members</th><th>PR-AUC · 100k sample</th><th>Auto-renew churners reached</th></tr></thead>
+        <tbody><tr><td><b>P2 model (no listening shape)</b><div class='muted' style='font-size:12.5px'>Payment, renewal and 30-day listening totals</div></td><td class='num'>0.5614</td><td class='num'>0.5495</td><td class='num'>22.8%</td></tr><tr><td><b>+ A · shape statistics</b><div class='muted' style='font-size:12.5px'>Trend, last week vs before, longest gap, weekend share, skip trend</div></td><td class='num'>0.5652 <span class='muted'>(+0.0038)</span></td><td class='num'>0.5508 <span class='muted'>(+0.0013)</span></td><td class='num'>22.5%</td></tr><tr><td><b>+ B · self-taught encoder</b><div class='muted' style='font-size:12.5px'>Small network that learns patterns by filling in hidden days</div></td><td class='num'>0.5633 <span class='muted'>(+0.0019)</span></td><td class='num'>0.5498 <span class='muted'>(+0.0002)</span></td><td class='num'>22.9%</td></tr><tr><td><b>+ A and B</b><div class='muted' style='font-size:12.5px'>Both together</div></td><td class='num'>0.5646 <span class='muted'>(+0.0033)</span></td><td class='num'>—</td><td class='num'>22.7%</td></tr><tr><td><b>+ C · Mantis foundation model</b><div class='muted' style='font-size:12.5px'>2025 pre-trained time-series model, used as-is</div></td><td class='num'>—</td><td class='num'>0.5527 <span class='muted'>(+0.0031)</span></td><td class='num'>23.7%</td></tr></tbody></table></div>
+      <p class="muted" style="font-size:13px">No arm clears +0.02; the largest gain (+0.004) is about the size of run-to-run noise (0.003). Mantis ran on a 100k sample per month for compute reasons, with every arm re-scored on the same sample (ADR-003 Amendment 1).</p>
+    </div>
+    <div class="explain">
       <span class="eyebrow">P2 · PR-AUC by lead time × history window · train Feb 2017, test Mar 2017</span>
       <div class="table-wrap"><table class="compact">
         <thead><tr><th>Days before renewal</th><th>30 days history</th><th>60 days history</th><th>90 days history</th><th>120 days history</th><th>180 days history</th></tr></thead>
@@ -637,7 +660,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <h2>Working view, revised as results come in</h2>
   <div class="take">
     <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Warning time is the real trade-off;</b> history length is not. 30 days of logs is enough.</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark scores overstate:</b> a realistic setup loses 0.06 PR-AUC versus training on labels that arrive too late.</li><li><b>The open gap is auto-renew cancellers:</b> a third of churners, and the list reaches 1 in 4. That is where Phase 3 behaviour signals have to earn their keep.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
-    <div><span class="eyebrow">What would change our mind</span><ul class="points"><li><b>Answered by P2:</b> lead time is not free (−5 points of reach from 14 to 30 days). We keep 14 days; 7 if campaigns can move faster.</li><li>Embeddings miss their gate (P3) → keep them for <b>personas only</b>. Likely, since listening carries only ~6% of the signal so far.</li></ul></div>
+    <div><span class="eyebrow">What would change our mind</span><ul class="points"><li><b>Answered by P2:</b> lead time is not free (−5 points of reach from 14 to 30 days). We keep 14 days; 7 if campaigns can move faster.</li><li><b>Answered by P3:</b> embeddings missed their gate (+0.004 vs +0.02), so they serve personas only. Auto-renew cancellers need a different signal, such as payment-failure history or offer response (CHN-2).</li></ul></div>
   </div>
 </section>
 
@@ -807,6 +830,20 @@ const P2R = {"leads":[0,7,14,30],"windows":[30,60,90,120,180],"g":{"0_30":[0.675
   hw._hover = (vx, vy) => { const w = wins[nearestIdx(wins, B.ix(vx))], k = leads.reduce((b, kk) => (Math.abs(B.sy(g(kk, w)[1]) - vy) < Math.abs(B.sy(g(b, w)[1]) - vy) ? kk : b), leads[0]), [pr, r10] = g(k, w), spread = Math.max(...wins.map((x) => g(k, x)[1])) - Math.min(...wins.map((x) => g(k, x)[1]));
     return { at: [B.sx(w), B.sy(r10)], html: `<b>${w} days of history · scored ${k} days ahead</b>` + tipRows([["churners reached (call 10%)", `${pct(r10, 1)} · ${n(L * r10)}`], ["PR-AUC", pr.toFixed(3)]]) + `<div class="muted tip-hint">All windows for ${k}-day lead time sit within ${(spread * 100).toFixed(1)} points: more history does not help here.</div>` }; };
   hoverable(hw);
+})();
+
+/* results: P3 personas (data from data/outputs/p3_behaviour.json) */
+const P3P = [{"name":"Steady regulars","desc":"Active most days, about an hour a day","color":"accent","share":0.3762,"churn":0.0766,"reached":0.63,"manual":0.169,"minutes":72,"tenure":610,"active30":24.0,"lastweek":1.04,"members":324341},{"name":"Fading","desc":"Listening last week well below the weeks before","color":"amber","share":0.2817,"churn":0.0714,"reached":0.676,"manual":0.081,"minutes":9,"tenure":503,"active30":6.0,"lastweek":0.63,"members":242899},{"name":"Silent payers","desc":"Auto-renew, but no listening for 60 days","color":"muted","share":0.2027,"churn":0.0396,"reached":0.362,"manual":0.004,"minutes":0,"tenure":442,"active30":0.0,"lastweek":1.0,"members":174759},{"name":"Re-engaging","desc":"Long-time members whose listening is rising again","color":"churn","share":0.1358,"churn":0.1144,"reached":0.824,"manual":0.251,"minutes":54,"tenure":410,"active30":18.0,"lastweek":1.34,"members":117067},{"name":"Just came back","desc":"Back after about 7 silent weeks","color":"stay","share":0.0036,"churn":0.0346,"reached":0.589,"manual":0.023,"minutes":6,"tenure":380,"active30":3.0,"lastweek":1388.28,"members":3092}];
+(function () {
+  const svg = $("ps-svg"), A = frame(svg, { l: 48, r: 610, t: 24, b: 214, x0: 0, x1: 0.45, y0: 0, y1: 0.14, xt: [0, 0.1, 0.2, 0.3, 0.4], yt: [0, 0.04, 0.08, 0.12], xf: (v) => Math.round(v * 100) + "%", yf: (v) => Math.round(v * 100) + "%", xl: "share of members", yl: "churn rate" });
+  S("line", { x1: A.sx(0), x2: A.sx(0.45), y1: A.sy(0.0726), y2: A.sy(0.0726), class: "s-muted", "stroke-dasharray": "3 3" }, svg);
+  T("average churn 7.3%", { x: A.sx(0.45) - 2, y: A.sy(0.0726) - 5, class: "svgtxt", "text-anchor": "end" }, svg);
+  const rad = (d) => 6 + 26 * Math.sqrt(d.share / 0.4);
+  P3P.forEach((d) => { S("circle", { cx: A.sx(d.share), cy: A.sy(d.churn), r: rad(d), class: "f-" + d.color, opacity: 0.35 }, svg); S("circle", { cx: A.sx(d.share), cy: A.sy(d.churn), r: rad(d), fill: "none", class: "s-" + d.color, "stroke-width": 1.5 }, svg);
+    T(d.name, { x: A.sx(d.share), y: A.sy(d.churn) - rad(d) - 5, class: "svglab", "text-anchor": "middle" }, svg); });
+  svg._hover = (vx, vy) => { const dist = P3P.map((d) => Math.hypot(A.sx(d.share) - vx, A.sy(d.churn) - vy) - rad(d)), i = dist.indexOf(Math.min(...dist)); if (dist[i] > 12) return null; const d = P3P[i];
+    return { at: [A.sx(d.share), A.sy(d.churn)], html: `<b>${d.name}</b> <span class="muted">${d.desc}</span>` + tipRows([["members", `${d.members.toLocaleString("en-US")} (${pct(d.share)})`], ["churn rate", pct(d.churn, 1)], ["churners the list reaches", pct(d.reached)], ["active days, last 30", d.active30], ["minutes a day (median)", d.minutes], ["last week vs weeks before", "×" + (d.lastweek > 50 ? "50+" : d.lastweek.toFixed(2))], ["manual renewal", pct(d.manual)], ["membership tenure (median)", d.tenure + " days"]]) }; };
+  hoverable(svg);
 })();
 
 /* results: P1 PR-AUC bars (values from data/outputs/p1_baseline.json) */

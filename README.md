@@ -17,6 +17,7 @@ Test: March 2017, 862,158 members, 62,616 churners, official benchmark labels. M
 | Extra churners reached each month, same number of calls | **+7,100** |
 | What does more warning time cost? | 7 days: 68% · 14 days: 65% · 30 days: 60% reached |
 | How much listening history is needed? | **30 days** — 30 to 180 days score the same |
+| Do listening habits improve the list? | **No** (+0.004 vs a +0.02 bar). They do give 5 personas, e.g. silent payers: 20% of members, list reaches 36% of their churners |
 
 Churner: a member who does not renew within 30 days after their membership expires.
 
@@ -27,7 +28,7 @@ Churner: a member who does not renew within 30 days after their membership expir
 | P0 · Labels | Can we rebuild the official labels? | ≥ 99% agreement | **Failed** (98.8% / 97.0%) — cause found; official labels used as test truth |
 | P1 · Baseline | Does a model beat today's rule? | Out-of-time score reported; leakage tests pass | **Passed** — PR-AUC 0.568 vs rule 0.342 |
 | P2 · Timing | How early can we call? How much history? | Curve and knee per lead time | **Passed** — lead time costs, history does not |
-| P3 · Behaviour | Do listening habits help, esp. auto-renew cancellers? | +0.02 PR-AUC | Planned |
+| P3 · Behaviour | Do listening habits help, esp. auto-renew cancellers? | +0.02 PR-AUC | **Failed** — best +0.004; kept as 5 personas for messaging |
 | P4 · Call list | Who to call first, given revenue at risk? | Profit in top 10% beats probability sort | Planned |
 | P5 · Services + GenAI | Can apps and agents use it? | Contract tests + LLM eval in CI | Planned |
 | P6 · Databricks | Does it run on a real platform? | Same metrics on Databricks | Planned |

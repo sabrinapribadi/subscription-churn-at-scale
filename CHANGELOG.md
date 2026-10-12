@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.10.0] — 2026-10-12 — P3: listening shape adds no signal; five personas for practitioners
+**Files:** scripts/build_sequences.py, scripts/behaviour_ablation.py, src/models/behaviour.py, tests/test_behaviour.py, docs/adr/ADR-003-behaviour-encoder.md, docs/adr/README.md, docs/index.html, docs/PRD.md, README.md, data/outputs/p3_behaviour.json
+- **Situation:** A third of churners are auto-renew members who cancel; the list reached only 1 in 4. Their payment record looks safe, so the hope was that changes in listening would warn earlier.
+- **Task:** Test, against a +0.02 PR-AUC bar set in advance, whether listening shape adds signal — comparing a cheap option with two learned ones.
+- **Action:** Extracted 60-day daily sequences (≈22M member-days per month); built three arms on top of the P2 model: hand-crafted shape statistics, a self-supervised masked autoencoder (labels never used), and frozen Mantis-8M embeddings (100k sample per month, every arm re-scored on the same sample). Fixed two macOS issues on the way (LightGBM/PyTorch OpenMP crash; Arrow/PyTorch deadlock) by staging the job. Clustered members into five personas and added a hoverable persona chart.
+- **Result:** Gate failed for every arm (best +0.004, within noise); no gain on auto-renew cancellers. Personas give practitioners messaging angles: silent payers (20% of members, list reaches 36% of their churners) and re-engaging long-time members (highest churn, 11%).
+- **Talking point:** "I tested a hand-crafted baseline, a self-supervised encoder and a 2025 foundation model on the same split. None beat the bar, so I shipped none of them to scoring — and turned the work into personas the CRM team can use."
+
 ## [0.9.1] — 2026-10-12 — MIT license
 **Files:** LICENSE
 - **Situation:** The repository had no license file, so by default nobody else could legally reuse the code.
