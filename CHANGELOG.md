@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.12.1] — 2026-10-12 — Full test suite runs in one command again
+**Files:** tests/test_behaviour.py
+- **Situation:** After P4 added LightGBM-based tests, running the whole suite segfaulted: the autoencoder test loads PyTorch in the same process, and on macOS their OpenMP runtimes clash (the issue already handled in the P3 pipeline).
+- **Task:** Keep every test in the default `pytest` run without the crash.
+- **Action:** The PyTorch test now runs in a child process and checks its result.
+- **Result:** 25/25 tests pass in one `pytest tests/` run.
+- **Talking point:** "When two native libraries can't share a process, the test isolates them the same way production does."
+
 ## [0.12.0] — 2026-10-12 — Hiring-team-first page; cost-scenario picker
 **Files:** docs/index.html, src/models/ranking.py, scripts/rank_and_calibrate.py, data/outputs/p4_rank_calibrate.json, tests/browser/hover_test.js, tests/browser/controls_test.js, Makefile
 - **Situation:** The page showed everything at once (~19 screens). Reviewers asked what the "9 cost scenarios" were, and the answer was buried in an appendix table with absolute numbers only.
