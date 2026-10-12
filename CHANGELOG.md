@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.11.2] — 2026-10-12 — Every tooltip checked on desktop (light and dark) and phone
+**Files:** docs/index.html, tests/browser/hover_test.js, Makefile
+- **Situation:** After the hide fix, a full visual review found long values overlapping their labels, an 8-row persona tooltip, tooltips covering 72–128% of the chart on phones, a wrong year ("Nov 2017" for Nov 2016), and a chart label running into the next zone.
+- **Task:** Check every tooltip the way a reader sees it, on the artifact build and on GitHub Pages, in desktop light, desktop dark, and phone width.
+- **Action:** Tooltip rows now keep the label whole and wrap the value; phones show details as a panel under the chart; persona tooltip cut to 6 rows; dates computed with their real year; shortened the grace-zone label. Extended the Chrome test to three modes with screenshots of every tooltip.
+- **Result:** 48/48 checks pass (16 tooltips × 3 modes) on both the artifact build and the Pages file: shown on hover, inside the chart or under it on phones, hidden on leave; none on load; no sideways scroll; no JS errors.
+- **Talking point:** "I test charts the way readers see them — light, dark, and on a phone — and screenshot every tooltip before publishing."
+
 ## [0.11.1] — 2026-10-12 — Tooltips that hide, stay small, and stay out of the way
 **Files:** docs/index.html, tests/browser/hover_test.js, Makefile, .gitignore
 - **Situation:** On GitHub Pages, tooltips stayed on screen after the pointer left and covered the charts; the appendix tab was also always visible. The artifact preview hid the bug because it adds a global "hidden" reset.

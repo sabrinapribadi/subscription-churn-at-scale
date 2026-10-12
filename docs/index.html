@@ -182,11 +182,13 @@ td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; whit
 .chart-wrap { position: relative; }
 .chart-wrap svg { touch-action: pan-y; cursor: crosshair; }
 .tip { position: absolute; z-index: 2; width: max-content; max-width: min(260px, 70%); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14); font: 11.5px/1.35 var(--font-mono); font-variant-numeric: tabular-nums; pointer-events: none; display: grid; gap: 2px; opacity: 0.97; }
-.tip-row { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; column-gap: 6px; align-items: baseline; }
+.tip-row { display: grid; grid-template-columns: 8px max-content minmax(0, 1fr); column-gap: 8px; align-items: baseline; }
+.tip-row > span:last-child { text-align: right; overflow-wrap: anywhere; }
 .tip-row i { width: 8px; height: 8px; border-radius: 2px; }
 .tip-row .muted { grid-column: 2 / 4; font-size: 11px; }
 .tip b { font-weight: 600; }
 .tip-hint { font-size: 10.5px !important; }
+.tip.below { position: static; width: auto; max-width: none; margin-top: 6px; box-shadow: none; }
 .tip-hint { font-size: 11px; border-top: 1px solid var(--line); padding-top: 4px; }
 .legend i.dash { background: none; border-top: 2px dashed var(--muted); height: 0; width: 14px; vertical-align: 3px; border-radius: 0; }
 
@@ -746,7 +748,10 @@ function frame(svg, o) {
 }
 /* hover (rule R10): every chart shows its numbers on hover. A chart sets svg._hover = (vx, vy) => ({ html, at }) | null */
 function place(tip, x, y, width, height) {
-  // Put the tip in the quadrant away from the cursor so the hovered point stays visible; keep it inside the chart.
+  // Narrow screens: details go in a panel under the chart, so nothing covers the plot.
+  if (width < 520) { tip.classList.add("below"); tip.style.left = tip.style.top = ""; return; }
+  tip.classList.remove("below");
+  // Otherwise: the quadrant away from the cursor, so the hovered point stays visible; kept inside the chart.
   const w = tip.offsetWidth, h = tip.offsetHeight, H = height || tip.parentElement.offsetHeight || 260, gap = 16;
   let left = x < width / 2 ? x + gap : x - w - gap, top = y < H / 2 ? y + gap : y - h - gap;
   tip.style.left = Math.max(4, Math.min(left, width - w - 4)) + "px";
@@ -786,6 +791,7 @@ function path(pts, sx, sy) { return pts.map((p, i) => (i ? "L" : "M") + sx(p[0])
 function bindOut(id, f) { const el = $(id), out = $(id + "-o"); const show = () => { if (out) out.textContent = f ? f(+el.value) : el.value; }; el.addEventListener("input", show); show(); }
 function on(ids, fn) { ids.forEach((id) => $(id).addEventListener("input", fn)); fn(); }
 const dayFmt = (base, off) => { const d = new Date(base + off * 864e5); return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }); };
+const dayFmtY = (base, off) => new Date(base + off * 864e5).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
 /* results: tabs, budget dial with hover, calibration (data from data/outputs/p1_practitioner.json) */
 const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0.02,0.1463],[0.03,0.2028],[0.04,0.2547],[0.05,0.3025],[0.06,0.3497],[0.07,0.3977],[0.08,0.4464],[0.09,0.4933],[0.1,0.5406],[0.11,0.5869],[0.12,0.6356],[0.13,0.6479],[0.14,0.6529],[0.15,0.6575],[0.16,0.6623],[0.17,0.6671],[0.18,0.672],[0.19,0.6764],[0.2,0.6807],[0.21,0.6856],[0.22,0.6903],[0.23,0.6949],[0.24,0.7002],[0.25,0.7045],[0.26,0.7095],[0.27,0.7144],[0.28,0.7197],[0.29,0.7248],[0.3,0.7295],[0.31,0.7346],[0.32,0.7405],[0.33,0.747],[0.34,0.7526],[0.35,0.7582],[0.36,0.7635],[0.37,0.7692],[0.38,0.7751],[0.39,0.7818],[0.4,0.7874],[0.41,0.793],[0.42,0.798],[0.43,0.803],[0.44,0.8075],[0.45,0.8119],[0.46,0.816],[0.47,0.8203],[0.48,0.8247],[0.49,0.8288],[0.5,0.8329]],"realistic":[[0.01,0.1217],[0.02,0.2315],[0.03,0.3274],[0.04,0.4042],[0.05,0.4533],[0.06,0.4737],[0.07,0.5069],[0.08,0.5306],[0.09,0.5463],[0.1,0.5586],[0.11,0.5719],[0.12,0.5857],[0.13,0.5973],[0.14,0.6033],[0.15,0.6054],[0.16,0.61],[0.17,0.6156],[0.18,0.6228],[0.19,0.6256],[0.2,0.6298],[0.21,0.636],[0.22,0.6438],[0.23,0.6481],[0.24,0.6532],[0.25,0.6609],[0.26,0.6678],[0.27,0.6742],[0.28,0.6805],[0.29,0.6864],[0.3,0.6925],[0.31,0.6985],[0.32,0.7054],[0.33,0.7123],[0.34,0.7186],[0.35,0.7248],[0.36,0.731],[0.37,0.7365],[0.38,0.7423],[0.39,0.7472],[0.4,0.7525],[0.41,0.7575],[0.42,0.7625],[0.43,0.7678],[0.44,0.7721],[0.45,0.7763],[0.46,0.7807],[0.47,0.7853],[0.48,0.7895],[0.49,0.7943],[0.5,0.7998]],"model":[[0.01,0.1164],[0.02,0.2124],[0.03,0.3032],[0.04,0.3877],[0.05,0.4624],[0.06,0.5213],[0.07,0.5657],[0.08,0.6008],[0.09,0.6303],[0.1,0.6547],[0.11,0.6767],[0.12,0.6971],[0.13,0.7147],[0.14,0.7309],[0.15,0.7459],[0.16,0.7576],[0.17,0.7702],[0.18,0.779],[0.19,0.7883],[0.2,0.795],[0.21,0.8024],[0.22,0.8098],[0.23,0.8162],[0.24,0.8219],[0.25,0.8278],[0.26,0.8337],[0.27,0.8389],[0.28,0.844],[0.29,0.8486],[0.3,0.8541],[0.31,0.8588],[0.32,0.8638],[0.33,0.8674],[0.34,0.8716],[0.35,0.876],[0.36,0.88],[0.37,0.8844],[0.38,0.8874],[0.39,0.8912],[0.4,0.895],[0.41,0.8988],[0.42,0.9019],[0.43,0.9052],[0.44,0.9085],[0.45,0.9107],[0.46,0.9133],[0.47,0.9157],[0.48,0.9185],[0.49,0.9213],[0.5,0.9243]]},"cal":[[0.0033,0.0038],[0.0051,0.0082],[0.0064,0.0122],[0.0076,0.0138],[0.0092,0.0168],[0.0123,0.0213],[0.0197,0.0297],[0.0363,0.0429],[0.0925,0.1019],[0.3725,0.4755]]};
@@ -891,7 +897,7 @@ const P4R = {"curves":{"probability":[[0.01,2140831.0],[0.02,4039914.0],[0.03,57
   T("top 10%", { x: A.sx(0.1) + 4, y: 36, class: "svgtxt" }, svg);
   const at = (k, f) => cv[k][Math.min(cv[k].length - 1, Math.max(0, Math.round(f * 100) - 1))];
   svg._hover = (vx) => { const f = Math.min(0.5, Math.max(0.01, Math.round(A.ix(vx) * 100) / 100)), ev = at("expected_value", f)[1], pr = at("probability", f)[1], lm = at("lambdamart", f)[1], calls = Math.round(P4R.members * f);
-    return { at: [A.sx(f), A.sy(ev)], html: `<b>Call ${Math.round(f * 100)}% · ${n(calls)} members</b>` + tipRows([["probability × value", n(ev), "var(--accent)"], ["probability", n(pr), "var(--muted)"], ["LambdaMART", n(lm), "var(--churn)"], ["call costs included", n(calls * P4R.c)]]) +
+    return { at: [A.sx(f), A.sy(ev)], html: `<b>Call ${Math.round(f * 100)}% · ${n(calls)} members</b>` + tipRows([["probability × value", n(ev), "var(--accent)"], ["probability", n(pr), "var(--muted)"], ["LambdaMART", n(lm), "var(--churn)"], ["of which call costs", n(calls * P4R.c)]]) +
       `<div class="muted tip-hint">1 in ${Math.round(1 / P4R.s)} saved · ${P4R.c} per call · value = 12 months of plan</div>` }; };
   hoverable(svg);
 })();
@@ -906,7 +912,7 @@ const P3P = [{"name":"Steady regulars","desc":"Active most days, about an hour a
   P3P.forEach((d) => { S("circle", { cx: A.sx(d.share), cy: A.sy(d.churn), r: rad(d), class: "f-" + d.color, opacity: 0.35 }, svg); S("circle", { cx: A.sx(d.share), cy: A.sy(d.churn), r: rad(d), fill: "none", class: "s-" + d.color, "stroke-width": 1.5 }, svg);
     T(d.name, { x: A.sx(d.share), y: A.sy(d.churn) - rad(d) - 5, class: "svglab", "text-anchor": "middle" }, svg); });
   svg._hover = (vx, vy) => { const dist = P3P.map((d) => Math.hypot(A.sx(d.share) - vx, A.sy(d.churn) - vy) - rad(d)), i = dist.indexOf(Math.min(...dist)); if (dist[i] > 12) return null; const d = P3P[i];
-    return { at: [A.sx(d.share), A.sy(d.churn)], html: `<b>${d.name}</b> <span class="muted">${d.desc}</span>` + tipRows([["members", `${d.members.toLocaleString("en-US")} (${pct(d.share)})`], ["churn rate", pct(d.churn, 1)], ["churners the list reaches", pct(d.reached)], ["active days, last 30", d.active30], ["minutes a day (median)", d.minutes], ["last week vs weeks before", "×" + (d.lastweek > 50 ? "50+" : d.lastweek.toFixed(2))], ["manual renewal", pct(d.manual)], ["membership tenure (median)", d.tenure + " days"]]) }; };
+    return { at: [A.sx(d.share), A.sy(d.churn)], html: `<b>${d.name}</b><div class="muted">${d.desc}</div>` + tipRows([["members", `${d.members.toLocaleString("en-US")} · ${pct(d.share)}`], ["churn rate", pct(d.churn, 1)], ["list reaches", pct(d.reached) + " of churners"], ["listening", `${d.minutes} min/day · ${d.active30}/30 days`], ["manual renewal", pct(d.manual)], ["tenure (median)", d.tenure + " days"]]) }; };
   hoverable(svg);
 })();
 
@@ -937,7 +943,7 @@ const P3P = [{"name":"Steady regulars","desc":"Active most days, about an hour a
     const l = 20, r = 620, x0 = -30, x1 = 65, sx = (v) => l + (v - x0) / (x1 - x0) * (r - l), y = 110;
     S("rect", { x: sx(Ep), y: 40, width: sx(Ep + 30) - sx(Ep), height: 100, class: "f-stay-soft" }, svg);
     S("rect", { x: sx(Ep + 30), y: 40, width: Math.max(0, r - sx(Ep + 30)), height: 100, class: "f-churn-soft" }, svg);
-    T("30-day grace: renewal here keeps the member", { x: sx(Ep) + 6, y: 54, class: "svgtxt" }, svg);
+    T("30-day grace: renewal keeps them", { x: sx(Ep) + 6, y: 54, class: "svgtxt" }, svg);
     T("churn zone", { x: sx(Ep + 30) + 6, y: 54, class: "svgtxt" }, svg);
     const g = S("g", { class: "ax" }, svg);
     S("line", { x1: l, x2: r, y1: y, y2: y, style: "stroke: var(--muted)" }, g);
@@ -960,7 +966,7 @@ const P3P = [{"name":"Steady regulars","desc":"Active most days, about an hour a
     const why = none ? "no renewal transaction" : `g = t_renew − E′ = ${renew} − (${Ep}) = ${gap} days ${gap >= 30 ? "≥" : "<"} 30`;
     svg._hover = (vx) => { const d = Math.round(x0 + (vx - l) / (r - l) * (x1 - x0)); if (d < x0 || d > x1) return null;
       const g2 = d - Ep, zone = g2 < 0 ? ["before the effective expiry", "A renewal here comes early: retained"] : g2 < 30 ? [`day ${g2} of the 30-day grace window`, "A renewal here keeps the member: retained"] : [`${g2} days after the effective expiry`, "A renewal this late counts as churn"];
-      return { at: [sx(d), y], html: `<b>${dayFmt(E, d)} 2017</b>` + tipRows([["position", zone[0]]]) + `<div class="muted tip-hint">${zone[1]}${d === 0 ? " · E = original expiry" : ""}${cancel && d === Ep ? " · E′ = expiry after the cancel" : ""}</div>` }; };
+      return { at: [sx(d), y], html: `<b>${dayFmtY(E, d)}</b><div>${zone[0]}</div>` + `<div class="muted tip-hint">${zone[1]}${d === 0 ? " · E = original expiry" : ""}${cancel && d === Ep ? " · E′ = expiry after the cancel" : ""}</div>` }; };
     $("lr-out").innerHTML = `${why}<br>label: <span class="pill ${churn ? "churn" : "stay"}">${churn ? "CHURN  y = 1" : "RETAINED  y = 0"}</span>`;
   }
   on(["lr-renew", "lr-cancelto", "lr-none", "lr-cancel"], draw);
@@ -990,8 +996,8 @@ const P3P = [{"name":"Steady regulars","desc":"Active most days, about an hour a
     const recent = days.filter(([d]) => d >= Sd - 14 && d < Sd), rmean = recent.reduce((a, b) => a + b[1], 0) / recent.length;
     svg._hover = (vx) => { const d = Math.round(o.x0 + (vx - o.l) / (o.r - o.l) * (o.x1 - o.x0)); const row = days.find((q) => q[0] === d); if (!row) return null;
       const st = d >= Sd ? ["hidden from the model", "on or after the snapshot", "var(--churn)"] : d >= Sd - W ? ["used by the model", "inside the observation window", "var(--accent)"] : ["not used", "older than the window", "var(--line)"];
-      return { at: [sx(d), sy(Math.min(row[1], 160))], html: `<b>${dayFmt(E, d)} 2017</b>` + tipRows([["minutes listened", row[1].toFixed(0)], [st[0], st[1], st[2]], ["days before expiry", -d]]) }; };
-    $("pt-out").innerHTML = `S = E − ${k} = <b>${dayFmt(E, Sd)} 2017</b> · window ${dayFmt(E, Sd - W)} → ${dayFmt(E, Sd - 1)} (${W} days)<br>decline ratio seen by the model r = ${fmt(rmean, 1)} / ${fmt(mean, 1)} = <b>${fmt(rmean / mean, 2)}</b> · hidden from the model: last ${k} days + the 30-day label window`;
+      return { at: [sx(d), sy(Math.min(row[1], 160))], html: `<b>${dayFmtY(E, d)}</b>` + tipRows([["minutes listened", row[1].toFixed(0)], ["days before expiry", -d], ["model sees it?", st[0], st[2]]]) + `<div class="muted tip-hint">${st[1]}</div>` }; };
+    $("pt-out").innerHTML = `S = E − ${k} = <b>${dayFmtY(E, Sd)}</b> · window ${dayFmt(E, Sd - W)} → ${dayFmt(E, Sd - 1)} (${W} days)<br>decline ratio seen by the model r = ${fmt(rmean, 1)} / ${fmt(mean, 1)} = <b>${fmt(rmean / mean, 2)}</b> · hidden from the model: last ${k} days + the 30-day label window`;
   }
   on(["pt-k", "pt-w"], draw);
   hoverable($("pt-svg"));
@@ -1213,7 +1219,7 @@ const P3P = [{"name":"Steady regulars","desc":"Active most days, about an hour a
     S("path", { d: path(cE, sx, sy), fill: "none", class: "s-accent", "stroke-width": 2.4 }, svg);
     const at = (cv) => cv.reduce((best, q) => (Math.abs(q[0] - 0.1) < Math.abs(best[0] - 0.1) ? q : best))[1];
     svg._hover = (vx) => { const x = (vx - 58) / (620 - 58); if (x < 0 || x > 1) return null; const i = nearestIdx(cE.map((q) => q[0]), x), a1 = cP[i][1], b1 = cE[i][1], nn = (v) => Math.round(v).toLocaleString("en-US");
-      return { at: [sx(cE[i][0]), sy(b1)], html: `<b>Contact the top ${pct(cE[i][0])}</b> <span class="muted">(${nn(cE[i][0] * N)} of ${nn(N)})</span>` + tipRows([["sort by probability", nn(a1), "var(--muted)"], ["sort by probability × revenue", nn(b1), "var(--accent)"], ["difference", (b1 - a1 >= 0 ? "+" : "") + nn(b1 - a1)]]) + `<div class="muted tip-hint">Cumulative profit = revenue saved − cost of every call.</div>` }; };
+      return { at: [sx(cE[i][0]), sy(b1)], html: `<b>Contact the top ${pct(cE[i][0])}</b> <span class="muted">(${nn(cE[i][0] * N)} of ${nn(N)})</span>` + tipRows([["by probability", nn(a1), "var(--muted)"], ["by prob. × revenue", nn(b1), "var(--accent)"], ["difference", (b1 - a1 >= 0 ? "+" : "") + nn(b1 - a1)]]) + `<div class="muted tip-hint">Cumulative profit = revenue saved − cost of every call.</div>` }; };
     const a = at(cP), b = at(cE), bestK = cE.reduce((m, q) => (q[1] > m[1] ? q : m));
     $("pk-out").innerHTML = `profit@10%: probability sort <b>${Math.round(a).toLocaleString("en-US")}</b> · expected-value sort <b>${Math.round(b).toLocaleString("en-US")}</b> (${a !== 0 ? ((b - a) / Math.abs(a) * 100 >= 0 ? "+" : "") + ((b - a) / Math.abs(a) * 100).toFixed(0) + "%" : "n/a"})<br>best stopping point for the value sort: top <b>${(bestK[0] * 100).toFixed(0)}%</b>. Past it, each extra call costs more than it saves.`;
   }
