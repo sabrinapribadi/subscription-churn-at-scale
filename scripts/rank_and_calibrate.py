@@ -26,7 +26,7 @@ from src.evaluation.metrics import evaluate  # noqa: E402
 from src.features.build import select_window  # noqa: E402
 from src.models.baseline import NON_FEATURES, fit, holdout_split, prepare  # noqa: E402
 from src.models.ranking import (ece, fit_isotonic, fit_lambdamart, member_value, prior_shift_em,  # noqa: E402
-                                profit_at, profit_curve, relevance)
+                                profit_at, profit_curve, relevance, value_curve)
 
 TRAIN, TEST, K = 201702, 201703, 14
 ECE_GATE = 0.010
@@ -107,6 +107,8 @@ def main() -> None:
     ev_wins_tie = central["expected_value"]["profit"] >= central["lambdamart"]["profit"]
     out["recommendation"] = "expected_value" if ev_wins_tie and best != "probability" else best
     out["curves"] = {n: profit_curve(sc, y_te, v_te, biz["save_rate"], biz["contact_cost"]) for n, sc in rankers.items()}
+    # value reached by budget: lets the page compute profit for any save rate and call cost
+    out["value_curves"] = {n: value_curve(sc, y_te, v_te) for n, sc in rankers.items()}
     out["wins_across_grid"] = {n: sum(1 for r in out["profit_grid"] if max(rankers, key=lambda m: r[m]["profit"]) == n) for n in rankers}
 
     mlflow.set_tracking_uri("sqlite:///mlflow.db"); mlflow.set_experiment("p4_rank_calibrate")

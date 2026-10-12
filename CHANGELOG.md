@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.12.0] — 2026-10-12 — Hiring-team-first page; cost-scenario picker
+**Files:** docs/index.html, src/models/ranking.py, scripts/rank_and_calibrate.py, data/outputs/p4_rank_calibrate.json, tests/browser/hover_test.js, tests/browser/controls_test.js, Makefile
+- **Situation:** The page showed everything at once (~19 screens). Reviewers asked what the "9 cost scenarios" were, and the answer was buried in an appendix table with absolute numbers only.
+- **Task:** Let a hiring team grasp data, problem, approach and solution in about two minutes, and make the cost assumptions explorable rather than asserted.
+- **Action:** Rebuilt the page around rule R12: glance strip (data · problem · approach · result), then Problem, a new Data section (410.5M logs, 23.0M transactions, 6.8M members, label, test design), a new Approach section (pipeline + "tried vs chose + deciding number"), Solution for practitioners, Our take; simulations, decision log, extra findings and technical appendix moved into collapsible sections that links open automatically. Added a save-rate × call-cost picker (presets: pessimistic, central, optimistic) driven by exported value-by-budget curves that reproduce all 27 scenario-table cells exactly; the scenario table gained a plain-language note and relative-difference columns. Fixed a phone overflow from grid children that would not shrink.
+- **Result:** Collapsed page ~7 screens (from 19). 47/47 control checks (including picker = table in all presets, links open collapsed sections) and 48/48 tooltip checks pass; no sideways scroll at 400, 768 or 1280 px, collapsed or open; no JS errors.
+- **Talking point:** "When someone asks 'what are the cost scenarios?', I hand them the sliders: any save rate and call cost, and the best number of members to call — and the ranking of methods never changes."
+
 ## [0.11.3] — 2026-10-12 — Full audit of the published page: numbers, controls, links, sources
 **Files:** docs/index.html, tests/browser/controls_test.js, Makefile
 - **Situation:** The page had grown over five phases; it needed a check that every number is right, every control works, and nothing is stale on either the artifact or GitHub Pages.

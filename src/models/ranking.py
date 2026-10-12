@@ -84,6 +84,14 @@ def profit_at(score: np.ndarray, y: np.ndarray, value: np.ndarray, frac: float, 
             "value_at_risk_reached": float((y[top] * value[top]).sum() / (y * value).sum())}
 
 
+def value_curve(score: np.ndarray, y: np.ndarray, value: np.ndarray,
+                fractions=np.arange(0.005, 0.5001, 0.005)) -> list[list[float]]:
+    """Cumulative value of churners reached when calling the top share f. Profit(f) = s · V(f) − c · N · f for any s, c."""
+    order = np.argsort(-score, kind="stable")
+    cum = np.cumsum(y[order] * value[order])
+    return [[round(float(f), 3), round(float(cum[int(len(score) * f) - 1]), 0)] for f in fractions]
+
+
 def profit_curve(score: np.ndarray, y: np.ndarray, value: np.ndarray, save_rate: float, contact_cost: float,
                  fractions=np.arange(0.01, 0.51, 0.01)) -> list[list[float]]:
     order = np.argsort(-score, kind="stable")

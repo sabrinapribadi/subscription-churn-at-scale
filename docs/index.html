@@ -198,6 +198,24 @@ td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; whit
 .rank .r:not(.head):hover { box-shadow: inset 0 0 0 1px var(--accent); }
 .results-grid.even { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 
+#p4-scenarios { scroll-margin-top: 16px; }
+.glance { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.glance .card { display: grid; gap: 4px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.glance .card b { font: 600 24px/1.1 var(--font-mono); color: var(--accent); }
+.glance .card span:last-child { font-size: 13.5px; color: var(--muted); }
+details.more { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+details.more > summary { cursor: pointer; list-style: none; display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: baseline; padding: 14px 18px; }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::before { content: "+"; grid-row: span 2; font: 600 20px/1 var(--font-mono); color: var(--accent); width: 18px; }
+details.more[open] > summary::before { content: "−"; }
+details.more > summary span { font-weight: 700; font-size: 17px; }
+details.more > summary small { grid-column: 2; color: var(--muted); font-size: 13.5px; }
+details.more > summary:hover span { color: var(--accent); }
+details.more > .more-body { display: grid; gap: 24px; padding: 4px 18px 22px; border-top: 1px solid var(--line); }
+#deep-dives { gap: 14px; }
+/* grid children may shrink below their content, so wide tables scroll inside their own box on phones */
+section.block > *, .more-body > *, .pane > *, .results-grid > * { min-width: 0; }
+
 .gates td:nth-child(3) { white-space: nowrap; }
 footer { margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--line); display: grid; gap: 10px; font-size: 13px; color: var(--muted); }
 footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
@@ -212,21 +230,28 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 <div class="wrap">
 
 <header class="top">
-  <span class="eyebrow">Portfolio · Commercial / Churn · CHN-1</span>
+  <span class="eyebrow">Portfolio · Commercial / Churn · Sabrina Pribadi</span>
   <h1>Subscription Churn at Scale</h1>
-  <p class="lede">A churn system on ~410 million daily listening records that warns a retention team <b>before</b> renewal, not after.</p>
+  <p class="lede">Warn a music-streaming retention team <b>14 days before</b> a member's renewal, and tell them who to call first.</p>
+  <div class="glance">
+    <div class="card"><span class="eyebrow">Data</span><b>410M</b><span>daily listening records, 23M transactions, 6.8M members · public KKBox dataset</span></div>
+    <div class="card"><span class="eyebrow">Problem</span><b>Too late</b><span>churn is only visible after renewal fails, when nothing can be done</span></div>
+    <div class="card"><span class="eyebrow">Approach</span><b>LightGBM</b><span>on point-in-time features, tested on a later month; 5 alternatives tried and rejected</span></div>
+    <div class="card"><span class="eyebrow">Result</span><b>65%</b><span>of churners reached by calling the top 10%, vs 54% today; ≈12.5M protected a month</span></div>
+  </div>
   <nav class="toc" aria-label="Sections">
     <a href="#problem"><span class="step">1</span>Problem</a>
-    <a href="#why"><span class="step">2</span>Why this methodology</a>
-    <a href="#method"><span class="step">3</span>Methodology, simulated</a>
-    <a href="#results"><span class="step">4</span>Results</a>
+    <a href="#data"><span class="step">2</span>Data</a>
+    <a href="#approach"><span class="step">3</span>Approach</a>
+    <a href="#solution"><span class="step">4</span>Solution</a>
     <a href="#take"><span class="step">5</span>Our take</a>
+    <a href="#deep-dives"><span class="step">+</span>Deep dives</a>
   </nav>
 </header>
 
 <!-- 1. PROBLEM -->
 <section class="block" id="problem">
-  <span class="eyebrow">1 · Problem statement</span>
+  <span class="eyebrow">1 · The problem</span>
   <h2>Members leave silently. By the renewal date, it is too late to act.</h2>
   <div class="flow">
     <div class="lane"><span class="who">Today · competition setup</span>
@@ -255,37 +280,183 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <p class="muted" style="font-size:13px">Churn definition (official): no new valid subscription within 30 days after the membership expires. Figures counted from the competition's <span class="mono">train.csv</span> and <span class="mono">train_v2.csv</span>.</p>
 </section>
 
-<!-- 2. WHY -->
-<section class="block" id="why">
-  <span class="eyebrow">2 · Why this methodology</span>
-  <h2>Every choice was made against a named alternative, before any model was trained</h2>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Decision</th><th>Alternatives considered</th><th>Chosen</th><th>Why</th><th>Evidence</th></tr></thead>
-      <tbody>
-        <tr><td>When to predict</td><td><ul class="alts"><li>At expiry (competition) <span class="tag ref">reference only</span></li><li>Fixed calendar date <span class="tag rej">rejected</span></li><li>Continuous survival model <span class="tag later">deferred</span></li></ul></td><td class="chosen">Expiry − k days</td><td>A prediction is only useful if it leaves time to act. Lead time k is reported with every result.</td><td><a href="https://arxiv.org/abs/2606.06776">arXiv 2606.06776</a> (2026)</td></tr>
-        <tr><td>How much history</td><td><ul class="alts"><li>Fixed 30 days by habit <span class="tag rej">rejected</span></li></ul></td><td class="chosen">Measure a window curve W ∈ 30…180</td><td>How much history is enough depends on how the task is set up, so it has to be measured.</td><td><a href="https://arxiv.org/abs/2607.00473">arXiv 2607.00473</a> (2026, KKBox)</td></tr>
-        <tr><td>Labels for more months</td><td><ul class="alts"><li>Only the 2 official months <span class="tag rej">rejected</span></li><li>Our own churn rule <span class="tag rej">rejected</span></li></ul></td><td class="chosen">Port the official labeller</td><td>More cohorts for out-of-time tests, with a ≥ 99% parity check against official labels. <b>P0:</b> 98.8%, so official labels stay the test truth.</td><td>Competition's <span class="mono">WSDMChurnLabeller.scala</span></td></tr>
-        <tr><td>Train / test split</td><td><ul class="alts"><li>Random rows <span class="tag rej">rejected</span></li><li>Group by member <span class="tag rej">rejected</span></li></ul></td><td class="chosen">Out-of-time by expiry cohort</td><td>Churn rate moved 2.6 points in one month. A random split hides that drift.</td><td>ADR-002</td></tr>
-        <tr><td>Primary metric</td><td><ul class="alts"><li>Accuracy <span class="tag rej">rejected</span></li><li>ROC-AUC <span class="tag base">secondary</span></li></ul></td><td class="chosen">PR-AUC + profit@top-10%</td><td>Churn is a minority class, and the team only works the top of the list.</td><td>ADR-002</td></tr>
-        <tr><td>Baseline model</td><td><ul class="alts"><li>Logistic regression <span class="tag rej">rejected</span></li><li>Deep sequence model first <span class="tag later">later, P3</span></li></ul></td><td class="chosen">Gradient boosting on RFM features</td><td>The strongest model family on this benchmark; it sets the bar the deep model must beat.</td><td><a href="https://arxiv.org/abs/1802.03396">arXiv 1802.03396</a></td></tr>
-        <tr><td>Behaviour signal</td><td><ul class="alts"><li>Hand-crafted RFM only <span class="tag base">baseline</span></li></ul></td><td class="chosen">Self-supervised embeddings, as an ablation</td><td>They are added only if they beat RFM by +0.02 PR-AUC out-of-time. <b>P3:</b> +0.004, so kept for personas only.</td><td><a href="https://doi.org/10.1007/s10479-023-05259-9">Annals of OR (2023)</a></td></tr>
-        <tr><td>Ordering the call list</td><td><ul class="alts"><li>Sort by churn probability <span class="tag base">baseline</span></li><li>LambdaMART <span class="tag rej">tested, lost 22%</span></li></ul></td><td class="chosen">Probability × member value</td><td>Two members with the same probability are not worth the same call. <b>P4:</b> won all 9 cost scenarios.</td><td>ADR-004</td></tr>
-      </tbody>
-    </table>
+<!-- 2. DATA -->
+<section class="block" id="data">
+  <span class="eyebrow">2 · The data</span>
+  <h2>One public dataset, used the way a company would use its own</h2>
+  <div class="table-wrap"><table class="compact">
+    <thead><tr><th>Table</th><th>Size</th><th>What it tells us</th></tr></thead>
+    <tbody>
+      <tr><td><b>Listening logs</b></td><td class="num">410.5M rows</td><td>One row per member per day: songs played by how much was heard, unique songs, minutes</td></tr>
+      <tr><td><b>Transactions</b></td><td class="num">23.0M rows</td><td>Plan, price paid, auto-renew on/off, cancellations, expiry dates (Jan 2015 – Mar 2017)</td></tr>
+      <tr><td><b>Members</b></td><td class="num">6.8M rows</td><td>City, age band, sign-up channel, registration date</td></tr>
+      <tr><td><b>Churn labels</b></td><td class="num">≈1.9M</td><td>Official: did the member renew within 30 days of expiry? (Feb and Mar 2017)</td></tr>
+    </tbody></table></div>
+  <ul class="points">
+    <li><b>Source:</b> WSDM Cup 2018, KKBox (Asia's leading music streaming service), public on Kaggle.</li>
+    <li><b>Test design:</b> train on members expiring in February 2017, test on March 2017 (862,158 members). Never a random split.</li>
+    <li><b>No leakage:</b> every input is taken from before the scoring date; an automated test enforces it.</li>
+  </ul>
+</section>
+
+<!-- 3. APPROACH -->
+<section class="block" id="approach">
+  <span class="eyebrow">3 · Approach and model choice</span>
+  <h2>Five steps, and at each one the simplest option that held up</h2>
+  <div class="flow pipe">
+    <div class="lane"><span class="who">Pipeline · each step opens its interactive explainer</span>
+      <a class="node" href="#m-label">Labels <small>3.1</small></a><span class="arrow" aria-hidden="true">→</span>
+      <a class="node" href="#m-pit">Snapshot 14 days before renewal <small>3.2</small></a><span class="arrow" aria-hidden="true">→</span>
+      <a class="node" href="#m-split">Test on a later month <small>3.4</small></a><span class="arrow" aria-hidden="true">→</span>
+      <a class="node" href="#m-gbm">LightGBM model <small>3.6</small></a><span class="arrow" aria-hidden="true">→</span>
+      <a class="node good" href="#m-profit">Call list by value <small>3.8</small></a></div>
   </div>
-  <div class="legend tagkey">
-    <span><span class="tag rej">rejected</span> ruled out (reason in ADR)</span>
-    <span><span class="tag base">baseline</span> the bar to beat</span>
-    <span><span class="tag base">secondary</span> reported, not decisive</span>
-    <span><span class="tag later">deferred</span> planned extension</span>
-    <span><span class="tag ref">reference only</span> shows the cost of lead time</span>
+  <div class="table-wrap"><table class="compact">
+    <thead><tr><th>Choice</th><th>What we tried</th><th>What we chose</th><th>Deciding number</th></tr></thead>
+    <tbody>
+      <tr><td><b>When to score</b></td><td>0, 7, 14, 30 days before renewal</td><td class="chosen">14 days</td><td>65% of churners reached; 30 days: 60%</td></tr>
+      <tr><td><b>History needed</b></td><td>30 to 180 days of listening</td><td class="chosen">30 days</td><td>No measurable difference (≤ 0.003 PR-AUC)</td></tr>
+      <tr><td><b>Model</b></td><td>Today's rule · LightGBM · + 3 kinds of listening embeddings</td><td class="chosen">LightGBM</td><td>48 vs 39 churners per 100 calls; embeddings +0.004 (not worth it)</td></tr>
+      <tr><td><b>Order of the call list</b></td><td>Probability · probability × value · LambdaMART</td><td class="chosen">Probability × value</td><td>Won all <a href="#p4-scenarios">9 cost scenarios</a>; LambdaMART −22%</td></tr>
+      <tr><td><b>Labels</b></td><td>Rebuild from transactions · official</td><td class="chosen">Official</td><td>Rebuilt labels matched only 98.8%</td></tr>
+      <tr><td><b>Score accuracy</b></td><td>Raw · isotonic · prior-shift correction</td><td class="chosen">Prior-shift</td><td>Better, still runs low → check last month's outcomes</td></tr>
+    </tbody></table></div>
+  <p class="muted" style="font-size:13px">Every bar was set before training; three of five phases failed theirs, and the page reports them. Details in the deep dives below.</p>
+</section>
+
+<!-- 4. SOLUTION -->
+<section class="block" id="solution">
+  <span class="eyebrow">4 · The solution, for a retention team</span>
+  <h2>Call 86,000 members two weeks before renewal and reach 2 in 3 of those about to leave</h2>
+    <div class="tiles">
+      <div class="tile"><b>48 <small>of 100</small></b><span>calls reach a member who was about to leave. Today's rule: 39. Random: 7.</span></div>
+      <div class="tile"><b>65%</b><span>of all churners reached by calling the top 10% (rule: 54%)</span></div>
+      <div class="tile"><b>+7,100</b><span>more churners reached each month for the same 86,000 calls</span></div>
+      <div class="tile"><b>14 days</b><span>before renewal, while there is still time to act</span></div>
+    </div>
+
+    <div class="sim">
+      <span class="simtag">Budget dial · March 2017 · 862,158 members · 62,616 churners</span>
+      <p class="muted" style="font-size:13px">Churner: a member who does not renew within 30 days after their membership expires (official benchmark definition).</p>
+      <div class="controls"><label class="ctl" for="bd-share"><span class="row">Share of members we can call <output id="bd-share-o"></output></span><input type="range" id="bd-share" min="1" max="50" value="10"></label></div>
+      <div class="chart-wrap"><svg class="plot" id="bd-svg" viewBox="0 0 640 250" role="img" aria-label="Share of churners reached by share of members called"></svg><div class="tip" id="bd-tip" hidden></div></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Model</span><span><i style="background:var(--amber)"></i>Model trained only on outcomes known on the day</span><span><i style="background:var(--muted)"></i>Today's rule</span><span><i class="dash"></i>Random</span><span class="muted">Hover for numbers · click to set the dial</span></div>
+      <div class="readout" id="bd-out"></div>
+    </div>
+
+    <div class="results-grid">
+      <div class="sim">
+        <span class="simtag">P4 · What is the call list worth? · try your own assumptions</span>
+        <div class="controls">
+          <label class="ctl" for="pf-s"><span class="row">Save rate: called churners we keep <output id="pf-s-o"></output></span><input type="range" id="pf-s" min="0.05" max="0.5" step="0.05" value="0.2"></label>
+          <label class="ctl" for="pf-c"><span class="row">Cost per call <output id="pf-c-o"></output></span><input type="range" id="pf-c" min="0" max="100" step="5" value="20"></label>
+        </div>
+        <div class="btns"><button type="button" data-sc="0.1,50">Pessimistic · 10%, 50</button><button type="button" data-sc="0.2,20">Central · 20%, 20</button><button type="button" data-sc="0.3,0">Optimistic · 30%, 0</button></div>
+        <svg class="plot" id="pf-svg" viewBox="0 0 640 260" role="img" aria-label="Monthly profit by share of members called for three call-list orders"></svg>
+        <div class="legend"><span><i style="background:var(--accent)"></i>Probability × value</span><span><i style="background:var(--muted)"></i>Probability</span><span><i style="background:var(--churn)"></i>LambdaMART</span></div>
+        <div class="readout" id="pf-out"></div>
+        <p class="muted" style="font-size:13px">Save rate and cost per call are not in the data, so they are assumptions; prices are in the dataset's units (plans cost 99–149 a month). Member value = 12 months of the current plan. The <a href="#p4-scenarios" >9 tested scenarios</a> are in the appendix.</p>
+      </div>
+      <div class="explain">
+        <span class="eyebrow">What P4 showed</span>
+        <ol class="steps">
+          <li><b>Calling the top 10% protects about 12.5M a month</b> after call costs, covering 66% of the 107.9M at risk.</li>
+          <li><b>Ordering by value adds only 0.1%.</b> Most plans cost 99–149, so value barely reorders the list. Still the recommended order: it won in all 9 cost scenarios.</li>
+          <li><b>LambdaMART lost 22%.</b> It chased the highest-value churners and missed many others (49% reached vs 65%).</li>
+          <li><b>Scores still run low.</b> The prediction-day correction moved the expected churn rate from 5.7% to 6.0%; the real rate was 7.3%. For budgets, check last month's outcomes.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="results-grid">
+      <div class="explain">
+        <span class="eyebrow">Where the calls go · top 10% list</span>
+        <div class="table-wrap"><table class="compact">
+          <thead><tr><th>Segment</th><th>Members</th><th>Churn rate</th><th>Share of calls</th><th>Churners reached</th></tr></thead>
+          <tbody><tr><td>Manual renewal</td><td class='num'>104,817</td><td class='num'>38.4%</td><td class='num'>87%</td><td class='num'>89%</td></tr><tr><td>Auto-renew</td><td class='num'>757,218</td><td class='num'>2.9%</td><td class='num'>13%</td><td class='num'>23%</td></tr><tr><td>New (< 6 months)</td><td class='num'>139,067</td><td class='num'>9.7%</td><td class='num'>33%</td><td class='num'>81%</td></tr><tr><td>Established (≥ 6 months)</td><td class='num'>722,968</td><td class='num'>6.8%</td><td class='num'>67%</td><td class='num'>61%</td></tr></tbody></table></div>
+      </div>
+      <div class="explain">
+        <span class="eyebrow">Before you rely on it</span>
+        <ol class="steps">
+          <li><b>Fresh outcomes matter.</b> With only outcomes known on the day, the list beats the rule at small budgets (top 5%: 45% vs 30% of churners), not at 10%+.</li>
+          <li><b>Scores run low.</b> Members scored ~37% actually left 48% of the time. Recalibrate monthly before using scores in offers.</li>
+          <li><b>Auto-renew churners are mostly missed.</b> About 22,000, a third of churners; the list reaches 1 in 4.</li>
+          <li><b>Coverage.</b> The test covers 89% of March members, those with a known renewal date.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="faq">
+      <span class="eyebrow">Questions practitioners ask</span>
+      <details><summary>Isn't this just "members without auto-renew"?</summary><p>That is today's rule, and it only ever calls manual renewers. The model reaches 11 points more churners with the same calls, and finds 1 in 4 auto-renew churners the rule never calls.</p></details>
+      <details><summary>Did it use information from the future?</summary><p>No. Every input is built from data dated before the snapshot, 14 days ahead of renewal. An automated test fails if any later record changes a score.</p></details>
+      <details><summary>How many members should we call?</summary><p>Under our central assumptions (1 in 5 saved, 20 per call), profit keeps rising until about 22% of members (≈13.9M a month, vs ≈12.5M at 10%). Try your own save rate and call cost on the "What is the call list worth?" chart: it shows the best share to call for those numbers. Hover the "What is the call list worth?" chart to see the gain for any budget.</p></details>
+      <details><summary>Should we order the list by member value?</summary><p>Yes, but expect little: plans cost 99–149, so ordering by probability × value adds about 0.1%. A learned ranker (LambdaMART) did worse.</p></details>
+      <details><summary>Why is this member on the list?</summary><p>The strongest signals: manual renewal, payment method, a recent cancellation, days since the last payment, and tenure. Per-member reasons come in Phase 5.</p></details>
+      <details><summary>Should we just call the riskiest members?</summary><p>Not always. Some will leave whatever we offer (Ascarza, JMR 2018). Finding members who respond to an offer is the next project (uplift modelling).</p></details>
+      <details><summary>How often does it need refreshing?</summary><p>Monthly: retrain on the latest outcomes and recalibrate. Drift monitoring is covered in the MLOps project.</p></details>
+    </div>
+
+  <details class="more">
+    <summary><span>More findings</span><small>How early can we call · how much history · five member personas</small></summary>
+    <div class="more-body">
+    <div class="results-grid even">
+      <div class="sim">
+        <span class="simtag">P2 · How early can we call?</span>
+        <svg class="plot" id="lt-svg" viewBox="0 0 640 260" role="img" aria-label="Share of churners reached by days before renewal"></svg>
+        <div class="legend"><span><i style="background:var(--accent)"></i>Call 10% of members</span><span><i style="background:var(--amber)"></i>Call 5%</span><span><i class="dash"></i>Competition setup: renewal already visible</span></div>
+      </div>
+      <div class="sim">
+        <span class="simtag">P2 · How much listening history do we need?</span>
+        <svg class="plot" id="hw-svg" viewBox="0 0 640 260" role="img" aria-label="Share of churners reached by days of history"></svg>
+        <div class="legend"><span><i style="background:var(--muted)"></i>0 days</span><span><i style="background:var(--stay)"></i>7 days</span><span><i style="background:var(--accent)"></i>14 days</span><span><i style="background:var(--amber)"></i>30 days before renewal</span></div>
+      </div>
+    </div>
+    <div class="explain">
+      <span class="eyebrow">What P2 showed</span>
+      <ol class="steps">
+        <li><b>Every week of warning costs churners.</b> Calling 30 days ahead instead of 14 reaches about 3,600 fewer churners a month (60% vs 65%). 7 days reaches about 1,600 more (68%).</li>
+        <li><b>30 days of history is enough.</b> At our 14-day lead, 30 to 180 days of history reach churners within half a point of each other (0.003 PR-AUC), which is run-to-run noise.</li>
+        <li><b>Scoring on the renewal date looks best (74%)</b> only because the renewal is already visible. It leaves no time to act.</li>
+      </ol>
+    </div>
+
+    <div class="results-grid">
+      <div class="sim">
+        <span class="simtag">P3 · Who are our members? Five listening habits · March 2017</span>
+        <svg class="plot" id="ps-svg" viewBox="0 0 640 270" role="img" aria-label="Member groups by share of members and churn rate"></svg>
+        <div class="legend"><span>Circle size = number of members · hover a group for details</span></div>
+      </div>
+      <div class="explain">
+        <span class="eyebrow">What P3 showed</span>
+        <ol class="steps">
+          <li><b>Listening habits did not improve the list.</b> The best method added +0.004 PR-AUC against a +0.02 bar. The payment record already carries the signal.</li>
+          <li><b>Silent payers</b> (20% of members) pay automatically but have not listened in 60 days. The list reaches only 36% of the ones who leave: a re-engagement message, not a retention call.</li>
+          <li><b>Re-engaging members</b> churn most (11%). They are long-time members, a quarter on manual renewal. The list already reaches 82% of them.</li>
+        </ol>
+      </div>
+    </div>
+    </div>
+  </details>
+</section>
+
+<!-- 5. TAKE -->
+<section class="block" id="take">
+  <span class="eyebrow">5 · Our take</span>
+  <h2>Working view, revised as results come in</h2>
+  <div class="take">
+    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Warning time is the real trade-off;</b> history length is not. 30 days of logs is enough.</li><li><b>Simple beats clever three times:</b> shape statistics vs encoders (P3), probability × value vs LambdaMART (P4).</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark scores overstate:</b> a realistic setup loses 0.06 PR-AUC versus training on labels that arrive too late.</li><li><b>The open gap is auto-renew cancellers:</b> a third of churners, and the list reaches 1 in 4. That is where Phase 3 behaviour signals have to earn their keep.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
+    <div><span class="eyebrow">What would change our mind</span><ul class="points"><li><b>Answered by P2:</b> lead time is not free (−5 points of reach from 14 to 30 days). We keep 14 days; 7 if campaigns can move faster.</li><li><b>Answered by P3:</b> embeddings missed their gate (+0.004 vs +0.02), so they serve personas only. Auto-renew cancellers need a different signal, such as payment-failure history or offer response (CHN-2).</li></ul></div>
   </div>
 </section>
 
-<!-- 3. METHODOLOGY -->
-<section class="block" id="method">
-  <span class="eyebrow">3 · Methodology, simulated</span>
+<!-- DEEP DIVES -->
+<section class="block" id="deep-dives">
+  <span class="eyebrow">+ · Deep dives</span>
+  <h2>For readers who want the details</h2>
+  <details class="more" id="d-methods">
+    <summary><span>How each method works</span><small>9 interactive simulations: logic, maths, and a chart you can move</small></summary>
+    <div class="more-body">
   <h2>Each method: logic, math, and a simulation you can move</h2>
   <div class="flow pipe">
     <div class="lane"><span class="who">Pipeline · click a step</span>
@@ -472,7 +643,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
         <span class="lbl">Realised profit of the top k</span>Π(<i>k</i>) = Σ<sub><i>i</i> ∈ top <i>k</i></sub> ( <i>s</i> · <i>y</i><sub>i</sub> · <i>r</i><sub>i</sub> − <i>c</i> )
         <span class="lbl">Expected value per member</span>𝔼[Π<sub>i</sub>] = <i>s</i> · <i>p̂</i><sub>i</sub> · <i>r</i><sub>i</sub> − <i>c</i>
       </div>
-      <p class="why-here"><b>Why it matters:</b> s and c are stated assumptions, varied in a sensitivity table. <b>Real data (P4):</b> probability × value won all 9 scenarios, by 0.1%.</p>
+      <p class="why-here"><b>Why it matters:</b> s and c are stated assumptions, varied in a sensitivity table. <b>Real data (P4):</b> probability × value won all <a href="#p4-scenarios" >9 cost scenarios</a>, by about 0.1%.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · 3,000 members, synthetic plan prices</span>
@@ -507,119 +678,39 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <div class="readout" id="lm-out"></div>
     </div>
   </article>
-</section>
-
-<!-- 4. RESULTS -->
-<section class="block" id="results">
-  <span class="eyebrow">4 · Results</span>
-  <h2>Call 86,000 members two weeks before renewal and reach 2 in 3 of those about to leave</h2>
-  <div class="tabs" role="tablist" aria-label="Results view">
-    <button type="button" role="tab" id="tab-prac" aria-selected="true" aria-controls="pane-prac">For practitioners</button>
-    <button type="button" role="tab" id="tab-app" aria-selected="false" aria-controls="pane-app">Appendix · ML metrics</button>
+</div>
+  </details>
+  <details class="more" id="d-decisions">
+    <summary><span>Decision log</span><small>Every alternative considered, and why it was chosen or rejected</small></summary>
+    <div class="more-body">
+  <h2>Every choice was made against a named alternative, before any model was trained</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Decision</th><th>Alternatives considered</th><th>Chosen</th><th>Why</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr><td>When to predict</td><td><ul class="alts"><li>At expiry (competition) <span class="tag ref">reference only</span></li><li>Fixed calendar date <span class="tag rej">rejected</span></li><li>Continuous survival model <span class="tag later">deferred</span></li></ul></td><td class="chosen">Expiry − k days</td><td>A prediction is only useful if it leaves time to act. Lead time k is reported with every result.</td><td><a href="https://arxiv.org/abs/2606.06776">arXiv 2606.06776</a> (2026)</td></tr>
+        <tr><td>How much history</td><td><ul class="alts"><li>Fixed 30 days by habit <span class="tag rej">rejected</span></li></ul></td><td class="chosen">Measure a window curve W ∈ 30…180</td><td>How much history is enough depends on how the task is set up, so it has to be measured.</td><td><a href="https://arxiv.org/abs/2607.00473">arXiv 2607.00473</a> (2026, KKBox)</td></tr>
+        <tr><td>Labels for more months</td><td><ul class="alts"><li>Only the 2 official months <span class="tag rej">rejected</span></li><li>Our own churn rule <span class="tag rej">rejected</span></li></ul></td><td class="chosen">Port the official labeller</td><td>More cohorts for out-of-time tests, with a ≥ 99% parity check against official labels. <b>P0:</b> 98.8%, so official labels stay the test truth.</td><td>Competition's <span class="mono">WSDMChurnLabeller.scala</span></td></tr>
+        <tr><td>Train / test split</td><td><ul class="alts"><li>Random rows <span class="tag rej">rejected</span></li><li>Group by member <span class="tag rej">rejected</span></li></ul></td><td class="chosen">Out-of-time by expiry cohort</td><td>Churn rate moved 2.6 points in one month. A random split hides that drift.</td><td>ADR-002</td></tr>
+        <tr><td>Primary metric</td><td><ul class="alts"><li>Accuracy <span class="tag rej">rejected</span></li><li>ROC-AUC <span class="tag base">secondary</span></li></ul></td><td class="chosen">PR-AUC + profit@top-10%</td><td>Churn is a minority class, and the team only works the top of the list.</td><td>ADR-002</td></tr>
+        <tr><td>Baseline model</td><td><ul class="alts"><li>Logistic regression <span class="tag rej">rejected</span></li><li>Deep sequence model first <span class="tag later">later, P3</span></li></ul></td><td class="chosen">Gradient boosting on RFM features</td><td>The strongest model family on this benchmark; it sets the bar the deep model must beat.</td><td><a href="https://arxiv.org/abs/1802.03396">arXiv 1802.03396</a></td></tr>
+        <tr><td>Behaviour signal</td><td><ul class="alts"><li>Hand-crafted RFM only <span class="tag base">baseline</span></li></ul></td><td class="chosen">Self-supervised embeddings, as an ablation</td><td>They are added only if they beat RFM by +0.02 PR-AUC out-of-time. <b>P3:</b> +0.004, so kept for personas only.</td><td><a href="https://doi.org/10.1007/s10479-023-05259-9">Annals of OR (2023)</a></td></tr>
+        <tr><td>Ordering the call list</td><td><ul class="alts"><li>Sort by churn probability <span class="tag base">baseline</span></li><li>LambdaMART <span class="tag rej">tested, lost 22%</span></li></ul></td><td class="chosen">Probability × member value</td><td>Two members with the same probability are not worth the same call. <b>P4:</b> won all <a href="#p4-scenarios" >9 cost scenarios</a>.</td><td>ADR-004</td></tr>
+      </tbody>
+    </table>
   </div>
-
-  <div id="pane-prac" role="tabpanel" aria-labelledby="tab-prac" class="pane">
-    <div class="tiles">
-      <div class="tile"><b>48 <small>of 100</small></b><span>calls reach a member who was about to leave. Today's rule: 39. Random: 7.</span></div>
-      <div class="tile"><b>65%</b><span>of all churners reached by calling the top 10% (rule: 54%)</span></div>
-      <div class="tile"><b>+7,100</b><span>more churners reached each month for the same 86,000 calls</span></div>
-      <div class="tile"><b>14 days</b><span>before renewal, while there is still time to act</span></div>
-    </div>
-
-    <div class="sim">
-      <span class="simtag">Budget dial · March 2017 · 862,158 members · 62,616 churners</span>
-      <p class="muted" style="font-size:13px">Churner: a member who does not renew within 30 days after their membership expires (official benchmark definition).</p>
-      <div class="controls"><label class="ctl" for="bd-share"><span class="row">Share of members we can call <output id="bd-share-o"></output></span><input type="range" id="bd-share" min="1" max="50" value="10"></label></div>
-      <div class="chart-wrap"><svg class="plot" id="bd-svg" viewBox="0 0 640 250" role="img" aria-label="Share of churners reached by share of members called"></svg><div class="tip" id="bd-tip" hidden></div></div>
-      <div class="legend"><span><i style="background:var(--accent)"></i>Model</span><span><i style="background:var(--amber)"></i>Model trained only on outcomes known on the day</span><span><i style="background:var(--muted)"></i>Today's rule</span><span><i class="dash"></i>Random</span><span class="muted">Hover for numbers · click to set the dial</span></div>
-      <div class="readout" id="bd-out"></div>
-    </div>
-
-    <div class="results-grid even">
-      <div class="sim">
-        <span class="simtag">P2 · How early can we call?</span>
-        <svg class="plot" id="lt-svg" viewBox="0 0 640 260" role="img" aria-label="Share of churners reached by days before renewal"></svg>
-        <div class="legend"><span><i style="background:var(--accent)"></i>Call 10% of members</span><span><i style="background:var(--amber)"></i>Call 5%</span><span><i class="dash"></i>Competition setup: renewal already visible</span></div>
-      </div>
-      <div class="sim">
-        <span class="simtag">P2 · How much listening history do we need?</span>
-        <svg class="plot" id="hw-svg" viewBox="0 0 640 260" role="img" aria-label="Share of churners reached by days of history"></svg>
-        <div class="legend"><span><i style="background:var(--muted)"></i>0 days</span><span><i style="background:var(--stay)"></i>7 days</span><span><i style="background:var(--accent)"></i>14 days</span><span><i style="background:var(--amber)"></i>30 days before renewal</span></div>
-      </div>
-    </div>
-    <div class="explain">
-      <span class="eyebrow">What P2 showed</span>
-      <ol class="steps">
-        <li><b>Every week of warning costs churners.</b> Calling 30 days ahead instead of 14 reaches about 3,600 fewer churners a month (60% vs 65%). 7 days reaches about 1,600 more (68%).</li>
-        <li><b>30 days of history is enough.</b> At our 14-day lead, 30 to 180 days of history reach churners within half a point of each other (0.003 PR-AUC), which is run-to-run noise.</li>
-        <li><b>Scoring on the renewal date looks best (74%)</b> only because the renewal is already visible. It leaves no time to act.</li>
-      </ol>
-    </div>
-
-    <div class="results-grid">
-      <div class="sim">
-        <span class="simtag">P4 · What is the call list worth? · 1 in 5 called churners saved · 20 per call</span>
-        <svg class="plot" id="pf-svg" viewBox="0 0 640 260" role="img" aria-label="Monthly profit by share of members called for three call-list orders"></svg>
-        <div class="legend"><span><i style="background:var(--accent)"></i>Probability × value</span><span><i style="background:var(--muted)"></i>Probability</span><span><i style="background:var(--churn)"></i>LambdaMART</span></div>
-      </div>
-      <div class="explain">
-        <span class="eyebrow">What P4 showed</span>
-        <ol class="steps">
-          <li><b>Calling the top 10% protects about 12.5M a month</b> after call costs, covering 66% of the 107.9M at risk.</li>
-          <li><b>Ordering by value adds only 0.1%.</b> Most plans cost 99–149, so value barely reorders the list. Still the recommended order: it won in all 9 cost scenarios.</li>
-          <li><b>LambdaMART lost 22%.</b> It chased the highest-value churners and missed many others (49% reached vs 65%).</li>
-          <li><b>Scores still run low.</b> The prediction-day correction moved the expected churn rate from 5.7% to 6.0%; the real rate was 7.3%. For budgets, check last month's outcomes.</li>
-        </ol>
-      </div>
-    </div>
-
-    <div class="results-grid">
-      <div class="sim">
-        <span class="simtag">P3 · Who are our members? Five listening habits · March 2017</span>
-        <svg class="plot" id="ps-svg" viewBox="0 0 640 270" role="img" aria-label="Member groups by share of members and churn rate"></svg>
-        <div class="legend"><span>Circle size = number of members · hover a group for details</span></div>
-      </div>
-      <div class="explain">
-        <span class="eyebrow">What P3 showed</span>
-        <ol class="steps">
-          <li><b>Listening habits did not improve the list.</b> The best method added +0.004 PR-AUC against a +0.02 bar. The payment record already carries the signal.</li>
-          <li><b>Silent payers</b> (20% of members) pay automatically but have not listened in 60 days. The list reaches only 36% of the ones who leave: a re-engagement message, not a retention call.</li>
-          <li><b>Re-engaging members</b> churn most (11%). They are long-time members, a quarter on manual renewal. The list already reaches 82% of them.</li>
-        </ol>
-      </div>
-    </div>
-
-    <div class="results-grid">
-      <div class="explain">
-        <span class="eyebrow">Where the calls go · top 10% list</span>
-        <div class="table-wrap"><table class="compact">
-          <thead><tr><th>Segment</th><th>Members</th><th>Churn rate</th><th>Share of calls</th><th>Churners reached</th></tr></thead>
-          <tbody><tr><td>Manual renewal</td><td class='num'>104,817</td><td class='num'>38.4%</td><td class='num'>87%</td><td class='num'>89%</td></tr><tr><td>Auto-renew</td><td class='num'>757,218</td><td class='num'>2.9%</td><td class='num'>13%</td><td class='num'>23%</td></tr><tr><td>New (< 6 months)</td><td class='num'>139,067</td><td class='num'>9.7%</td><td class='num'>33%</td><td class='num'>81%</td></tr><tr><td>Established (≥ 6 months)</td><td class='num'>722,968</td><td class='num'>6.8%</td><td class='num'>67%</td><td class='num'>61%</td></tr></tbody></table></div>
-      </div>
-      <div class="explain">
-        <span class="eyebrow">Before you rely on it</span>
-        <ol class="steps">
-          <li><b>Fresh outcomes matter.</b> With only outcomes known on the day, the list beats the rule at small budgets (top 5%: 45% vs 30% of churners), not at 10%+.</li>
-          <li><b>Scores run low.</b> Members scored ~37% actually left 48% of the time. Recalibrate monthly before using scores in offers.</li>
-          <li><b>Auto-renew churners are mostly missed.</b> About 22,000, a third of churners; the list reaches 1 in 4.</li>
-          <li><b>Coverage.</b> The test covers 89% of March members, those with a known renewal date.</li>
-        </ol>
-      </div>
-    </div>
-
-    <div class="faq">
-      <span class="eyebrow">Questions practitioners ask</span>
-      <details><summary>Isn't this just "members without auto-renew"?</summary><p>That is today's rule, and it only ever calls manual renewers. The model reaches 11 points more churners with the same calls, and finds 1 in 4 auto-renew churners the rule never calls.</p></details>
-      <details><summary>Did it use information from the future?</summary><p>No. Every input is built from data dated before the snapshot, 14 days ahead of renewal. An automated test fails if any later record changes a score.</p></details>
-      <details><summary>How many members should we call?</summary><p>Under our central assumptions (1 in 5 saved, 20 per call), profit keeps rising until about 22% of members (≈13.9M a month, vs ≈12.5M at 10%), and each extra call earns less. Hover the "What is the call list worth?" chart to see the gain for any budget.</p></details>
-      <details><summary>Should we order the list by member value?</summary><p>Yes, but expect little: plans cost 99–149, so ordering by probability × value adds about 0.1%. A learned ranker (LambdaMART) did worse.</p></details>
-      <details><summary>Why is this member on the list?</summary><p>The strongest signals: manual renewal, payment method, a recent cancellation, days since the last payment, and tenure. Per-member reasons come in Phase 5.</p></details>
-      <details><summary>Should we just call the riskiest members?</summary><p>Not always. Some will leave whatever we offer (Ascarza, JMR 2018). Finding members who respond to an offer is the next project (uplift modelling).</p></details>
-      <details><summary>How often does it need refreshing?</summary><p>Monthly: retrain on the latest outcomes and recalibrate. Drift monitoring is covered in the MLOps project.</p></details>
-    </div>
+  <div class="legend tagkey">
+    <span><span class="tag rej">rejected</span> ruled out (reason in ADR)</span>
+    <span><span class="tag base">baseline</span> the bar to beat</span>
+    <span><span class="tag base">secondary</span> reported, not decisive</span>
+    <span><span class="tag later">deferred</span> planned extension</span>
+    <span><span class="tag ref">reference only</span> shows the cost of lead time</span>
   </div>
-
-  <div id="pane-app" role="tabpanel" aria-labelledby="tab-app" class="pane" hidden>
+</div>
+  </details>
+  <details class="more" id="appendix">
+    <summary><span>Technical appendix</span><small>Phase gates · ML metrics (PR-AUC, Gini, lift, EMPC) · calibration · the 9 cost scenarios</small></summary>
+    <div class="more-body">
     <div class="table-wrap">
     <table class="gates">
       <thead><tr><th>Phase</th><th>Gate</th><th>Status</th><th>Result</th></tr></thead>
@@ -657,12 +748,17 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <p class="muted" style="font-size:13px">Metrics disagree on the realistic model: PR-AUC and top-5% capture favour it; Gini, H-measure and EMPC favour the rule. It helps only at small call budgets. Profit assumptions: CLV 200, incentive 10, contact 1, accept rate ~ Beta(6, 14).</p>
     </div>
     <div class="results-grid even">
-      <div class="explain">
-        <span class="eyebrow">P4 · Profit at the top 10% · 9 scenarios · Mar 2017</span>
+      <div class="explain" id="p4-scenarios">
+        <span class="eyebrow">P4 · The 9 cost scenarios · profit when calling the top 10% (86,215 members) · Mar 2017</span>
+        <ul class="points">
+          <li><b>Why scenarios:</b> two inputs are not in the data. <b>Save rate</b> = share of called churners we keep; <b>cost per call</b> = agent time plus any offer.</li>
+          <li><b>The grid:</b> save rate 10% / 20% / 30% × cost 0 / 20 / 50 (bold = central case). Everything else is real March 2017 data.</li>
+          <li><b>Reading it:</b> the absolute profit swings from 2.8M to 21M; the ranking of the three orders never changes.</li>
+        </ul>
         <div class="table-wrap"><table class="compact">
-          <thead><tr><th>Save rate</th><th>Cost per call</th><th>Probability</th><th>Probability × value</th><th>LambdaMART</th></tr></thead>
-          <tbody><tr><td class='num'>10%</td><td class='num'>0</td><td class='num'>7.1M</td><td class='num'>7.1M</td><td class='num'>5.7M</td></tr><tr><td class='num'>10%</td><td class='num'>20</td><td class='num'>5.4M</td><td class='num'>5.4M</td><td class='num'>4.0M</td></tr><tr><td class='num'>10%</td><td class='num'>50</td><td class='num'>2.8M</td><td class='num'>2.8M</td><td class='num'>1.4M</td></tr><tr><td class='num'>20%</td><td class='num'>0</td><td class='num'>14.2M</td><td class='num'>14.2M</td><td class='num'>11.5M</td></tr><tr><td class='num'>20%</td><td class='num'>20</td><td class='num'>12.4M</td><td class='num'>12.5M</td><td class='num'>9.7M</td></tr><tr><td class='num'>20%</td><td class='num'>50</td><td class='num'>9.9M</td><td class='num'>9.9M</td><td class='num'>7.1M</td></tr><tr><td class='num'>30%</td><td class='num'>0</td><td class='num'>21.3M</td><td class='num'>21.3M</td><td class='num'>17.2M</td></tr><tr><td class='num'>30%</td><td class='num'>20</td><td class='num'>19.5M</td><td class='num'>19.6M</td><td class='num'>15.5M</td></tr><tr><td class='num'>30%</td><td class='num'>50</td><td class='num'>16.9M</td><td class='num'>17.0M</td><td class='num'>12.9M</td></tr></tbody></table></div>
-        <p class="muted" style="font-size:13px">Probability × value wins all 9 (by about 0.1%); LambdaMART loses all 9. Member value = amount paid per day × 365.</p>
+          <thead><tr><th>Save rate</th><th>Cost per call</th><th>Probability</th><th>Probability × value (vs probability)</th><th>LambdaMART (vs probability)</th></tr></thead>
+          <tbody><tr><td class='num'>10%</td><td class='num'>0</td><td class='num'>7.1M</td><td class='num'>7.1M <span style='color:var(--stay)'>(+0.09%)</span></td><td class='num'>5.7M <span style='color:var(--churn)'>(-19%)</span></td></tr><tr><td class='num'>10%</td><td class='num'>20</td><td class='num'>5.4M</td><td class='num'>5.4M <span style='color:var(--stay)'>(+0.12%)</span></td><td class='num'>4.0M <span style='color:var(--churn)'>(-25%)</span></td></tr><tr><td class='num'>10%</td><td class='num'>50</td><td class='num'>2.8M</td><td class='num'>2.8M <span style='color:var(--stay)'>(+0.24%)</span></td><td class='num'>1.4M <span style='color:var(--churn)'>(-49%)</span></td></tr><tr><td class='num'>20%</td><td class='num'>0</td><td class='num'>14.2M</td><td class='num'>14.2M <span style='color:var(--stay)'>(+0.09%)</span></td><td class='num'>11.5M <span style='color:var(--churn)'>(-19%)</span></td></tr><tr><td class='num'><b>20%</b></td><td class='num'><b>20</b></td><td class='num'>12.4M</td><td class='num'>12.5M <span style='color:var(--stay)'>(+0.11%)</span></td><td class='num'>9.7M <span style='color:var(--churn)'>(-22%)</span></td></tr><tr><td class='num'>20%</td><td class='num'>50</td><td class='num'>9.9M</td><td class='num'>9.9M <span style='color:var(--stay)'>(+0.13%)</span></td><td class='num'>7.1M <span style='color:var(--churn)'>(-28%)</span></td></tr><tr><td class='num'>30%</td><td class='num'>0</td><td class='num'>21.3M</td><td class='num'>21.3M <span style='color:var(--stay)'>(+0.09%)</span></td><td class='num'>17.2M <span style='color:var(--churn)'>(-19%)</span></td></tr><tr><td class='num'>30%</td><td class='num'>20</td><td class='num'>19.5M</td><td class='num'>19.6M <span style='color:var(--stay)'>(+0.10%)</span></td><td class='num'>15.5M <span style='color:var(--churn)'>(-21%)</span></td></tr><tr><td class='num'>30%</td><td class='num'>50</td><td class='num'>16.9M</td><td class='num'>17.0M <span style='color:var(--stay)'>(+0.12%)</span></td><td class='num'>12.9M <span style='color:var(--churn)'>(-24%)</span></td></tr></tbody></table></div>
+        <p class="muted" style="font-size:13px">Probability × value wins all 9, by more when calls cost more (+0.24% at 10% saved, 50 per call). LambdaMART loses all 9, worst when calls are expensive (−49%), because it skips many ordinary churners.</p>
       </div>
       <div class="explain">
         <span class="eyebrow">P4 · Calibration · March 2017 actual churn 7.3%</span>
@@ -690,17 +786,9 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <span class="simtag">Calibration · model, March 2017 · ten equal-size groups</span>
       <div class="chart-wrap"><svg class="plot" id="cal-svg" viewBox="0 0 640 250" role="img" aria-label="Predicted versus observed churn rate"></svg><div class="tip" id="cal-tip" hidden></div></div>
     </div>
-  </div>
-</section>
-
-<!-- 5. TAKE -->
-<section class="block" id="take">
-  <span class="eyebrow">5 · Our take</span>
-  <h2>Working view, revised as results come in</h2>
-  <div class="take">
-    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Warning time is the real trade-off;</b> history length is not. 30 days of logs is enough.</li><li><b>Simple beats clever three times:</b> shape statistics vs encoders (P3), probability × value vs LambdaMART (P4).</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark scores overstate:</b> a realistic setup loses 0.06 PR-AUC versus training on labels that arrive too late.</li><li><b>The open gap is auto-renew cancellers:</b> a third of churners, and the list reaches 1 in 4. That is where Phase 3 behaviour signals have to earn their keep.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
-    <div><span class="eyebrow">What would change our mind</span><ul class="points"><li><b>Answered by P2:</b> lead time is not free (−5 points of reach from 14 to 30 days). We keep 14 days; 7 if campaigns can move faster.</li><li><b>Answered by P3:</b> embeddings missed their gate (+0.004 vs +0.02), so they serve personas only. Auto-renew cancellers need a different signal, such as payment-failure history or offer response (CHN-2).</li></ul></div>
-  </div>
+  
+    </div>
+  </details>
 </section>
 
 <footer>
@@ -803,11 +891,14 @@ function on(ids, fn) { ids.forEach((id) => $(id).addEventListener("input", fn));
 const dayFmt = (base, off) => { const d = new Date(base + off * 864e5); return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }); };
 const dayFmtY = (base, off) => new Date(base + off * 864e5).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
+/* in-page links open any collapsed section that holds their target (rule R12) */
+function revealTarget(id) { const t = id && document.getElementById(id); if (!t) return null; for (let d = t.closest("details"); d; d = d.parentElement.closest("details")) d.open = true; return t; }
+document.addEventListener("click", (e) => { const a = e.target.closest && e.target.closest('a[href^="#"]'); if (!a) return; const t = revealTarget(a.getAttribute("href").slice(1)); if (t) { e.preventDefault(); t.scrollIntoView({ block: "start" }); } });
+if (location.hash) requestAnimationFrame(() => { const t = revealTarget(location.hash.slice(1)); if (t) t.scrollIntoView({ block: "start" }); });
+
 /* results: tabs, budget dial with hover, calibration (data from data/outputs/p1_practitioner.json) */
 const P1R = {"members":862158,"churners":62616,"curve":{"rule":[[0.01,0.0846],[0.02,0.1463],[0.03,0.2028],[0.04,0.2547],[0.05,0.3025],[0.06,0.3497],[0.07,0.3977],[0.08,0.4464],[0.09,0.4933],[0.1,0.5406],[0.11,0.5869],[0.12,0.6356],[0.13,0.6479],[0.14,0.6529],[0.15,0.6575],[0.16,0.6623],[0.17,0.6671],[0.18,0.672],[0.19,0.6764],[0.2,0.6807],[0.21,0.6856],[0.22,0.6903],[0.23,0.6949],[0.24,0.7002],[0.25,0.7045],[0.26,0.7095],[0.27,0.7144],[0.28,0.7197],[0.29,0.7248],[0.3,0.7295],[0.31,0.7346],[0.32,0.7405],[0.33,0.747],[0.34,0.7526],[0.35,0.7582],[0.36,0.7635],[0.37,0.7692],[0.38,0.7751],[0.39,0.7818],[0.4,0.7874],[0.41,0.793],[0.42,0.798],[0.43,0.803],[0.44,0.8075],[0.45,0.8119],[0.46,0.816],[0.47,0.8203],[0.48,0.8247],[0.49,0.8288],[0.5,0.8329]],"realistic":[[0.01,0.1217],[0.02,0.2315],[0.03,0.3274],[0.04,0.4042],[0.05,0.4533],[0.06,0.4737],[0.07,0.5069],[0.08,0.5306],[0.09,0.5463],[0.1,0.5586],[0.11,0.5719],[0.12,0.5857],[0.13,0.5973],[0.14,0.6033],[0.15,0.6054],[0.16,0.61],[0.17,0.6156],[0.18,0.6228],[0.19,0.6256],[0.2,0.6298],[0.21,0.636],[0.22,0.6438],[0.23,0.6481],[0.24,0.6532],[0.25,0.6609],[0.26,0.6678],[0.27,0.6742],[0.28,0.6805],[0.29,0.6864],[0.3,0.6925],[0.31,0.6985],[0.32,0.7054],[0.33,0.7123],[0.34,0.7186],[0.35,0.7248],[0.36,0.731],[0.37,0.7365],[0.38,0.7423],[0.39,0.7472],[0.4,0.7525],[0.41,0.7575],[0.42,0.7625],[0.43,0.7678],[0.44,0.7721],[0.45,0.7763],[0.46,0.7807],[0.47,0.7853],[0.48,0.7895],[0.49,0.7943],[0.5,0.7998]],"model":[[0.01,0.1164],[0.02,0.2124],[0.03,0.3032],[0.04,0.3877],[0.05,0.4624],[0.06,0.5213],[0.07,0.5657],[0.08,0.6008],[0.09,0.6303],[0.1,0.6547],[0.11,0.6767],[0.12,0.6971],[0.13,0.7147],[0.14,0.7309],[0.15,0.7459],[0.16,0.7576],[0.17,0.7702],[0.18,0.779],[0.19,0.7883],[0.2,0.795],[0.21,0.8024],[0.22,0.8098],[0.23,0.8162],[0.24,0.8219],[0.25,0.8278],[0.26,0.8337],[0.27,0.8389],[0.28,0.844],[0.29,0.8486],[0.3,0.8541],[0.31,0.8588],[0.32,0.8638],[0.33,0.8674],[0.34,0.8716],[0.35,0.876],[0.36,0.88],[0.37,0.8844],[0.38,0.8874],[0.39,0.8912],[0.4,0.895],[0.41,0.8988],[0.42,0.9019],[0.43,0.9052],[0.44,0.9085],[0.45,0.9107],[0.46,0.9133],[0.47,0.9157],[0.48,0.9185],[0.49,0.9213],[0.5,0.9243]]},"cal":[[0.0033,0.0038],[0.0051,0.0082],[0.0064,0.0122],[0.0076,0.0138],[0.0092,0.0168],[0.0123,0.0213],[0.0197,0.0297],[0.0363,0.0429],[0.0925,0.1019],[0.3725,0.4755]]};
 (function () {
-  const tabs = [["tab-prac", "pane-prac"], ["tab-app", "pane-app"]];
-  tabs.forEach(([t]) => $(t).addEventListener("click", () => tabs.forEach(([t2, p2]) => { const on = t2 === t; $(t2).setAttribute("aria-selected", on); $(p2).hidden = !on; })));
   bindOut("bd-share", (v) => v + "%");
   const at = (curve, f) => curve.reduce((b, q) => (Math.abs(q[0] - f) < Math.abs(b[0] - f) ? q : b))[1];
   const n = (v) => Math.round(v).toLocaleString("en-US");
@@ -897,19 +988,38 @@ const P2R = {"leads":[0,7,14,30],"windows":[30,60,90,120,180],"g":{"0_30":[0.675
   hoverable(hw);
 })();
 
-/* results: P4 profit curves (data from data/outputs/p4_rank_calibrate.json) */
-const P4R = {"curves":{"probability":[[0.01,2140831.0],[0.02,4039914.0],[0.03,5751947.0],[0.04,7301027.0],[0.05,8738205.0],[0.06,9877306.0],[0.07,10798751.0],[0.08,11417246.0],[0.09,11982367.0],[0.1,12445531.0],[0.11,12819351.0],[0.12,13133708.0],[0.13,13422229.0],[0.14,13624130.0],[0.15,13761829.0],[0.16,13859708.0],[0.17,13916965.0],[0.18,13955741.0],[0.19,13975578.0],[0.2,13983960.0],[0.21,13950524.0],[0.22,13920356.0],[0.23,13882723.0],[0.24,13847687.0],[0.25,13813100.0],[0.26,13771707.0],[0.27,13706505.0],[0.28,13657802.0],[0.29,13589609.0],[0.3,13522878.0],[0.31,13439574.0],[0.32,13366947.0],[0.33,13298551.0],[0.34,13227214.0],[0.35,13160035.0],[0.36,13073984.0],[0.37,12994103.0],[0.38,12878331.0],[0.39,12806030.0],[0.4,12713017.0],[0.41,12609290.0],[0.42,12501455.0],[0.43,12403147.0],[0.44,12296146.0],[0.45,12178804.0],[0.46,12063064.0],[0.47,11939001.0],[0.48,11821134.0],[0.49,11701765.0],[0.5,11597733.0]],"expected_value":[[0.01,2242542.0],[0.02,3964887.0],[0.03,5645303.0],[0.04,7103403.0],[0.05,8380149.0],[0.06,9701984.0],[0.07,10692208.0],[0.08,11384452.0],[0.09,11976774.0],[0.1,12458816.0],[0.11,12845790.0],[0.12,13151779.0],[0.13,13432612.0],[0.14,13621127.0],[0.15,13765296.0],[0.16,13800894.0],[0.17,13835166.0],[0.18,13857320.0],[0.19,13899040.0],[0.2,13918055.0],[0.21,13915124.0],[0.22,13933348.0],[0.23,13876423.0],[0.24,13856069.0],[0.25,13801921.0],[0.26,13775785.0],[0.27,13735340.0],[0.28,13673120.0],[0.29,13615918.0],[0.3,13539923.0],[0.31,13466847.0],[0.32,13394475.0],[0.33,13319928.0],[0.34,13235612.0],[0.35,13163289.0],[0.36,13090633.0],[0.37,12976204.0],[0.38,12908908.0],[0.39,12815890.0],[0.4,12751656.0],[0.41,12654287.0],[0.42,12547632.0],[0.43,12449207.0],[0.44,12335549.0],[0.45,12218071.0],[0.46,12081966.0],[0.47,11963529.0],[0.48,11869423.0],[0.49,11766910.0],[0.5,11664083.0]],"lambdamart":[[0.01,1959423.0],[0.02,3294647.0],[0.03,4427648.0],[0.04,5336549.0],[0.05,6185344.0],[0.06,6959468.0],[0.07,7656487.0],[0.08,8280119.0],[0.09,8982232.0],[0.1,9731189.0],[0.11,10538287.0],[0.12,11438228.0],[0.13,12280880.0],[0.14,12934891.0],[0.15,13351119.0],[0.16,13562786.0],[0.17,13601055.0],[0.18,13612350.0],[0.19,13581133.0],[0.2,13606681.0],[0.21,13676808.0],[0.22,13674519.0],[0.23,13676929.0],[0.24,13652830.0],[0.25,13636987.0],[0.26,13606518.0],[0.27,13551158.0],[0.28,13480480.0],[0.29,13406564.0],[0.3,13315555.0],[0.31,13252582.0],[0.32,13177115.0],[0.33,13072081.0],[0.34,13043583.0],[0.35,13022202.0],[0.36,12951531.0],[0.37,12885550.0],[0.38,12805051.0],[0.39,12725487.0],[0.4,12639530.0],[0.41,12551917.0],[0.42,12466295.0],[0.43,12373905.0],[0.44,12276069.0],[0.45,12179052.0],[0.46,12080535.0],[0.47,11973036.0],[0.48,11853972.0],[0.49,11739820.0],[0.5,11621989.0]]},"members":862158,"s":0.2,"c":20.0,"var":107874360.5934219};
+/* results: P4 money view with adjustable assumptions (data from data/outputs/p4_rank_calibrate.json).
+   profit(share) = save rate × value of churners reached − cost per call × members called */
+const P4R = {"v":{"probability":[[0.005,6344448.0],[0.01,11566257.0],[0.015,16888189.0],[0.02,21923869.0],[0.025,26705361.0],[0.03,31346135.0],[0.035,35661233.0],[0.04,39953733.0],[0.045,44136060.0],[0.05,48001727.0],[0.055,51335422.0],[0.06,54559431.0],[0.065,57410273.0],[0.07,60028857.0],[0.075,62085499.0],[0.08,63983429.0],[0.085,65888375.0],[0.09,67671235.0],[0.095,69340680.0],[0.1,70849156.0],[0.105,72214591.0],[0.11,73580457.0],[0.115,74799119.0],[0.12,76014338.0],[0.125,77261762.0],[0.13,78319143.0],[0.135,79238821.0],[0.14,80190850.0],[0.145,80954686.0],[0.15,81741443.0],[0.155,82399076.0],[0.16,83093038.0],[0.165,83633713.0],[0.17,84241426.0],[0.175,84808891.0],[0.18,85297505.0],[0.185,85787833.0],[0.19,86258890.0],[0.195,86709483.0],[0.2,87162898.0],[0.205,87429628.0],[0.21,87857919.0],[0.215,88214195.0],[0.22,88569182.0],[0.225,88922380.0],[0.23,89243215.0],[0.235,89563345.0],[0.24,89930133.0],[0.245,90213373.0],[0.25,90619399.0],[0.255,90957925.0],[0.26,91274635.0],[0.265,91546925.0],[0.27,91810723.0],[0.275,92082283.0],[0.28,92429410.0],[0.285,92664531.0],[0.29,92950545.0],[0.295,93186310.0],[0.3,93479089.0],[0.305,93672065.0],[0.31,93924669.0],[0.315,94168635.0],[0.32,94423733.0],[0.325,94744021.0],[0.33,94943956.0],[0.335,95216647.0],[0.34,95449371.0],[0.345,95681049.0],[0.35,95975677.0],[0.355,96184919.0],[0.36,96407521.0],[0.365,96656572.0],[0.37,96870316.0],[0.375,96978101.0],[0.38,97153654.0],[0.385,97420152.0],[0.39,97654251.0],[0.395,97856522.0],[0.4,98051383.0],[0.405,98235842.0],[0.41,98394848.0],[0.415,98565948.0],[0.42,98717873.0],[0.425,98906201.0],[0.43,99088433.0],[0.435,99258584.0],[0.44,99415632.0],[0.445,99575818.0],[0.45,99691121.0],[0.455,99839117.0],[0.46,99974520.0],[0.465,100107720.0],[0.47,100216405.0],[0.475,100346479.0],[0.48,100489170.0],[0.485,100600665.0],[0.49,100754525.0],[0.495,100937098.0],[0.5,101096566.0]],"expected_value":[[0.005,6822631.0],[0.01,12074812.0],[0.015,17043773.0],[0.02,21548736.0],[0.025,26100592.0],[0.03,30812917.0],[0.035,35112057.0],[0.04,38965616.0],[0.045,43396384.0],[0.05,46211446.0],[0.055,49136881.0],[0.06,53682818.0],[0.065,56352957.0],[0.07,59496142.0],[0.075,61542828.0],[0.08,63819461.0],[0.085,65429020.0],[0.09,67643268.0],[0.095,69548699.0],[0.1,70915582.0],[0.105,72289709.0],[0.11,73712651.0],[0.115,74954156.0],[0.12,76104695.0],[0.125,77180026.0],[0.13,78371058.0],[0.135,79328964.0],[0.14,80175837.0],[0.145,80992512.0],[0.15,81758781.0],[0.155,82351225.0],[0.16,82798970.0],[0.165,83401001.0],[0.17,83832431.0],[0.175,84205352.0],[0.18,84805399.0],[0.185,85223592.0],[0.19,85876200.0],[0.195,86365665.0],[0.2,86833376.0],[0.205,87300028.0],[0.21,87680918.0],[0.215,88075580.0],[0.22,88634140.0],[0.225,88836970.0],[0.23,89211716.0],[0.235,89572567.0],[0.24,89972047.0],[0.245,90278647.0],[0.25,90563506.0],[0.255,90961465.0],[0.26,91295026.0],[0.265,91572390.0],[0.27,91954898.0],[0.275,92225010.0],[0.28,92505999.0],[0.285,92789945.0],[0.29,93082091.0],[0.295,93323258.0],[0.3,93564317.0],[0.305,93801798.0],[0.31,94061033.0],[0.315,94284011.0],[0.32,94561375.0],[0.325,94795230.0],[0.33,95050840.0],[0.335,95262941.0],[0.34,95491358.0],[0.345,95747430.0],[0.35,95991944.0],[0.355,96240071.0],[0.36,96490765.0],[0.365,96641230.0],[0.37,96780818.0],[0.375,97065433.0],[0.38,97306540.0],[0.385,97500513.0],[0.39,97703550.0],[0.395,97920738.0],[0.4,98244578.0],[0.405,98429487.0],[0.41,98619834.0],[0.415,98811703.0],[0.42,98948760.0],[0.425,99150143.0],[0.43,99318736.0],[0.435,99489143.0],[0.44,99612646.0],[0.445,99764778.0],[0.45,99887455.0],[0.455,99966745.0],[0.46,100069030.0],[0.465,100183141.0],[0.47,100339045.0],[0.475,100536644.0],[0.48,100730617.0],[0.485,100902593.0],[0.49,101080251.0],[0.495,101261534.0],[0.5,101428315.0]],"lambdamart":[[0.005,5643179.0],[0.01,10659217.0],[0.015,14568778.0],[0.02,18197535.0],[0.025,21641723.0],[0.03,24724642.0],[0.035,27601264.0],[0.04,30131343.0],[0.045,32724950.0],[0.05,35237419.0],[0.055,37694635.0],[0.06,39970240.0],[0.065,42061884.0],[0.07,44317533.0],[0.075,46383380.0],[0.08,48297796.0],[0.085,50417316.0],[0.09,52670558.0],[0.095,54904242.0],[0.1,57277447.0],[0.105,59573239.0],[0.11,62175136.0],[0.115,64874670.0],[0.12,67536938.0],[0.125,70144300.0],[0.13,72612401.0],[0.135,74815396.0],[0.14,76744653.0],[0.145,78342260.0],[0.15,79687893.0],[0.155,80755536.0],[0.16,81608432.0],[0.165,82171422.0],[0.17,82661873.0],[0.175,83150700.0],[0.18,83580551.0],[0.185,83923409.0],[0.19,84286665.0],[0.195,84764455.0],[0.2,85276503.0],[0.205,85822429.0],[0.21,86489339.0],[0.215,86898589.0],[0.22,87339996.0],[0.225,87795102.0],[0.23,88214244.0],[0.235,88592907.0],[0.24,88955851.0],[0.245,89354492.0],[0.25,89738837.0],[0.255,90153197.0],[0.26,90448689.0],[0.265,90734873.0],[0.27,91033991.0],[0.275,91300477.0],[0.28,91542801.0],[0.285,91773432.0],[0.29,92035319.0],[0.295,92223611.0],[0.3,92442477.0],[0.305,92705094.0],[0.31,92989709.0],[0.315,93246645.0],[0.32,93474575.0],[0.325,93576094.0],[0.33,93811604.0],[0.335,94050533.0],[0.34,94531214.0],[0.345,94839383.0],[0.35,95286508.0],[0.355,95548846.0],[0.36,95795257.0],[0.365,96073971.0],[0.37,96327549.0],[0.375,96554859.0],[0.38,96787254.0],[0.385,97034992.0],[0.39,97251534.0],[0.395,97477104.0],[0.4,97683950.0],[0.405,97894129.0],[0.41,98107983.0],[0.415,98327627.0],[0.42,98542077.0],[0.425,98759386.0],[0.43,98942227.0],[0.435,99144303.0],[0.44,99315244.0],[0.445,99515946.0],[0.45,99692362.0],[0.455,99865032.0],[0.46,100061876.0],[0.465,100236736.0],[0.47,100386580.0],[0.475,100538457.0],[0.48,100653359.0],[0.485,100777945.0],[0.49,100944799.0],[0.495,101093439.0],[0.5,101217843.0]]},"N":862158};
 (function () {
-  const svg = $("pf-svg"), cv = P4R.curves, all = [].concat(...Object.values(cv).map((c) => c.map((q) => q[1]))), hi = Math.ceil(Math.max(...all) / 5e6) * 5e6, n = (v) => Math.round(v).toLocaleString("en-US");
-  const A = frame(svg, { l: 58, r: 610, t: 24, b: 206, x0: 0, x1: 0.5, y0: 0, y1: hi, xt: [0, 0.1, 0.2, 0.3, 0.4, 0.5], yt: Array.from({ length: hi / 5e6 + 1 }, (_, i) => i * 5e6), xf: (v) => Math.round(v * 100) + "%", yf: (v) => (v / 1e6) + "M", xl: "share of members called", yl: "monthly profit after call costs" });
-  [["lambdamart", "s-churn", 2], ["probability", "s-muted", 2], ["expected_value", "s-accent", 2.6]].forEach(([k, cls, w]) => S("path", { d: path([[0, 0]].concat(cv[k]), A.sx, A.sy), fill: "none", class: cls, "stroke-width": w }, svg));
-  S("line", { x1: A.sx(0.1), x2: A.sx(0.1), y1: 24, y2: 206, class: "s-amber", "stroke-dasharray": "4 3" }, svg);
-  T("top 10%", { x: A.sx(0.1) + 4, y: 36, class: "svgtxt" }, svg);
-  const at = (k, f) => cv[k][Math.min(cv[k].length - 1, Math.max(0, Math.round(f * 100) - 1))];
-  svg._hover = (vx) => { const f = Math.min(0.5, Math.max(0.01, Math.round(A.ix(vx) * 100) / 100)), ev = at("expected_value", f)[1], pr = at("probability", f)[1], lm = at("lambdamart", f)[1], calls = Math.round(P4R.members * f);
-    return { at: [A.sx(f), A.sy(ev)], html: `<b>Call ${Math.round(f * 100)}% · ${n(calls)} members</b>` + tipRows([["probability × value", n(ev), "var(--accent)"], ["probability", n(pr), "var(--muted)"], ["LambdaMART", n(lm), "var(--churn)"], ["of which call costs", n(calls * P4R.c)]]) +
-      `<div class="muted tip-hint">1 in ${Math.round(1 / P4R.s)} saved · ${P4R.c} per call · value = 12 months of plan</div>` }; };
+  const svg = $("pf-svg"), names = { expected_value: "probability × value", probability: "probability", lambdamart: "LambdaMART" };
+  const n = (v) => Math.round(v).toLocaleString("en-US"), m = (v) => (v / 1e6).toFixed(1) + "M";
+  bindOut("pf-s", (v) => Math.round(v * 100) + "%"); bindOut("pf-c", (v) => v);
+  const curve = (k, sr, c) => P4R.v[k].map(([f, V]) => [f, sr * V - c * P4R.N * f]);
+  let A, cur;
+  function draw() {
+    const sr = +$("pf-s").value, c = +$("pf-c").value; clear(svg);
+    cur = { expected_value: curve("expected_value", sr, c), probability: curve("probability", sr, c), lambdamart: curve("lambdamart", sr, c) };
+    const all = [].concat(...Object.values(cur).map((q) => q.map((x) => x[1]))), step = 5e6;
+    const lo = Math.min(0, Math.floor(Math.min(...all) / step) * step), hi = Math.max(step, Math.ceil(Math.max(...all) / step) * step);
+    const yt = []; for (let v = lo; v <= hi + 1; v += step) yt.push(v);
+    A = frame(svg, { l: 58, r: 610, t: 24, b: 206, x0: 0, x1: 0.5, y0: lo, y1: hi, xt: [0, 0.1, 0.2, 0.3, 0.4, 0.5], yt, xf: (v) => Math.round(v * 100) + "%", yf: (v) => (v / 1e6) + "M", xl: "share of members called", yl: "monthly profit after call costs" });
+    if (lo < 0) S("line", { x1: A.sx(0), x2: A.sx(0.5), y1: A.sy(0), y2: A.sy(0), class: "s-muted" }, svg);
+    [["lambdamart", "s-churn", 2], ["probability", "s-muted", 2], ["expected_value", "s-accent", 2.6]].forEach(([k, cls, w]) => S("path", { d: path([[0, 0]].concat(cur[k]), A.sx, A.sy), fill: "none", class: cls, "stroke-width": w }, svg));
+    S("line", { x1: A.sx(0.1), x2: A.sx(0.1), y1: 24, y2: 206, class: "s-amber", "stroke-dasharray": "4 3" }, svg);
+    T("top 10%", { x: A.sx(0.1) + 4, y: 36, class: "svgtxt" }, svg);
+    const best = cur.expected_value.reduce((b, q) => (q[1] > b[1] ? q : b));
+    S("circle", { cx: A.sx(best[0]), cy: A.sy(best[1]), r: 5, class: "f-accent" }, svg);
+    T(`best: top ${Math.round(best[0] * 100)}%`, { x: A.sx(best[0]), y: A.sy(best[1]) - 10, class: "svglab", "text-anchor": "middle" }, svg);
+    const at10 = (k) => cur[k][19][1], ev = at10("expected_value"), pr = at10("probability"), lm = at10("lambdamart");
+    $("pf-out").innerHTML = `top 10% (${n(P4R.N * 0.1)} calls): probability × value <b>${m(ev)}</b> · probability ${m(pr)} (${((ev / pr - 1) * 100).toFixed(2)}% less) · LambdaMART ${m(lm)} (${((lm / pr - 1) * 100).toFixed(0)}%)<br>best budget for probability × value: <b>top ${Math.round(best[0] * 100)}%</b> (${n(P4R.N * best[0])} calls) → <b>${m(best[1])}</b> a month${best[1] <= 0 ? " — calls cost more than they save at these numbers" : ""}`;
+  }
+  svg._hover = (vx) => { const i = Math.max(0, Math.min(cur.expected_value.length - 1, Math.round(A.ix(vx) / 0.005) - 1)), f = cur.expected_value[i][0], calls = P4R.N * f;
+    return { at: [A.sx(f), A.sy(cur.expected_value[i][1])], html: `<b>Call ${(f * 100).toFixed(1).replace(/\.0$/, "")}% · ${n(calls)} members</b>` + tipRows([["probability × value", n(cur.expected_value[i][1]), "var(--accent)"], ["probability", n(cur.probability[i][1]), "var(--muted)"], ["LambdaMART", n(cur.lambdamart[i][1]), "var(--churn)"], ["of which call costs", n(calls * +$("pf-c").value)]]) +
+      `<div class="muted tip-hint">save rate ${Math.round($("pf-s").value * 100)}% · ${$("pf-c").value} per call</div>` }; };
   hoverable(svg);
+  on(["pf-s", "pf-c"], draw);
+  document.querySelectorAll("[data-sc]").forEach((btn) => btn.addEventListener("click", () => { const [sr, c] = btn.dataset.sc.split(","); $("pf-s").value = sr; $("pf-c").value = c; ["pf-s", "pf-c"].forEach((id) => $(id).dispatchEvent(new Event("input"))); }));
 })();
 
 /* results: P3 personas (data from data/outputs/p3_behaviour.json) */

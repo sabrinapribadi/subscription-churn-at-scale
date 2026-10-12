@@ -34,4 +34,4 @@ hover-test:
 
 # Real-browser check that every interactive control changes what it should
 controls-test:
-	cd tests/browser && (test -d node_modules/puppeteer-core || npm i --no-save puppeteer-core@23) && node controls_test.js $(CURDIR)/docs/index.html /tmp/links.txt | grep -E "FAIL|control checks"
+	cd tests/browser && (test -d node_modules/puppeteer-core || npm i --no-save puppeteer-core@23) && node controls_test.js $(CURDIR)/docs/index.html /tmp/links.txt $(CURDIR)/data/outputs/p4_rank_calibrate.json | grep -E "FAIL|control checks"

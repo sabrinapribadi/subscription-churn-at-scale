@@ -1,6 +1,6 @@
 // Real-browser tooltip check (rule R10) in three modes: desktop light, desktop dark, phone 400 px.
-// Every chart: tooltip appears on hover, stays inside its chart (or as a panel under it on phones),
-// and disappears when the pointer leaves; none visible on load; no sideways scroll; no JS errors.
+// Opens every collapsed section, then for every chart: tooltip appears on hover, stays inside its chart
+// (or as a panel under it on phones), disappears on leave; none on load; no sideways scroll; no JS errors.
 // Run: make hover-test   (needs Node + Google Chrome)
 const puppeteer = require("puppeteer-core");
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -15,11 +15,12 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const errs = []; page.on("pageerror", (e) => errs.push(e.message));
     await page.goto("file://" + file, { waitUntil: "networkidle0" });
     const onLoad = await page.$$eval(".tip", (ts) => ts.filter((t) => getComputedStyle(t).display !== "none").length);
+    const closedOnLoad = await page.$$eval("details.more", (ds) => ds.filter((d) => !d.open).length);
+    await page.$$eval("details", (ds) => ds.forEach((d) => (d.open = true)));
     const hScroll = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     const ids = await page.$$eval("svg.plot", (ss) => ss.map((s) => s.id));
     const rows = [];
     for (const id of ids) {
-      await page.click(["res-svg", "cal-svg"].includes(id) ? "#tab-app" : "#tab-prac"); await wait(50);
       const el = await page.$("#" + id); await el.scrollIntoView(); await wait(300);
       const box = await el.boundingBox();
       const probes = [[0.5, 0.45], [0.3, 0.5], [0.7, 0.4], [0.2, 0.3], [0.8, 0.6], [0.6, 0.7]];
@@ -39,14 +40,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       rows.push({ id, ok, ...(res || {}), gone });
     }
     // ranking rows
-    await page.click("#tab-prac"); await page.mouse.move(2, 2); const row = (await page.$$("#lm-list .r"))[3]; await row.scrollIntoView(); await wait(300); const rb = await row.boundingBox();
+    await page.mouse.move(2, 2); const row = (await page.$$("#lm-list .r"))[3]; await row.scrollIntoView(); await wait(300); const rb = await row.boundingBox();
     await page.mouse.move(rb.x + rb.width * 0.3, rb.y + rb.height / 2); await wait(80);
     const lm = await page.evaluate(() => { const t = document.getElementById("lm-list").parentElement.querySelector(":scope > .tip"); if (getComputedStyle(t).display === "none") return null; const r = t.getBoundingClientRect(), w = t.parentElement.getBoundingClientRect(); return { inside: r.left >= w.left - 1 && r.right <= w.right + 1, w: Math.round(r.width), h: Math.round(r.height), text: t.textContent.replace(/\s+/g, " ").slice(0, 70) }; });
     if (lm) { const wrap = await page.evaluateHandle(() => document.getElementById("lm-list").parentElement); await wrap.asElement().screenshot({ path: `${outDir}/${mode}_lm-list.png` }); }
     await page.mouse.move(2, 2); await wait(80);
     const lmGone = await page.evaluate(() => getComputedStyle(document.getElementById("lm-list").parentElement.querySelector(":scope > .tip")).display === "none");
     rows.push({ id: "lm-list", ok: !!lm && lm.inside && lmGone, ...(lm || {}), gone: lmGone });
-    summary.push({ mode, onLoad, hScroll, errs: errs.length, pass: rows.filter((r) => r.ok).length, total: rows.length });
+    summary.push({ mode, onLoad, closedOnLoad, hScroll, errs: errs.length, pass: rows.filter((r) => r.ok).length, total: rows.length });
     console.log(`\n== ${mode}: tooltips visible on load=${onLoad} · page scrolls sideways=${hScroll} · JS errors=${errs.length}`);
     for (const r of rows) console.log(`  ${r.ok ? "OK  " : "FAIL"} ${r.id.padEnd(8)} ${r.w ? `${r.w}×${r.h}px covers ${r.coverPct ?? "-"}% inside=${r.inside}${r.clipped ? " CLIPPED" : ""}` : "not shown"} hides=${r.gone} | ${r.text || ""}`);
     if (mode === "desktop-dark") console.log(`  tooltip colours (dark): bg ${rows[0].bg} · text ${rows[0].fg}`);
