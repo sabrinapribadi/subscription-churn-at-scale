@@ -2,6 +2,8 @@
 
 Warn a retention team **before** renewal, rank who to call first, and show the trade-offs in plain numbers. Built on ~410 million daily listening records from the public KKBox (WSDM Cup 2018) dataset.
 
+[![ci](https://github.com/sabrinapribadi/subscription-churn-at-scale/actions/workflows/ci.yml/badge.svg)](https://github.com/sabrinapribadi/subscription-churn-at-scale/actions/workflows/ci.yml)
+
 **Showcase page (interactive, every chart hoverable):** https://sabrinapribadi.github.io/subscription-churn-at-scale/
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square) ![PySpark](https://img.shields.io/badge/PySpark-4.0-E25A1C?style=flat-square) ![LightGBM](https://img.shields.io/badge/LightGBM-4.7-2E8B57?style=flat-square) ![MLflow](https://img.shields.io/badge/MLflow-3.17-0194E2?style=flat-square)

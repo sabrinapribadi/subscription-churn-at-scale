@@ -53,7 +53,7 @@ The question: **"How do we serve scores, reasons and call lists so apps and AI a
 | MCP tools over the real protocol (in-memory and HTTP) | Pass, including clean errors for unknown members |
 | Serving image has no Spark or PyTorch | Verified in a clean environment; built in CI |
 
-**Gate:** contract tests and the LLM evaluation set pass in CI → **passed** (see CI run linked from the changelog).
+**Gate:** contract tests and the LLM evaluation set pass in CI → **passed** in [GitHub Actions run 38279575714](https://github.com/sabrinapribadi/subscription-churn-at-scale/actions/runs/38279575714): 55 tests passed, 1 skipped (the PyTorch test, run locally), evaluation set 100% grounded, Docker image built. The first CI run failed at setup (pip cache had no requirements file to key on) and was fixed before the gate was claimed.
 
 ## Consequences
 

@@ -754,7 +754,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
           </ul>
           <span class="eyebrow">Tested on every push</span>
           <ul class="points">
-            <li>Contract tests for every endpoint; MCP tools over the real protocol</li>
+            <li>GitHub Actions on every push: unit, Spark, contract and MCP tests, the evaluation set, and a Docker build</li><li>Contract tests for every endpoint; MCP tools over the real protocol</li>
             <li>12-case evaluation set: 100% grounded, 100% correct actions</li>
             <li>Docker image built in CI; no API key needed to test</li>
           </ul>
@@ -801,7 +801,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
         <tr><td>P1 · Baseline</td><td>Out-of-time PR-AUC reported; leakage tests pass</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>PR-AUC <b>0.568</b> vs rule <b>0.342</b></li><li>Top 10% of the list catches <b>65%</b> of churners</li><li>Leakage tests pass</li></ul></td></tr>
         <tr><td>P2 · Window</td><td>Window curve and knee reported for each k</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>Lead time: PR-AUC 0.676 (0 d) → 0.602 (7 d) → 0.561 (14 d) → 0.476 (30 d)</li><li>History: flat from 30 to 180 days → use 30</li></ul></td></tr>
         <tr><td>P3 · Embeddings</td><td>PR-AUC(GBM + embeddings) ≥ PR-AUC(GBM) + 0.02 out-of-time</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>Best: shape statistics +0.004; encoder +0.002; Mantis +0.003 (sample)</li><li>Kept for personas only (ADR-003)</li></ul></td></tr>
-        <tr><td>P5 · Serving</td><td>Contract tests and LLM evaluation set pass in CI</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>56/56 tests; 12/12 evaluation cases grounded</li><li>≈ $0.10 per 1,000 AI notes; cached answers free</li></ul></td></tr>
+        <tr><td>P5 · Serving</td><td>Contract tests and LLM evaluation set pass in CI</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>CI green: 55 tests + 1 local-only (PyTorch); 12/12 evaluation cases grounded (<a href="https://github.com/sabrinapribadi/subscription-churn-at-scale/actions/runs/38279575714">run</a>)</li><li>≈ $0.10 per 1,000 AI notes; cached answers free</li></ul></td></tr>
         <tr><td>P4 · Ranking</td><td>profit@10%(LambdaMART) &gt; profit@10%(probability sort); ECE ≤ 0.010</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>LambdaMART −22% vs probability sort</li><li>Probability × value wins all 9 scenarios (+0.1%) → recommended</li><li>ECE 0.0158 → 0.0128 (gate 0.010)</li></ul></td></tr>
       </tbody>
     </table>

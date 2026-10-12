@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.13.1] — 2026-10-12 — CI green: the P5 gate, verified
+**Files:** .github/workflows/ci.yml, src/gateway/mcp_server.py, docs/adr/ADR-005-service-boundaries.md, docs/index.html, README.md
+- **Situation:** The first CI run failed before any test ran: pip caching looked for a requirements.txt/pyproject.toml the repo does not have. The ADR already said "passed".
+- **Task:** Make the gate real and make the record match it.
+- **Action:** Keyed the pip cache on the CI requirement files and moved to current action versions (Node 20 deprecation). Linked the passing run in ADR-005; corrected the page's test count to what CI runs; made a docstring vendor-neutral; added a CI badge.
+- **Result:** [Run 38279575714](https://github.com/sabrinapribadi/subscription-churn-at-scale/actions/runs/38279575714): tests 55 passed, 1 skipped (PyTorch, local-only); evaluation set 100% grounded; Docker image built.
+- **Talking point:** "I don't call a gate passed until CI shows it — and when my first run failed on setup, the record says so."
+
 ## [0.13.0] — 2026-10-12 — P5: services, grounded GenAI notes, MCP gateway, CI
 **Files:** src/services/ (contracts, store, clients, apps, artifacts), src/genai/ (providers, prompts, grader, explain, tools, dictionary), src/gateway/mcp_server.py, src/features/schema.py, scripts/export_serving_artifacts.py, scripts/llm_eval.py, tests/ (conftest, test_services, test_genai, test_gateway, llm_eval/cases.json, test_behaviour), Dockerfile, docker-compose.yml, requirements-serving.txt, requirements-ci.txt, .github/workflows/ci.yml, Makefile, configs/default_config.yaml, docs/adr/ADR-005, ADR-006, docs/index.html, README.md, docs/PRD.md
 - **Situation:** The model and call list lived in batch scripts. CRM screens and AI assistants need the same answers on demand, and a language model explaining a score can invent reasons, cost money, and be slow.
