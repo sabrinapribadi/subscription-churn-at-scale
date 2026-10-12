@@ -22,10 +22,15 @@ def prepare(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
+def holdout_split(train: pd.DataFrame):
+    """The 90/10 member-grouped split used for early stopping (deterministic)."""
+    gss = GroupShuffleSplit(n_splits=1, test_size=0.1, random_state=7)
+    return next(gss.split(train, groups=train["msno"]))
+
+
 def fit(train: pd.DataFrame, features: list[str]) -> lgb.LGBMClassifier:
     """Early stopping on a 10% member-level hold-out inside the training cohorts."""
-    gss = GroupShuffleSplit(n_splits=1, test_size=0.1, random_state=7)
-    tr_idx, va_idx = next(gss.split(train, groups=train["msno"]))
+    tr_idx, va_idx = holdout_split(train)
     tr, va = train.iloc[tr_idx], train.iloc[va_idx]
     model = lgb.LGBMClassifier(**PARAMS)
     model.fit(tr[features], tr["label"], eval_set=[(va[features], va["label"])], eval_metric="average_precision",

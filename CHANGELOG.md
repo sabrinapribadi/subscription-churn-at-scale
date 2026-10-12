@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.11.0] — 2026-10-12 — P4: call list ordered by money at stake; honest look at calibration
+**Files:** src/models/ranking.py, src/models/baseline.py, scripts/rank_and_calibrate.py, tests/test_ranking.py, configs/default_config.yaml, docs/adr/ADR-004-ranking-and-calibration.md, docs/adr/README.md, docs/index.html, docs/PRD.md, README.md, data/outputs/p4_rank_calibrate.json
+- **Situation:** Scores ran low (top group predicted 37%, observed 48%) because March churned more than February; the list ignored that members are worth different amounts.
+- **Task:** Make scores usable on prediction day without March labels, and find the call-list order that protects the most money — judged on profit, with the gates set first.
+- **Action:** Isotonic calibration plus Saerens prior-shift EM on unlabelled March scores; member value = paid per day × 365; compared probability sort, probability × value, and LambdaMART across 9 save-rate × call-cost scenarios. Fixed a tie-ordering flaw (isotonic steps) by breaking ties with the raw score. Added a hoverable profit chart and appendix tables.
+- **Result:** Top-10% list protects ≈12.5M a month (66% of value at risk). Probability × value wins 9/9 scenarios but by only 0.1%; LambdaMART loses 22% (G1 failed). Calibration error 0.0158 → 0.0128, short of 0.010 (G2 failed): EM recovered only part of the churn shift.
+- **Talking point:** "The fancy ranker lost 22% of the money; the one-line rule — probability times value — won every scenario. I shipped the rule and wrote down why."
+
 ## [0.10.0] — 2026-10-12 — P3: listening shape adds no signal; five personas for practitioners
 **Files:** scripts/build_sequences.py, scripts/behaviour_ablation.py, src/models/behaviour.py, tests/test_behaviour.py, docs/adr/ADR-003-behaviour-encoder.md, docs/adr/README.md, docs/index.html, docs/PRD.md, README.md, data/outputs/p3_behaviour.json
 - **Situation:** A third of churners are auto-renew members who cancel; the list reached only 1 in 4. Their payment record looks safe, so the hope was that changes in listening would warn earlier.

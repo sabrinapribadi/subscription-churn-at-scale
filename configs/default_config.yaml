@@ -29,9 +29,11 @@ validation:
 
 # ----- Business assumptions for profit@k (ADR-002) — varied in a sensitivity table -----
 business:
-  save_rate: 0.20                    # share of contacted churners retained (assumption)
-  contact_cost: 1.0                  # cost per contact, in revenue units (assumption)
-  revenue_horizon_periods: 1         # next billing period only
+  save_rate: 0.20                    # share of contacted churners retained (assumption, central case)
+  contact_cost: 20.0                 # cost per contact, same currency as plan prices (assumption, central case)
+  save_rate_grid: [0.10, 0.20, 0.30] # sensitivity (ADR-004)
+  contact_cost_grid: [0, 20, 50]
+  value_horizon_days: 365            # member value = paid per day × 365 (ADR-004)
 
 # ----- Spark -----
 spark:

@@ -461,13 +461,13 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <!-- M8 -->
   <article class="method" id="m-profit">
     <div class="explain">
-      <div class="head"><span class="num">3.8</span><h3>Profit at k</h3><span class="chip decided">Decided · ADR-002</span></div>
+      <div class="head"><span class="num">3.8</span><h3>Profit at k</h3><span class="chip use">In use · P4</span></div>
       <ul class="points"><li>Each call costs <b>c</b> and saves a churner with probability <b>s</b>.</li><li>Profit = revenue saved − cost of every call.</li><li>Sort by <b>probability × revenue</b>, not probability alone.</li></ul>
       <div class="formula">
         <span class="lbl">Realised profit of the top k</span>Π(<i>k</i>) = Σ<sub><i>i</i> ∈ top <i>k</i></sub> ( <i>s</i> · <i>y</i><sub>i</sub> · <i>r</i><sub>i</sub> − <i>c</i> )
         <span class="lbl">Expected value per member</span>𝔼[Π<sub>i</sub>] = <i>s</i> · <i>p̂</i><sub>i</sub> · <i>r</i><sub>i</sub> − <i>c</i>
       </div>
-      <p class="why-here"><b>Why it matters:</b> s and c are stated assumptions, varied in a sensitivity table.</p>
+      <p class="why-here"><b>Why it matters:</b> s and c are stated assumptions, varied in a sensitivity table. <b>Real data (P4):</b> probability × value won all 9 scenarios, by 0.1%.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · 3,000 members, synthetic plan prices</span>
@@ -485,7 +485,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <!-- M9 -->
   <article class="method" id="m-lambda">
     <div class="explain">
-      <div class="head"><span class="num">3.9</span><h3>LambdaMART ranking</h3><span class="chip planned">Planned · P4</span></div>
+      <div class="head"><span class="num">3.9</span><h3>LambdaMART ranking</h3><span class="chip fail">Tested · P4 gate failed</span></div>
       <ol class="steps"><li>For each pair in the wrong order, compute a push <b>λ</b>.</li><li>Scale it by the NDCG gain of swapping them.</li><li>Trees learn the pushes. Mistakes near the top cost most.</li></ol>
       <div class="formula">
         <span class="lbl">Pair push, for grade<sub>i</sub> &gt; grade<sub>j</sub></span>λ<sub>ij</sub> = σ · |ΔNDCG<sub>ij</sub>| / (1 + e<sup>σ(<i>s</i><sub>i</sub> − <i>s</i><sub>j</sub>)</sup>)
@@ -493,7 +493,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
         <span class="lbl">Quality, in plain words</span>NDCG@5 = how close the top 5 is to the best possible top 5 (0 to 1). Higher tiers count more; rank 1 counts in full, rank 2 63%, rank 3 50%, rank 4 43%, rank 5 39%.
         <span class="lbl">Quality, as a formula</span>NDCG@5 = DCG@5 / IDCG@5,&nbsp; DCG = Σ (2<sup>g</sup> − 1) / log₂(rank + 1)
       </div>
-      <p class="why-here"><b>Why it matters:</b> grades are revenue-at-risk tiers. Here λ moves the scores directly so you can watch.</p>
+      <p class="why-here"><b>Why it matters:</b> grades are revenue-at-risk tiers. Here λ moves the scores directly so you can watch. <b>Real data (P4):</b> it chased top-tier churners and lost 22% of profit.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · 8 members, grade = revenue-at-risk tier (0–3)</span>
@@ -553,6 +553,23 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 
     <div class="results-grid">
       <div class="sim">
+        <span class="simtag">P4 · What is the call list worth? · 1 in 5 called churners saved · 20 per call</span>
+        <svg class="plot" id="pf-svg" viewBox="0 0 640 260" role="img" aria-label="Monthly profit by share of members called for three call-list orders"></svg>
+        <div class="legend"><span><i style="background:var(--accent)"></i>Probability × value</span><span><i style="background:var(--muted)"></i>Probability</span><span><i style="background:var(--churn)"></i>LambdaMART</span></div>
+      </div>
+      <div class="explain">
+        <span class="eyebrow">What P4 showed</span>
+        <ol class="steps">
+          <li><b>Calling the top 10% protects about 12.5M a month</b> after call costs, covering 66% of the 107.9M at risk.</li>
+          <li><b>Ordering by value adds only 0.1%.</b> Most plans cost 99–149, so value barely reorders the list. Still the recommended order: it won in all 9 cost scenarios.</li>
+          <li><b>LambdaMART lost 22%.</b> It chased the highest-value churners and missed many others (49% reached vs 65%).</li>
+          <li><b>Scores still run low.</b> The prediction-day correction moved the expected churn rate from 5.7% to 6.0%; the real rate was 7.3%. For budgets, check last month's outcomes.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="results-grid">
+      <div class="sim">
         <span class="simtag">P3 · Who are our members? Five listening habits · March 2017</span>
         <svg class="plot" id="ps-svg" viewBox="0 0 640 270" role="img" aria-label="Member groups by share of members and churn rate"></svg>
         <div class="legend"><span>Circle size = number of members · hover a group for details</span></div>
@@ -589,7 +606,8 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <span class="eyebrow">Questions practitioners ask</span>
       <details><summary>Isn't this just "members without auto-renew"?</summary><p>That is today's rule, and it only ever calls manual renewers. The model reaches 11 points more churners with the same calls, and finds 1 in 4 auto-renew churners the rule never calls.</p></details>
       <details><summary>Did it use information from the future?</summary><p>No. Every input is built from data dated before the snapshot, 14 days ahead of renewal. An automated test fails if any later record changes a score.</p></details>
-      <details><summary>How many members should we call?</summary><p>Profit analysis puts the sweet spot near 10% (assuming 30% offer acceptance, offer cost 10, call cost 1, member value 200). Use the dial above for your budget.</p></details>
+      <details><summary>How many members should we call?</summary><p>Profit keeps rising past 10% under our central assumptions (1 in 5 saved, 20 per call), but each extra call earns less. Hover the "What is the call list worth?" chart to see the gain for any budget.</p></details>
+      <details><summary>Should we order the list by member value?</summary><p>Yes, but expect little: plans cost 99–149, so ordering by probability × value adds about 0.1%. A learned ranker (LambdaMART) did worse.</p></details>
       <details><summary>Why is this member on the list?</summary><p>The strongest signals: manual renewal, payment method, a recent cancellation, days since the last payment, and tenure. Per-member reasons come in Phase 5.</p></details>
       <details><summary>Should we just call the riskiest members?</summary><p>Not always. Some will leave whatever we offer (Ascarza, JMR 2018). Finding members who respond to an offer is the next project (uplift modelling).</p></details>
       <details><summary>How often does it need refreshing?</summary><p>Monthly: retrain on the latest outcomes and recalibrate. Drift monitoring is covered in the MLOps project.</p></details>
@@ -605,7 +623,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
         <tr><td>P1 · Baseline</td><td>Out-of-time PR-AUC reported; leakage tests pass</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>PR-AUC <b>0.568</b> vs rule <b>0.342</b></li><li>Top 10% of the list catches <b>65%</b> of churners</li><li>Leakage tests: 3/3 pass</li></ul></td></tr>
         <tr><td>P2 · Window</td><td>Window curve and knee reported for each k</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>Lead time: PR-AUC 0.676 (0 d) → 0.602 (7 d) → 0.561 (14 d) → 0.476 (30 d)</li><li>History: flat from 30 to 180 days → use 30</li></ul></td></tr>
         <tr><td>P3 · Embeddings</td><td>PR-AUC(GBM + embeddings) ≥ PR-AUC(GBM) + 0.02 out-of-time</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>Best: shape statistics +0.004; encoder +0.002; Mantis +0.003 (sample)</li><li>Kept for personas only (ADR-003)</li></ul></td></tr>
-        <tr><td>P4 · Ranking</td><td>profit@10%(LambdaMART) &gt; profit@10%(probability sort)</td><td><span class="chip planned">Not started</span></td><td>—</td></tr>
+        <tr><td>P4 · Ranking</td><td>profit@10%(LambdaMART) &gt; profit@10%(probability sort); ECE ≤ 0.010</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>LambdaMART −22% vs probability sort</li><li>Probability × value wins all 9 scenarios (+0.1%) → recommended</li><li>ECE 0.0158 → 0.0128 (gate 0.010)</li></ul></td></tr>
       </tbody>
     </table>
   </div>
@@ -633,6 +651,22 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
         <tbody><tr><td><b>PR-AUC <span class='tag base'>primary</span></b></td><td>Quality at the top of the list</td><td class='num'>0.342</td><td class='num'>0.504</td><td class='num'>0.568</td></tr><tr><td><b>ROC-AUC</b></td><td>Ranking across all members</td><td class='num'>0.803</td><td class='num'>0.800</td><td class='num'>0.891</td></tr><tr><td><b>Gini</b></td><td>ROC-AUC rescaled (2·AUC − 1); common in credit risk</td><td class='num'>0.607</td><td class='num'>0.600</td><td class='num'>0.781</td></tr><tr><td><b>Top-decile lift</b></td><td>Churners in the top 10% vs a random 10%</td><td class='num'>5.41×</td><td class='num'>5.59×</td><td class='num'>6.55×</td></tr><tr><td><b>H-measure</b></td><td>AUC with coherent cost weighting (Hand 2009)</td><td class='num'>0.432</td><td class='num'>0.411</td><td class='num'>0.535</td></tr><tr><td><b>MPC</b></td><td>Max profit per member at the best cut-off, 30% accept rate</td><td class='num'>1.79 <span class='muted'>@ 12%</span></td><td class='num'>1.72 <span class='muted'>@ 8%</span></td><td class='num'>2.09 <span class='muted'>@ 10%</span></td></tr><tr><td><b>EMPC</b></td><td>Expected max profit, uncertain accept rate (Verbraken 2013)</td><td class='num'>1.80 <span class='muted'>@ 12%</span></td><td class='num'>1.74 <span class='muted'>@ 7%</span></td><td class='num'>2.13 <span class='muted'>@ 10%</span></td></tr><tr><td><b>Brier</b></td><td>Probability error, lower is better</td><td class='num'>—</td><td class='num'>0.050</td><td class='num'>0.045</td></tr><tr><td><b>ECE</b></td><td>Calibration gap, lower is better</td><td class='num'>—</td><td class='num'>0.033</td><td class='num'>0.016</td></tr></tbody></table></div>
       <p class="muted" style="font-size:13px">Metrics disagree on the realistic model: PR-AUC and top-5% capture favour it; Gini, H-measure and EMPC favour the rule. It helps only at small call budgets. Profit assumptions: CLV 200, incentive 10, contact 1, accept rate ~ Beta(6, 14).</p>
     </div>
+    <div class="results-grid even">
+      <div class="explain">
+        <span class="eyebrow">P4 · Profit at the top 10% · 9 scenarios · Mar 2017</span>
+        <div class="table-wrap"><table class="compact">
+          <thead><tr><th>Save rate</th><th>Cost per call</th><th>Probability</th><th>Probability × value</th><th>LambdaMART</th></tr></thead>
+          <tbody><tr><td class='num'>10%</td><td class='num'>0</td><td class='num'>7.1M</td><td class='num'>7.1M</td><td class='num'>5.7M</td></tr><tr><td class='num'>10%</td><td class='num'>20</td><td class='num'>5.4M</td><td class='num'>5.4M</td><td class='num'>4.0M</td></tr><tr><td class='num'>10%</td><td class='num'>50</td><td class='num'>2.8M</td><td class='num'>2.8M</td><td class='num'>1.4M</td></tr><tr><td class='num'>20%</td><td class='num'>0</td><td class='num'>14.2M</td><td class='num'>14.2M</td><td class='num'>11.5M</td></tr><tr><td class='num'>20%</td><td class='num'>20</td><td class='num'>12.4M</td><td class='num'>12.5M</td><td class='num'>9.7M</td></tr><tr><td class='num'>20%</td><td class='num'>50</td><td class='num'>9.9M</td><td class='num'>9.9M</td><td class='num'>7.1M</td></tr><tr><td class='num'>30%</td><td class='num'>0</td><td class='num'>21.3M</td><td class='num'>21.3M</td><td class='num'>17.2M</td></tr><tr><td class='num'>30%</td><td class='num'>20</td><td class='num'>19.5M</td><td class='num'>19.6M</td><td class='num'>15.5M</td></tr><tr><td class='num'>30%</td><td class='num'>50</td><td class='num'>16.9M</td><td class='num'>17.0M</td><td class='num'>12.9M</td></tr></tbody></table></div>
+        <p class="muted" style="font-size:13px">Probability × value wins all 9 (by about 0.1%); LambdaMART loses all 9. Member value = amount paid per day × 365.</p>
+      </div>
+      <div class="explain">
+        <span class="eyebrow">P4 · Calibration · March 2017 actual churn 7.3%</span>
+        <div class="table-wrap"><table class="compact">
+          <thead><tr><th>Step</th><th>ECE</th><th>Mean predicted</th><th>Top 10% predicted</th><th>Top 10% observed</th></tr></thead>
+          <tbody><tr><td>Raw LightGBM</td><td class='num'>0.0158</td><td class='num'>5.7%</td><td class='num'>38.1%</td><td class='num'>47.4%</td></tr><tr><td>+ isotonic (Feb hold-out)</td><td class='num'>0.0158</td><td class='num'>5.7%</td><td class='num'>37.7%</td><td class='num'>47.4%</td></tr><tr><td>+ prior-shift EM (no March labels)</td><td class='num'>0.0128</td><td class='num'>6.0%</td><td class='num'>39.2%</td><td class='num'>47.4%</td></tr></tbody></table></div>
+        <p class="muted" style="font-size:13px">Gate G2 (ECE ≤ 0.010) not met. EM estimated March churn at 6.0%: the shift is partly in who the members are, not only in the churn rate.</p>
+      </div>
+    </div>
     <div class="explain">
       <span class="eyebrow">P3 · Does listening shape add signal? · train Feb, test Mar 2017 · gate +0.02 PR-AUC</span>
       <div class="table-wrap"><table class="compact">
@@ -659,7 +693,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <span class="eyebrow">5 · Our take</span>
   <h2>Working view, revised as results come in</h2>
   <div class="take">
-    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Warning time is the real trade-off;</b> history length is not. 30 days of logs is enough.</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark scores overstate:</b> a realistic setup loses 0.06 PR-AUC versus training on labels that arrive too late.</li><li><b>The open gap is auto-renew cancellers:</b> a third of churners, and the list reaches 1 in 4. That is where Phase 3 behaviour signals have to earn their keep.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
+    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Warning time is the real trade-off;</b> history length is not. 30 days of logs is enough.</li><li><b>Simple beats clever three times:</b> shape statistics vs encoders (P3), probability × value vs LambdaMART (P4).</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark scores overstate:</b> a realistic setup loses 0.06 PR-AUC versus training on labels that arrive too late.</li><li><b>The open gap is auto-renew cancellers:</b> a third of churners, and the list reaches 1 in 4. That is where Phase 3 behaviour signals have to earn their keep.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
     <div><span class="eyebrow">What would change our mind</span><ul class="points"><li><b>Answered by P2:</b> lead time is not free (−5 points of reach from 14 to 30 days). We keep 14 days; 7 if campaigns can move faster.</li><li><b>Answered by P3:</b> embeddings missed their gate (+0.004 vs +0.02), so they serve personas only. Auto-renew cancellers need a different signal, such as payment-failure history or offer response (CHN-2).</li></ul></div>
   </div>
 </section>
@@ -830,6 +864,21 @@ const P2R = {"leads":[0,7,14,30],"windows":[30,60,90,120,180],"g":{"0_30":[0.675
   hw._hover = (vx, vy) => { const w = wins[nearestIdx(wins, B.ix(vx))], k = leads.reduce((b, kk) => (Math.abs(B.sy(g(kk, w)[1]) - vy) < Math.abs(B.sy(g(b, w)[1]) - vy) ? kk : b), leads[0]), [pr, r10] = g(k, w), spread = Math.max(...wins.map((x) => g(k, x)[1])) - Math.min(...wins.map((x) => g(k, x)[1]));
     return { at: [B.sx(w), B.sy(r10)], html: `<b>${w} days of history · scored ${k} days ahead</b>` + tipRows([["churners reached (call 10%)", `${pct(r10, 1)} · ${n(L * r10)}`], ["PR-AUC", pr.toFixed(3)]]) + `<div class="muted tip-hint">All windows for ${k}-day lead time sit within ${(spread * 100).toFixed(1)} points: more history does not help here.</div>` }; };
   hoverable(hw);
+})();
+
+/* results: P4 profit curves (data from data/outputs/p4_rank_calibrate.json) */
+const P4R = {"curves":{"probability":[[0.01,2140831.0],[0.02,4039914.0],[0.03,5751947.0],[0.04,7301027.0],[0.05,8738205.0],[0.06,9877306.0],[0.07,10798751.0],[0.08,11417246.0],[0.09,11982367.0],[0.1,12445531.0],[0.11,12819351.0],[0.12,13133708.0],[0.13,13422229.0],[0.14,13624130.0],[0.15,13761829.0],[0.16,13859708.0],[0.17,13916965.0],[0.18,13955741.0],[0.19,13975578.0],[0.2,13983960.0],[0.21,13950524.0],[0.22,13920356.0],[0.23,13882723.0],[0.24,13847687.0],[0.25,13813100.0],[0.26,13771707.0],[0.27,13706505.0],[0.28,13657802.0],[0.29,13589609.0],[0.3,13522878.0],[0.31,13439574.0],[0.32,13366947.0],[0.33,13298551.0],[0.34,13227214.0],[0.35,13160035.0],[0.36,13073984.0],[0.37,12994103.0],[0.38,12878331.0],[0.39,12806030.0],[0.4,12713017.0],[0.41,12609290.0],[0.42,12501455.0],[0.43,12403147.0],[0.44,12296146.0],[0.45,12178804.0],[0.46,12063064.0],[0.47,11939001.0],[0.48,11821134.0],[0.49,11701765.0],[0.5,11597733.0]],"expected_value":[[0.01,2242542.0],[0.02,3964887.0],[0.03,5645303.0],[0.04,7103403.0],[0.05,8380149.0],[0.06,9701984.0],[0.07,10692208.0],[0.08,11384452.0],[0.09,11976774.0],[0.1,12458816.0],[0.11,12845790.0],[0.12,13151779.0],[0.13,13432612.0],[0.14,13621127.0],[0.15,13765296.0],[0.16,13800894.0],[0.17,13835166.0],[0.18,13857320.0],[0.19,13899040.0],[0.2,13918055.0],[0.21,13915124.0],[0.22,13933348.0],[0.23,13876423.0],[0.24,13856069.0],[0.25,13801921.0],[0.26,13775785.0],[0.27,13735340.0],[0.28,13673120.0],[0.29,13615918.0],[0.3,13539923.0],[0.31,13466847.0],[0.32,13394475.0],[0.33,13319928.0],[0.34,13235612.0],[0.35,13163289.0],[0.36,13090633.0],[0.37,12976204.0],[0.38,12908908.0],[0.39,12815890.0],[0.4,12751656.0],[0.41,12654287.0],[0.42,12547632.0],[0.43,12449207.0],[0.44,12335549.0],[0.45,12218071.0],[0.46,12081966.0],[0.47,11963529.0],[0.48,11869423.0],[0.49,11766910.0],[0.5,11664083.0]],"lambdamart":[[0.01,1959423.0],[0.02,3294647.0],[0.03,4427648.0],[0.04,5336549.0],[0.05,6185344.0],[0.06,6959468.0],[0.07,7656487.0],[0.08,8280119.0],[0.09,8982232.0],[0.1,9731189.0],[0.11,10538287.0],[0.12,11438228.0],[0.13,12280880.0],[0.14,12934891.0],[0.15,13351119.0],[0.16,13562786.0],[0.17,13601055.0],[0.18,13612350.0],[0.19,13581133.0],[0.2,13606681.0],[0.21,13676808.0],[0.22,13674519.0],[0.23,13676929.0],[0.24,13652830.0],[0.25,13636987.0],[0.26,13606518.0],[0.27,13551158.0],[0.28,13480480.0],[0.29,13406564.0],[0.3,13315555.0],[0.31,13252582.0],[0.32,13177115.0],[0.33,13072081.0],[0.34,13043583.0],[0.35,13022202.0],[0.36,12951531.0],[0.37,12885550.0],[0.38,12805051.0],[0.39,12725487.0],[0.4,12639530.0],[0.41,12551917.0],[0.42,12466295.0],[0.43,12373905.0],[0.44,12276069.0],[0.45,12179052.0],[0.46,12080535.0],[0.47,11973036.0],[0.48,11853972.0],[0.49,11739820.0],[0.5,11621989.0]]},"members":862158,"s":0.2,"c":20.0,"var":107874360.5934219};
+(function () {
+  const svg = $("pf-svg"), cv = P4R.curves, all = [].concat(...Object.values(cv).map((c) => c.map((q) => q[1]))), hi = Math.ceil(Math.max(...all) / 5e6) * 5e6, n = (v) => Math.round(v).toLocaleString("en-US");
+  const A = frame(svg, { l: 58, r: 610, t: 24, b: 206, x0: 0, x1: 0.5, y0: 0, y1: hi, xt: [0, 0.1, 0.2, 0.3, 0.4, 0.5], yt: Array.from({ length: hi / 5e6 + 1 }, (_, i) => i * 5e6), xf: (v) => Math.round(v * 100) + "%", yf: (v) => (v / 1e6) + "M", xl: "share of members called", yl: "monthly profit after call costs" });
+  [["lambdamart", "s-churn", 2], ["probability", "s-muted", 2], ["expected_value", "s-accent", 2.6]].forEach(([k, cls, w]) => S("path", { d: path([[0, 0]].concat(cv[k]), A.sx, A.sy), fill: "none", class: cls, "stroke-width": w }, svg));
+  S("line", { x1: A.sx(0.1), x2: A.sx(0.1), y1: 24, y2: 206, class: "s-amber", "stroke-dasharray": "4 3" }, svg);
+  T("top 10%", { x: A.sx(0.1) + 4, y: 36, class: "svgtxt" }, svg);
+  const at = (k, f) => cv[k][Math.min(cv[k].length - 1, Math.max(0, Math.round(f * 100) - 1))];
+  svg._hover = (vx) => { const f = Math.min(0.5, Math.max(0.01, Math.round(A.ix(vx) * 100) / 100)), ev = at("expected_value", f)[1], pr = at("probability", f)[1], lm = at("lambdamart", f)[1], calls = Math.round(P4R.members * f);
+    return { at: [A.sx(f), A.sy(ev)], html: `<b>Call ${Math.round(f * 100)}% · ${n(calls)} members</b>` + tipRows([["probability × value", n(ev), "var(--accent)"], ["probability", n(pr), "var(--muted)"], ["LambdaMART", n(lm), "var(--churn)"], ["call costs included", n(calls * P4R.c)]]) +
+      `<div class="muted tip-hint">Assumes 1 in ${Math.round(1 / P4R.s)} called churners is saved and ${P4R.c} per call. Value = 12 months of their current plan.</div>` }; };
+  hoverable(svg);
 })();
 
 /* results: P3 personas (data from data/outputs/p3_behaviour.json) */
