@@ -1,0 +1,19 @@
+# Overlay for Databricks Free Edition (ADR-008). Applied automatically when running on Databricks.
+paths:
+  raw_dir: /Volumes/workspace/churn/raw/csv
+  parquet_dir: /Volumes/workspace/churn/raw/parquet
+  features_dir: /Volumes/workspace/churn/data/features
+  outputs_dir: /Volumes/workspace/churn/data/outputs
+  reference_dir: /Volumes/workspace/churn/raw/reference   # local P4 features, uploaded for the parity check
+
+databricks:
+  model_name: workspace.churn.churn_lgbm      # Unity Catalog model registry
+  alias: champion
+  experiment: churn-p6                        # created under the running user's workspace folder
+
+# P6 gate (ADR-008): written before the first Databricks run
+parity:
+  feature_rows_identical_min: 0.999   # share of members whose every feature matches the local build
+  pr_auc_abs_tol: 0.002
+  churners_reached_abs_tol: 0.002     # top 10% of the list
+  profit_rel_tol: 0.005               # expected-value ordering, central scenario

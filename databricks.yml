@@ -1,0 +1,51 @@
+# Databricks Asset Bundle for P6 (ADR-008): the same pipeline as local, on serverless compute.
+#   databricks bundle validate -p portfolio
+#   databricks bundle deploy   -p portfolio
+#   databricks bundle run churn_p6 -p portfolio
+# The workspace comes from the CLI profile, so no workspace URL is stored in the repo.
+bundle:
+  name: subscription-churn-at-scale
+
+sync:
+  exclude:
+    - docs/**
+    - tests/**
+    - "*.db"
+
+targets:
+  dev:
+    mode: development
+    default: true
+
+resources:
+  jobs:
+    churn_p6:
+      name: churn-p6-reproduce
+      description: Build k=14, W=30 features with PySpark, retrain the champion, check parity with the local build, register it in Unity Catalog.
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: build_features
+          environment_key: spark
+          spark_python_task:
+            python_file: scripts/build_dataset.py
+            parameters: ["--months", "201702", "201703", "--W", "30"]
+        - task_key: train_register
+          depends_on:
+            - task_key: build_features
+          environment_key: ml
+          spark_python_task:
+            python_file: scripts/databricks_train_register.py
+      environments:
+        - environment_key: spark
+          spec:
+            environment_version: "6"
+            dependencies:
+              - pyyaml
+        - environment_key: ml
+          spec:
+            environment_version: "6"
+            dependencies:            # pinned to the local versions that produced P4
+              - lightgbm==4.7.0
+              - scikit-learn==1.9.1
+              - mlflow==3.17.0
+              - pyyaml

@@ -14,19 +14,19 @@ import sys
 import time
 from pathlib import Path
 
-import yaml
 from pyspark.sql import functions as F
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.data.cohorts import build_cohort_labels_fast, last_expiry_before, month_bounds  # noqa: E402
 from src.features.build import add_snapshot, build_features, build_features_multi  # noqa: E402
-from src.spark_session import get_spark  # noqa: E402
+from src.config import ON_DATABRICKS, load_config  # noqa: E402
+from src.spark_session import cache, get_spark, uncache  # noqa: E402
 
 OFFICIAL = {201702: "train.csv", 201703: "train_v2.csv"}
 
 
 def main() -> None:
-    cfg = yaml.safe_load(Path("configs/default_config.yaml").read_text())
+    cfg = load_config()  # + configs/databricks.yaml on Databricks
     ap = argparse.ArgumentParser()
     ap.add_argument("--months", nargs="+", type=int, required=True)
     ap.add_argument("--k", type=int, default=cfg["framing"]["lead_days"])
@@ -37,10 +37,11 @@ def main() -> None:
     raw = Path(cfg["paths"]["raw_dir"]).expanduser()
     pq = Path(cfg["paths"]["parquet_dir"]).expanduser()
     tag = f"k{a.k}_wmulti" if a.windows else f"k{a.k}_w{a.W}"
-    out = Path(cfg["paths"]["parquet_dir"]).expanduser().parent / "features" / tag
+    out = Path(cfg["paths"]["features_dir"]).expanduser() / tag
     spark = get_spark(driver_memory=cfg["spark"]["driver_memory"])
-    spark.sparkContext.setLogLevel("ERROR")
-    tx = spark.read.parquet(str(pq / "transactions")).cache()
+    if not ON_DATABRICKS:
+        spark.sparkContext.setLogLevel("ERROR")
+    tx = cache(spark.read.parquet(str(pq / "transactions")))
     ul = spark.read.parquet(str(pq / "user_logs"))
     members = spark.read.parquet(str(pq / "members"))
 
@@ -61,7 +62,7 @@ def main() -> None:
             n_off = None
             cohort = build_cohort_labels_fast(tx, y, m).select(
                 "msno", "last_expire", F.col("is_churn").alias("label"), F.lit("reconstructed").alias("label_source"))
-        cohort = add_snapshot(cohort.withColumn("cohort", F.lit(ym)), a.k).cache()
+        cohort = cache(add_snapshot(cohort.withColumn("cohort", F.lit(ym)), a.k))
         n, churn = cohort.count(), cohort.agg(F.avg("label")).first()[0]
         feats = build_features_multi(tx, ul, members, cohort, a.windows) if a.windows else build_features(tx, ul, members, cohort, a.W)
         feats.write.mode("overwrite").parquet(str(out / f"cohort={ym}"))
@@ -71,10 +72,11 @@ def main() -> None:
             "seconds": round(time.time() - t0),
         }
         print(ym, stats[f"{tag}:{ym}"], flush=True)
-        cohort.unpersist()
+        uncache(cohort)
     stats_path.parent.mkdir(parents=True, exist_ok=True)
     stats_path.write_text(json.dumps(stats, indent=2))
-    spark.stop()
+    if not ON_DATABRICKS:
+        spark.stop()
 
 
 if __name__ == "__main__":

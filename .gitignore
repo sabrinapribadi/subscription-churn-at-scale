@@ -29,3 +29,6 @@ htmlcov/
 !docs/index.html
 mlflow.db
 tests/browser/node_modules/
+
+# Databricks bundle state
+.databricks/
