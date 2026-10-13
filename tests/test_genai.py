@@ -10,7 +10,7 @@ import pytest
 import yaml
 
 from src.genai.explain import Explainer, build_facts
-from src.genai.grader import grade
+from src.genai.grader import grade, mentions_any
 from src.genai.providers import OpenAIProvider, TemplateProvider, get_provider, template_text
 from src.genai.tools import build_tools, openai_tool_schemas
 from src.services.contracts import Reason, Reasons, Score
@@ -46,7 +46,7 @@ def test_eval_set_template_is_grounded(case):
     e = Explainer(TemplateProvider()).explain(s, rs)
     assert e.grounded and not e.grounded_fallback, e.checks
     assert e.suggested_action == case["expected_action"]
-    assert not any(w in e.narrative.lower() for w in case.get("must_not_mention", []))
+    assert not mentions_any(e.narrative, case.get("must_not_mention", []))
 
 
 def test_grader_catches_invented_numbers_features_and_bad_endings():
@@ -102,3 +102,18 @@ def test_one_tool_registry_for_mcp_and_openai(client):
     assert set(schemas) == {"member_risk", "why_at_risk", "call_list", "what_if"}
     assert schemas["member_risk"]["parameters"]["required"] == ["member_id"]
     assert "required" not in schemas["what_if"]["parameters"]
+
+
+def test_mentions_any_is_whole_word():
+    assert not mentions_any("2190 at stake over 12 months", ["19"])
+    assert mentions_any("aged 19, lives nearby", ["19"])
+    assert not mentions_any("female listeners", ["male"])
+
+
+def test_openai_provider_sends_optional_params_only_when_set():
+    calls = []
+    fake = SimpleNamespace(responses=SimpleNamespace(create=lambda **kw: calls.append(kw) or SimpleNamespace(output_text="x", usage=None)))
+    OpenAIProvider(model="m", price_in=0, price_cached_in=0, price_out=0, client=fake).complete("s", "u", {})
+    OpenAIProvider(model="m", price_in=0, price_cached_in=0, price_out=0, temperature=0.2, reasoning_effort="none", client=fake).complete("s", "u", {})
+    assert "temperature" not in calls[0] and "reasoning" not in calls[0]
+    assert calls[1]["temperature"] == 0.2 and calls[1]["reasoning"] == {"effort": "none"}

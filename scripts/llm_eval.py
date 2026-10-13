@@ -20,7 +20,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.genai.explain import Explainer, build_facts  # noqa: E402
-from src.genai.grader import grade  # noqa: E402
+from src.genai.grader import grade, mentions_any  # noqa: E402
 from src.genai.providers import get_provider  # noqa: E402
 from src.services.contracts import Reason, Reasons, Score  # noqa: E402
 
@@ -41,9 +41,9 @@ def main() -> None:
         ex = Explainer(prov)
         system, user = ex.prompt.render(facts)
         out = prov.complete(system, user, facts)
-        raw_ok.append(all(grade(out.text, facts).values()) and not any(w in out.text.lower() for w in c["must_not_mention"]))
+        raw_ok.append(all(grade(out.text, facts).values()) and not mentions_any(out.text, c["must_not_mention"]))
         e = ex.explain(s, rs)
-        grounded.append(e.grounded and not any(w in e.narrative.lower() for w in c["must_not_mention"]))
+        grounded.append(e.grounded and not mentions_any(e.narrative, c["must_not_mention"]))
         action_ok.append(e.suggested_action == c["expected_action"])
         lat.append(out.meter.latency_ms); cost.append(out.meter.cost_usd); tin.append(out.meter.input_tokens); tout.append(out.meter.output_tokens)
     per_1000 = 1000 * float(np.mean(cost))

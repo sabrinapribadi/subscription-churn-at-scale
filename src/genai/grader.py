@@ -17,6 +17,11 @@ def _numbers(text: str) -> set[str]:
     return {n.replace(",", "") for n in _NUM.findall(text)}
 
 
+def mentions_any(text: str, words: list[str]) -> bool:
+    """Whole-word match, so a banned "19" does not fire inside "2190"."""
+    return any(re.search(rf"(?<![\w.]){re.escape(w)}(?![\w])", text, re.I) for w in words)
+
+
 def grade(text: str, facts: dict) -> dict[str, bool]:
     allowed = set()
     for v in facts["allowed_number_sources"]:

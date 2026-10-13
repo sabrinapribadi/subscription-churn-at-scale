@@ -23,6 +23,6 @@ class Prompt:
 
 
 @lru_cache
-def load_prompt(name: str, version: str = "v1") -> Prompt:
+def load_prompt(name: str, version: str = "v2") -> Prompt:
     d = yaml.safe_load((PROMPTS / f"{name}.{version}.yaml").read_text())
     return Prompt(d["name"], d["version"], d["system"], d["user"])

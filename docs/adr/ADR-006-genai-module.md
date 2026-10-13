@@ -1,6 +1,6 @@
 # ADR-006: GenAI Module — Provider Interface, Versioned Prompts, Shared Tools, Grounding Grader
 
-**Status:** Accepted — evaluation set 100% grounded; cost and latency within budget
+**Status:** Accepted — evaluation set 100% grounded (12/12 live on OpenAI); cost within budget; live latency p95 2.26 s misses the 2 s budget (see Results)
 **Date:** 2026-10-12
 **Deciders:** Sabrina Pribadi
 
@@ -31,7 +31,7 @@ The question: **"How do we write plain-language reasons that are provably faithf
 ## Decision Outcome
 
 - **Providers** (`src/genai/providers.py`): `TemplateProvider` (deterministic text from reasons; no key) and `OpenAIProvider` (model from config). `get_provider()` uses OpenAI only when `OPENAI_API_KEY` is set.
-- **Prompts** (`src/genai/prompts/*.yaml`): versioned (`name`, `version`, `system`, `user`); the version is returned with every explanation.
+- **Prompts** (`src/genai/prompts/*.yaml`): versioned (`name`, `version`, `system`, `user`); the version is returned with every explanation and is part of the cache key. One file per prompt, renamed in place when the version changes (git keeps earlier versions).
 - **Grader** (`src/genai/grader.py`), all must pass:
   1. *Numbers grounded* — every number in the text appears in the supplied facts
   2. *Reasons grounded* — the top reason is mentioned; no feature outside the supplied reasons is named
@@ -51,7 +51,7 @@ Prices from OpenAI's official pricing page (developers.openai.com/api/docs/prici
 |---|---|---|---|---|
 | `gpt-6-luna` | $0.10 | $0.01 | $0.50 | −50% |
 
-Estimate per explanation ≈ 400 input + 110 output tokens → **≈ $0.0001 each, ≈ $0.10 per 1,000**; the full monthly call list (86,215 members) ≈ $8, or ≈ $4 as a nightly batch.
+Measured per explanation ≈ 200 input + 56 output tokens → **≈ $0.00005 each, $0.048 per 1,000**; the full monthly call list (86,215 members) ≈ $4, or ≈ $2 as a nightly batch. (Planning estimate before the live run: $0.10 per 1,000.)
 
 | Budget | Target | How it is enforced |
 |---|---|---|
@@ -66,7 +66,25 @@ Estimate per explanation ≈ 400 input + 110 output tokens → **≈ $0.0001 eac
 - Evaluation set (12 cases, template provider): raw pass 100%, grounded after guard 100%, action accuracy 100%.
 - Guard verified with a scripted OpenAI client: invented facts → fallback to the template; grounded text → used and metered.
 - Latency (real artefacts): first note p95 49 ms in-process, 80 ms over HTTP; cached p95 0.13 ms in-process, 7 ms over HTTP.
-- Cost: template $0; estimated ≈ $0.10 per 1,000 notes with `gpt-6-luna` at list prices (≈ 420 input + 95 output tokens). Live OpenAI numbers are reported by `make llm-eval` once a key is set.
+- Cost: template $0.
+
+### Live OpenAI run (2026-10-13, `gpt-6-luna`, prompt `explain_member.v2`)
+
+| Metric | Result | Budget |
+|---|---|---|
+| Raw pass rate (before the guard) | **12/12 (100%)** | reported |
+| Grounded after guard · action accuracy | 100% · 100% | 100% |
+| Cost per 1,000 notes | **$0.048** (≈ 198 input + 56 output tokens) | ≤ $0.20 ✅ |
+| Live latency p50 / p95 | 1.69 s / **2.26 s** | p95 ≤ 2.0 s ❌ |
+| Network floor ("Say OK", 10 calls) | 1.40 s / 1.60 s | — |
+
+How we got there, in three runs:
+
+1. **First run failed:** the API rejected `temperature` for this model. It is now optional in config (`null`) and sent only when set.
+2. **Raw pass 25%, p95 3.6 s:** `gpt-6-luna` is a reasoning model, and reasoning tokens (80–140) used up the 160-token output limit, cutting notes off mid-sentence. Fixed with `reasoning_effort: none` (config).
+3. **Raw pass 5/12:** the model paraphrased reasons ("a 410-day plan" for "plan length in days"), which the exact-match grader rejects. Prompt v2 asks for each reason's exact wording, first reason first, risk level and percentage up front, so the grader stays strict and the prompt adapts to it. The eval's banned-word check now matches whole words (a banned "19" had fired inside "2190").
+
+**Latency decision:** the 2 s budget is kept, and the miss is recorded. About 1.6 s of the p95 is the network round trip, so a faster model would not fix it. Agents do not wait on this path: call-list notes are written in the nightly batch, and repeat questions are cached (7 ms over HTTP). The live path serves only first-time, on-demand questions. The next lever, if needed, is streaming, so the first words appear before the full note.
 
 ## Consequences
 

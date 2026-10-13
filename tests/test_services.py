@@ -68,5 +68,5 @@ def test_unknown_member_is_404_everywhere(apps):
 
 def test_explanation_contract(apps, store):
     e = Explanation(**apps[2].get(f"/members/{store.order[0]}/explanation").json())
-    assert e.grounded and not e.grounded_fallback and e.prompt_version == "explain_member.v1"
+    assert e.grounded and not e.grounded_fallback and e.prompt_version == "explain_member.v2"
     assert e.narrative.endswith(f"Suggested action: {e.suggested_action}.") and e.meter.cost_usd == 0

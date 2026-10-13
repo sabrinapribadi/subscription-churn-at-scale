@@ -39,7 +39,7 @@ def build_facts(score: Score, reasons: Reasons) -> dict:
 
 
 class Explainer:
-    def __init__(self, provider: Provider | None = None, prompt: str = "explain_member", version: str = "v1", cache_size: int = 100_000):
+    def __init__(self, provider: Provider | None = None, prompt: str = "explain_member", version: str = "v2", cache_size: int = 100_000):
         self.provider = provider or TemplateProvider()
         self.prompt = load_prompt(prompt, version)
         self.cache: OrderedDict[tuple, Explanation] = OrderedDict()

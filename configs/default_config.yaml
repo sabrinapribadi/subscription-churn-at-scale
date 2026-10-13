@@ -46,7 +46,8 @@ llm:
   provider: openai                   # used only when OPENAI_API_KEY is set; otherwise the template provider
   model: gpt-6-luna
   max_output_tokens: 160
-  temperature: 0.2
+  temperature: null                  # gpt-6-luna rejects temperature; set a number only for models that accept it
+  reasoning_effort: none             # reasoning tokens use up max_output_tokens and cut notes off mid-sentence
   timeout_seconds: 8
   # USD per 1M tokens, from developers.openai.com/api/docs/pricing (read 2026-10-12)
   price_input_per_m: 0.10

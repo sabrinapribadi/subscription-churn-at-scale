@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.13.2] — 2026-10-13 — Live OpenAI run: notes 12/12 grounded, $0.05 per 1,000, latency miss recorded
+**Files:** src/genai/providers.py, src/genai/prompts/explain_member.v2.yaml (renamed from v1), src/genai/explain.py, src/genai/registry.py, src/genai/grader.py, scripts/llm_eval.py, configs/default_config.yaml, tests/test_genai.py, tests/test_services.py, docs/adr/ADR-006-genai-module.md, docs/index.html, README.md
+- **Situation:** P5 had only estimated the LLM's cost and speed: CI runs the free template writer, and the real model had never been called.
+- **Task:** Run the evaluation set against OpenAI with a restricted, expiring API key and report the real pass rate, cost and latency (rule R13).
+- **Action:** First run: the API rejected `temperature` for this model, so it is now optional. Second run: 25% raw pass and p95 3.6 s, because the model's hidden reasoning used up the output limit and cut notes off; set `reasoning_effort: none`. Third run: 5/12, because the model paraphrased reasons and the exact-match grader rejected them; prompt v2 asks for exact reason wording, keeping the grader strict. Fixed an eval bug where a banned "19" matched inside "2190". Measured the network floor to explain the remaining latency.
+- **Result:** 12/12 notes grounded before any fallback; $0.048 per 1,000 notes (budget $0.20; earlier estimate $0.10); live p95 2.26 s against a 2 s budget, missed and recorded. 1.6 s of that is the network round trip, and agents read nightly or cached notes instead. 58/58 tests pass with no API key.
+- **Talking point:** "The first live run passed a quarter of the notes. Three fixes later it passed all of them at five cents per thousand, and I kept the one budget it still misses on the record instead of moving the line."
+
 ## [0.13.1] — 2026-10-12 — CI green: the P5 gate, verified
 **Files:** .github/workflows/ci.yml, src/gateway/mcp_server.py, docs/adr/ADR-005-service-boundaries.md, docs/index.html, README.md
 - **Situation:** The first CI run failed before any test ran: pip caching looked for a requirements.txt/pyproject.toml the repo does not have. The ADR already said "passed".

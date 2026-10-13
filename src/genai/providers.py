@@ -50,7 +50,8 @@ class OpenAIProvider:
     price_cached_in: float
     price_out: float
     max_output_tokens: int = 160
-    temperature: float = 0.2
+    temperature: float | None = None   # some models reject it; sent only when set
+    reasoning_effort: str | None = None  # reasoning tokens count against max_output_tokens; "none" for short notes
     timeout: float = 8.0
     client: object | None = None
     name: str = "openai"
@@ -67,8 +68,11 @@ class OpenAIProvider:
 
     def complete(self, system: str, user: str, facts: dict) -> Completion:
         t0 = time.perf_counter()
+        extra = {} if self.temperature is None else {"temperature": self.temperature}
+        if self.reasoning_effort is not None:
+            extra["reasoning"] = {"effort": self.reasoning_effort}
         r = self._client().responses.create(model=self.model, instructions=system, input=user,
-                                            max_output_tokens=self.max_output_tokens, temperature=self.temperature)
+                                            max_output_tokens=self.max_output_tokens, **extra)
         latency = (time.perf_counter() - t0) * 1000
         u = getattr(r, "usage", None)
         it = int(getattr(u, "input_tokens", 0) or 0)
@@ -86,5 +90,6 @@ def get_provider(llm_cfg: dict, prefer: str | None = None) -> Provider:
     if want == "openai" and os.environ.get("OPENAI_API_KEY"):
         return OpenAIProvider(model=llm_cfg["model"], price_in=llm_cfg["price_input_per_m"], price_cached_in=llm_cfg["price_cached_input_per_m"],
                               price_out=llm_cfg["price_output_per_m"], max_output_tokens=llm_cfg.get("max_output_tokens", 160),
-                              temperature=llm_cfg.get("temperature", 0.2), timeout=llm_cfg.get("timeout_seconds", 8))
+                              temperature=llm_cfg.get("temperature"), reasoning_effort=llm_cfg.get("reasoning_effort"),
+                              timeout=llm_cfg.get("timeout_seconds", 8))
     return TemplateProvider()
