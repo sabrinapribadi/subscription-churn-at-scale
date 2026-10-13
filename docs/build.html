@@ -103,7 +103,7 @@ tr:last-child td { border-bottom: 0; }
 @media (max-width: 520px) { .scqa { grid-template-columns: minmax(0, 1fr); } }
 
 /* swimlane */
-.lanewrap { display: grid; gap: 10px; }
+.lanewrap { display: grid; gap: 12px; }
 .walk { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .walk button { font: 600 13px var(--font-body); border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
 .walk button.primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
@@ -137,12 +137,26 @@ svg.swim g.step.done rect { fill: var(--tint); }
 .detail .kv b { font: 600 11px var(--font-mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); padding-top: 3px; }
 .detail code, td code { font: 12px var(--font-mono); background: var(--tint); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
 
-.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+/* phase panel: four parts, each separated by a rule and generous space */
+#phase { display: grid; gap: 30px; padding-top: 10px; }
+#phase > .part + .part { border-top: 1px solid var(--line); padding-top: 26px; }
+.ph-top { display: grid; gap: 14px; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; align-items: start; }
 @media (max-width: 860px) { .two { grid-template-columns: minmax(0, 1fr); } }
-.box { display: grid; gap: 10px; min-width: 0; }
+.box { display: grid; gap: 12px; min-width: 0; align-content: start; }
+.box > .eyebrow ~ .eyebrow { margin-top: 16px; }
 ul.points { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
 .star { margin: 0; border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; font-size: 15px; font-style: italic; }
 .obst td:first-child { width: 22%; }
+@media (max-width: 600px) {  /* obstacles become stacked cards on phones */
+  .obst thead { display: none; }
+  .obst, .obst tbody, .obst tr, .obst td { display: block; width: 100%; }
+  .obst tr { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .obst tr:last-child { border-bottom: 0; }
+  .obst td, .obst td:first-child { width: auto; border: 0; padding: 3px 0; display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px; }
+  .obst td::before { content: attr(data-label); font: 600 10.5px var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); padding-top: 3px; }
+  .obst td:first-child { font-weight: 600; }
+}
 .verdict-ok { color: var(--stay); font-weight: 600; }
 .verdict-no { color: var(--churn); font-weight: 600; }
 .verdict-wait { color: var(--amber); font-weight: 600; }
@@ -184,7 +198,7 @@ footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line);
 <section class="block" aria-labelledby="h-phase">
   <span class="eyebrow" id="h-phase">Phase</span>
   <div class="picker" id="picker" role="tablist" aria-label="Phases"></div>
-  <article id="phase" class="block" style="padding-top:8px"></article>
+  <article id="phase"></article>
 </section>
 
 <footer>
@@ -477,7 +491,7 @@ function renderSwim(p, state) {
   }
   p.steps.forEach((s, i) => {
     const {x, y} = pos[i], kind = s[5] ? ` kind-${s[5]}` : "", cls = i === state.i ? " current" : i < state.i ? " done" : "";
-    const lines = wrap(s[1], 19);
+    const lines = wrap(s[1], 16);
     svg += `<g class="step${kind}${cls}" data-i="${i}" tabindex="0" role="button" aria-label="Step ${i + 1}: ${esc(s[1])}">
       <rect x="${x}" y="${y}" width="${BOX_W}" height="${BOX_H}" rx="8"/>
       <text class="num" x="${x + 9}" y="${y + 16}">${i + 1}</text>
@@ -498,13 +512,13 @@ function renderPhase() {
   const scqa = ["Situation", "Complication", "Question", "Answer"].map((h, k) => `<div><b>${h}</b><p>${esc(p.scqa[k])}</p></div>`).join("");
   const res = p.results.map(r => `<tr><td>${esc(r[0])}</td><td class="mono">${esc(r[1])}</td><td class="mono">${esc(r[2])}</td><td>${
     r[3] === "ok" ? '<span class="verdict-ok">pass</span>' : r[3] === "no" ? '<span class="verdict-no">fail</span>' : r[3] === "wait" ? '<span class="verdict-wait">pending</span>' : '<span class="muted">info</span>'}</td></tr>`).join("");
-  const obs = p.obstacles.length ? `<div class="box"><span class="eyebrow">Obstacles · symptom → root cause → fix → prevention</span>
+  const obs = p.obstacles.length ? `<div class="part box"><span class="eyebrow">Obstacles · symptom → root cause → fix → prevention</span>
     <div class="scroll"><table class="obst"><thead><tr><th>Symptom</th><th>Root cause</th><th>Fix</th><th>Prevention</th></tr></thead><tbody>${
-    p.obstacles.map(o => `<tr>${o.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div>` : "";
+    p.obstacles.map(o => `<tr>${o.map((c, k) => `<td data-label="${["Symptom", "Root cause", "Fix", "Prevention"][k]}">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div>` : "";
   $("#phase").innerHTML = `
-    <div class="phase-head"><h2>${esc(p.tag)} · ${esc(p.name)}</h2>${chip(p.verdict)}<span class="dates">${esc(p.dates)}</span></div>
-    <div class="scqa">${scqa}</div>
-    <div class="lanewrap">
+    <div class="part ph-top"><div class="phase-head"><h2>${esc(p.tag)} · ${esc(p.name)}</h2>${chip(p.verdict)}<span class="dates">${esc(p.dates)}</span></div>
+    <div class="scqa">${scqa}</div></div>
+    <div class="part lanewrap">
       <div class="walk"><span class="eyebrow">Build steps</span>
         <button type="button" id="prev">◀ Prev</button><button type="button" class="primary" id="next">Next ▶</button>
         <span class="pos" id="pos"></span></div>
@@ -512,14 +526,14 @@ function renderPhase() {
       <div class="lane-legend"><span><i></i>step</span><span><i class="fail"></i>where it failed</span><span><i class="fix"></i>a fix</span><span><i class="plan"></i>planned</span><span>Hover a step for a summary; click or use Next for details.</span></div>
       <div id="detail"></div>
     </div>
-    <div class="two">
+    <div class="part two">
       <div class="box"><span class="eyebrow">Result vs gate (set before the work)</span>
         <div class="scroll"><table><thead><tr><th>Check</th><th>Target</th><th>Result</th><th></th></tr></thead><tbody>${res}</tbody></table></div></div>
       <div class="box"><span class="eyebrow">Key decisions</span>${p.decisions.length ? `<ul class="points">${p.decisions.map(d => `<li>${esc(d[0])} · ${adrLink(d[1])}</li>`).join("")}</ul>` : '<p class="muted">To be decided.</p>'}
         ${p.lessons.length ? `<span class="eyebrow">Lessons learned</span><ul class="points">${p.lessons.map(l => `<li>${esc(l)}</li>`).join("")}</ul>` : ""}</div>
     </div>
     ${obs}
-    ${p.star ? `<div class="box"><span class="eyebrow">STAR talking point</span><p class="star">“${esc(p.star)}”</p></div>` : ""}`;
+    ${p.star ? `<div class="part box"><span class="eyebrow">STAR talking point</span><p class="star">“${esc(p.star)}”</p></div>` : ""}`;
   $("#prev").addEventListener("click", () => step(-1));
   $("#next").addEventListener("click", () => step(1));
   drawSteps();

@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.15.2] — 2026-10-13 — Walkthrough page: clear spacing between parts
+**Files:** docs/build.html
+- **Situation:** On the walkthrough, section labels sat tight against the table above them ("Result vs gate" under the step panel, "Obstacles" under the table); on phones the four-column obstacles table squeezed into narrow columns.
+- **Task:** Make each phase read as distinct parts without adding length.
+- **Action:** The phase panel never got the grid spacing other sections have (its class rule targeted `section` only). Gave it its own grid with a thin rule and space between parts (summary, build steps, result and decisions, obstacles, STAR), more space before a second label in a column, earlier wrapping of step titles, and stacked labelled cards for obstacles on phones.
+- **Result:** Parts are visibly separate on desktop and phone; 333/333 browser checks pass.
+- **Talking point:** "When something looks cramped, I look for the rule that didn't apply before adding spacing by hand."
+
 ## [0.15.1] — 2026-10-13 — Audit: every document matches the results and the rules
 **Files:** docs/index.html, docs/build.html, README.md, docs/PRD.md, docs/adr/ADR-002-validation-strategy.md, docs/adr/ADR-005-service-boundaries.md, docs/adr/ADR-008-databricks-port.md, docs/adr/README.md
 - **Situation:** After P6 and the P4 re-run, many numbers had moved, and seven phases of documents had accumulated small drifts.
