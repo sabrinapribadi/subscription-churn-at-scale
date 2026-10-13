@@ -349,7 +349,7 @@ const PHASES = [
     ["Platform", "Docker + CI", "One image, four services; GitHub Actions runs every test without an API key.", "The gate is only passed when CI says so.", ".github/workflows/ci.yml"]
   ],
   decisions: [["Four services + MCP gateway", "005"], ["Rule-based grader with template fallback; budgets for cost and latency", "006"], ["One agent, not several", "007"]],
-  results: [["Contract tests + LLM evaluation in CI", "pass", "115 tests pass", "ok"], ["Notes grounded (live)", "100%", "60/60", "ok"], ["Cost per 1,000 notes", "≤ $0.20", "$0.048", "ok"], ["Live note latency, p95", "≤ 2 s", "3.6 s (network floor 1.6 s)", "no"], ["Agent task success", "≥ 80%", "45/45", "ok"]],
+  results: [["Contract tests + LLM evaluation in CI", "pass", "118 tests pass", "ok"], ["Notes grounded (live)", "100%", "60/60", "ok"], ["Cost per 1,000 notes", "≤ $0.20", "$0.048", "ok"], ["Live note latency, p95", "≤ 2 s", "3.6 s (network floor 1.6 s)", "no"], ["Agent task success", "≥ 80%", "45/45", "ok"]],
   obstacles: [
     ["Live notes cut off mid-sentence; 3/12 passed", "Reasoning model spent the output budget thinking", "reasoning_effort: none", "Check reasoning tokens when output looks truncated"],
     ["Model paraphrased reasons; grader rejected them", "Exact-match grader vs free wording", "Prompt v2 asks for exact reason wording", "Adapt the prompt to a strict grader, not the reverse"],
