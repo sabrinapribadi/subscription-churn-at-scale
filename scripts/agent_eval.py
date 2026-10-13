@@ -52,16 +52,19 @@ def matched(expect: dict, calls) -> bool:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(); ap.add_argument("--repeats", type=int, default=3); a = ap.parse_args()
+    ap = argparse.ArgumentParser(); ap.add_argument("--repeats", type=int, default=3)
+    ap.add_argument("--questions", default="tests/llm_eval/planner_questions.json")
+    ap.add_argument("--out", default="data/outputs/p5_agent_eval.json"); a = ap.parse_args()
     if not os.environ.get("OPENAI_API_KEY"):
         sys.exit("OPENAI_API_KEY is not set; the planner needs a live LLM.")
     cfg = yaml.safe_load(Path("configs/default_config.yaml").read_text())
     store = ServingStore(os.path.expanduser(os.environ.get("SERVING_DIR", "~/data/kkbox/serving")))
     client = LocalClient(store, Explainer(get_provider(cfg["llm"])))  # notes written by the live LLM, as deployed
     planner = get_planner(client, cfg)
-    ph = {"top_member": store.order[0], "mid_member": store.order[50_000], "low_member": store.order[-1],
-          "best_share_20_20": store.what_if(0.2, 20).best_share}
-    questions = fill(json.loads(Path("tests/llm_eval/planner_questions.json").read_text()), ph)
+    ph = {"top_member": store.order[0], "second_member": store.order[1], "mid_member": store.order[50_000],
+          "mid2_member": store.order[200_000], "low_member": store.order[-1], "low2_member": store.order[-2],
+          "best_share_20_20": store.what_if(0.2, 20).best_share, "best_share_30_10": store.what_if(0.3, 10).best_share}
+    questions = fill(json.loads(Path(a.questions).read_text()), ph)
     rows = []
     for q in questions:
         banned = list(q.get("must_not_mention", []))
@@ -85,7 +88,7 @@ def main() -> None:
     for r in rows:
         per_q.setdefault(r["id"], []).append(r["success"])
     A = cfg["agent"]
-    report = {"model": planner.model, "reasoning_effort": planner.reasoning_effort, "questions": len(questions), "repeats": a.repeats,
+    report = {"question_set": a.questions, "model": planner.model, "reasoning_effort": planner.reasoning_effort, "questions": len(questions), "repeats": a.repeats,
               "task_success": round(float(np.mean([r["success"] for r in rows])), 3),
               "tool_and_args_accuracy": round(float(np.mean([r["tools_and_args"] for r in rows])), 3),
               "raw_grounded": round(float(np.mean([r["raw_grounded"] for r in rows])), 3),
@@ -103,7 +106,7 @@ def main() -> None:
     for f in report["failures"]:
         print("FAILED", json.dumps(f, default=str)[:700])
     Path("data/outputs").mkdir(parents=True, exist_ok=True)
-    Path("data/outputs/p5_agent_eval.json").write_text(json.dumps(report, indent=1, default=str))
+    Path(a.out).write_text(json.dumps(report, indent=1, default=str))
     sys.exit(0 if report["passed"] else 1)
 
 

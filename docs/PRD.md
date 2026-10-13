@@ -131,7 +131,7 @@ Module F: Databricks port & MLflow registry — Phase 6 (ADR-008)
 | P4    | LambdaMART revenue-at-risk ranking                | profit@10% > sort-by-probability                             |
 | P5    | Microservices + GenAI module + MCP                | Contract tests + LLM eval set pass in CI                     |
 | P6    | Databricks Free Edition port + MLflow registry    | Same metrics reproduced on Databricks                        |
-| P7    | Showcase page + dashboard                         | Page published on GitHub Pages                               |
+| P7    | Operate monthly: dashboard, drift check, held-out agent questions | ADR-009 gates G1–G4 (page published: already met in P1)      |
 
 
 11. RISKS AND MITIGATIONS

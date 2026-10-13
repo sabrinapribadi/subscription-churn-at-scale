@@ -55,3 +55,7 @@ llm-eval:
 # Live only: the planner agent needs an LLM (ADR-007)
 agent-eval:
 	python scripts/agent_eval.py --repeats 3
+
+# P7: questions written before any run (ADR-009)
+agent-eval-holdout:
+	python scripts/agent_eval.py --repeats 3 --questions tests/llm_eval/planner_questions_holdout.json --out data/outputs/p7_agent_holdout.json
