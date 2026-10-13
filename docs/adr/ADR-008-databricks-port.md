@@ -1,6 +1,6 @@
 # ADR-008: Databricks Port — Asset Bundle, Unity Catalog Volumes, Serverless Job, MLflow Registry
 
-**Status:** Proposed — gate written before the first Databricks run
+**Status:** Accepted — gate passed on run 3 (identical to the local run); run 1 failed and is on record
 **Date:** 2026-10-13
 **Deciders:** Sabrina Pribadi
 
@@ -53,11 +53,33 @@ The question: **"Can the same code reproduce the champion's numbers on Databrick
 
 The model tolerances allow for LightGBM's floating-point summation order differing across CPU counts. Data and features must match exactly.
 
-## Results
+## Results (2026-10-13)
 
-Pending the first run.
+The gate table above was committed before any Databricks run (commit `1fa327f`). Tolerances never changed. The local reference was rebuilt after the fixes below, so the same corrected code ran on both platforms.
+
+| Run | What changed | PR-AUC local · Databricks | Profit local · Databricks | Features identical | Verdict |
+|---|---|---|---|---|---|
+| 1 | — | 0.5614 · 0.5670 | 12,458,816 · 12,547,119 (+0.7%) | 99.98% | **Failed** (PR-AUC, reach, profit) |
+| 2 | One deterministic last-transaction row; fixed feature order | 0.5589 · 0.5606 | 12,437,811 · 12,470,605 (+0.26%) | 100% | Passed within tolerance |
+| 3 | Fixed row order | **0.5594 · 0.5594** | **12,431,437 · 12,431,437** | 100% | **Passed, identical** |
+
+**Root cause of run 1, found locally without Databricks quota.** Training the same recipe on the laptop with the Databricks-built features reproduced the Databricks numbers exactly (PR-AUC 0.5670, best iteration 208). The platform was innocent; the inputs differed:
+
+1. **Ties in the last transaction.** `max_by` on (date, expiry) may pick any tied row, field by field. About 300 members (0.02%) got run-dependent values. Fix: one row chosen by `max` over a struct with a total order (on a tie, a cancellation wins).
+2. **Column order.** The multi-window and single-window builds emit columns in different orders. LightGBM samples 80% of columns by position (`feature_fraction`), so the order changes the model (+0.002 PR-AUC on its own). Fix: features enter training in alphabetical order.
+3. **Row order** (found by run 2). Spark writes rows in a platform-dependent order, and LightGBM's bagging samples rows by position. Fix: sort by cohort and member before training.
+
+Each fix has a test: two tied rows in both orders and two partitionings; column and row order invariance.
+
+**Registry.** `workspace.churn.churn_lgbm`: version 1 (run 1, no alias), version 2 (run 2), version 3 (run 3) holds the alias `champion`. The registered model reloads and scores identically. The `scores_march_2017` table matches the local serving artefacts: 862,158 members, 86,215 on the list, first member identical.
+
+**Run time on serverless (run 3):** features 140 s, training and registry 150 s (46 s of it training), tables 80 s.
+
+**Effect on earlier phases.** P4 and the serving artefacts were re-run with the deterministic pipeline (ADR-004 keeps the first-run values). Profit 12,458,816 → 12,431,437; every verdict is unchanged. P0–P3 results are records of their own phases and were not re-run.
 
 ## Consequences
+
+- Positive: a second platform exposed three sources of nondeterminism that one laptop hid; the pipeline is now reproducible bit for bit
 
 - Positive: the pipeline that produced every number on the page runs unchanged on a governed platform, with a versioned job and a registry
 - Negative: Free Edition's daily quota caps how often the full job can run; development stays local, and Databricks runs the reproducible job

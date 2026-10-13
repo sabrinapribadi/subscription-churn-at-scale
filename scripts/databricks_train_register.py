@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import gc
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -21,10 +22,18 @@ import numpy as np
 import pandas as pd
 import pyarrow.dataset as ds
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+def _repo_root() -> Path:  # Databricks runs job scripts through exec(), without __file__
+    for c in (globals().get("__file__"), sys.argv[0] if sys.argv else None, os.path.join(os.getcwd(), "_")):
+        if c and (Path(c).resolve().parents[1] / "src" / "config.py").exists():
+            return Path(c).resolve().parents[1]
+    raise RuntimeError("repo root not found")
+
+
+sys.path.insert(0, str(_repo_root()))
 from src.config import ROOT, load_config  # noqa: E402
 from src.evaluation.metrics import evaluate  # noqa: E402
-from src.models.baseline import NON_FEATURES, PARAMS, fit, holdout_split, prepare  # noqa: E402
+from src.models.baseline import PARAMS, canonical_rows, feature_columns, fit, holdout_split, prepare  # noqa: E402
 from src.models.ranking import fit_isotonic, member_value, prior_shift_em, profit_at  # noqa: E402
 
 TRAIN, TEST, K = 201702, 201703, 14
@@ -66,8 +75,8 @@ def main() -> None:
     ref_p4 = json.loads((ROOT / "data" / "outputs" / "p4_rank_calibrate.json").read_text())
 
     # ---- features built on Databricks by task 1, and the local reference
-    data = prepare(load(Path(P["features_dir"]) / f"k{K}_w{W}"))
-    feats = [c for c in data.columns if c not in NON_FEATURES]
+    data = canonical_rows(prepare(load(Path(P["features_dir"]) / f"k{K}_w{W}")))  # fixed row order, as locally
+    feats = feature_columns(data)  # fixed order, as locally (ADR-008)
     ref = prepare(load(Path(P["reference_dir"]) / f"k{K}_w{W}"))
     parity = feature_parity(data, ref, feats); del ref; gc.collect()
     print("feature parity", json.dumps(parity), flush=True)
@@ -144,8 +153,19 @@ def main() -> None:
         report["registry"]["alias"] = D["alias"]
     report["total_seconds"] = round(time.time() - t_start)
 
+    # ---- scored March cohort for the scores table (published by task 3)
+    ev = p_em * v_te
+    order = np.lexsort((-p_raw, -ev))  # by expected value, ties by raw score (ADR-004), as served
+    rank = np.empty(len(order), dtype=int); rank[order] = np.arange(1, len(order) + 1)
+    scores = pd.DataFrame({"member_id": test["msno"].to_numpy(), "expiry_date": test["last_expire"].astype(int).to_numpy(),
+                           "churn_probability": p_em, "risk_level": np.where(p_em >= 0.30, "high", np.where(p_em >= 0.10, "medium", "low")),
+                           "member_value": v_te, "expected_value_at_risk": ev, "call_priority_rank": rank,
+                           "in_top_10pct": rank <= int(len(test) * frac), "actual_churned": y_te.astype(bool),
+                           "model_version": f"{D['model_name']}/{version}"})
+
     out = Path(P["outputs_dir"]); out.mkdir(parents=True, exist_ok=True)
     (out / "p6_parity.json").write_text(json.dumps(report, indent=2))
+    scores.to_parquet(out / "scores_201703.parquet", index=False)
     print(json.dumps(report, indent=2), flush=True)
     if not report["gate_passed"]:
         sys.exit("P6 gate failed: " + ", ".join(k for k, v in report["checks"].items() if not v))

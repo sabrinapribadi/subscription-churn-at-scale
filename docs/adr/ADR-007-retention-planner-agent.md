@@ -32,7 +32,7 @@ The question: **"Should the project add LLM agents, and if so, how many?"**
 
 - **Agent** (`src/genai/agent.py`, `RetentionPlanner`): OpenAI Responses API with function calling over the four registry tools (`member_risk`, `why_at_risk`, `call_list`, `what_if`). At most 4 LLM rounds; the last round must answer in text.
 - **Tool errors go back to the model as data** (unknown member, bad arguments), so it can correct itself or say what it could not find.
-- **Grounding guard:** every number in the answer must match a number in the question or a tool result, within the rounding the answer shows (12.5M matches 12,458,816; 21.5% matches 0.215). No demographic words unless the question used them. At most 120 words. If any check fails, the answer is rebuilt from the last tool result by a template, and the response says so (`grounded_fallback`).
+- **Grounding guard:** every number in the answer must match a number in the question or a tool result, within the rounding the answer shows (12.4M matches 12,431,437; 21.5% matches 0.215). No demographic words unless the question used them. At most 120 words. If any check fails, the answer is rebuilt from the last tool result by a template, and the response says so (`grounded_fallback`).
 - **Served** as `POST /ask` on explain-svc (503 when no LLM key is set). Every answer returns its tool calls, LLM rounds, tokens, cost and latency.
 - **Tool descriptions are part of the design:** parameter descriptions and "use this for…" hints live in the registry, so MCP clients get them too.
 

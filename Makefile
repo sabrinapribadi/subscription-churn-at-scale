@@ -36,6 +36,9 @@ hover-test:
 controls-test:
 	cd tests/browser && (test -d node_modules/puppeteer-core || npm i --no-save puppeteer-core@23) && node controls_test.js $(CURDIR)/docs/index.html /tmp/links.txt $(CURDIR)/data/outputs/p4_rank_calibrate.json | grep -E "FAIL|control checks"
 
+build-test:
+	cd tests/browser && (test -d node_modules/puppeteer-core || npm i --no-save puppeteer-core@23) && node build_test.js $(CURDIR)/docs/build.html /tmp | grep -E "FAIL|build-page checks"
+
 # Phase 5: serving artefacts, services, LLM evaluation (cost + latency, rule R13)
 serving:
 	poetry run python scripts/export_serving_artifacts.py

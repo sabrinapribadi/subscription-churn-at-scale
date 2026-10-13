@@ -29,11 +29,29 @@ def add_snapshot(cohort: DataFrame, lead_days: int) -> DataFrame:
     return cohort.withColumn("snapshot", _int_date(F.date_sub(_d("last_expire"), lead_days)))
 
 
+# The last transaction before the snapshot, as ONE row with a total order (ADR-008).
+# Ordering by (date, expiry) alone left ties: Spark's max_by may pick any tied row, and each field
+# could come from a different row, so ~0.02% of members got run-dependent values. The extra keys
+# make the choice deterministic: on a tie, a cancellation wins (it is the member's latest intent).
+_LAST_KEYS = ["transaction_date", "membership_expire_date", "is_cancel", "is_auto_renew", "payment_plan_days",
+              "plan_list_price", "actual_amount_paid", "payment_method_id"]
+_LAST_FIELDS = [("payment_plan_days", "last_plan_days"), ("plan_list_price", "last_list_price"),
+                ("actual_amount_paid", "last_amount_paid"), ("is_auto_renew", "last_auto_renew"),
+                ("payment_method_id", "last_payment_method"), ("is_cancel", "last_is_cancel")]
+
+
+def _last_tx_row():
+    return F.max(F.struct(*_LAST_KEYS)).alias("_last")
+
+
+def _last_tx_fields():
+    return [F.col(f"_last.{src}").alias(dst) for src, dst in _LAST_FIELDS]
+
+
 def transaction_features(tx: DataFrame, cohort: DataFrame, window_days: int) -> DataFrame:
     s = cohort.select("msno", "snapshot")
     t = tx.join(s, "msno").filter(F.col("transaction_date") < F.col("snapshot"))
     w_start = _int_date(F.date_sub(_d("snapshot"), window_days))
-    last = F.struct("transaction_date", "membership_expire_date")
     return t.groupBy("msno").agg(
         F.count("*").alias("tx_count"),
         F.sum((F.col("transaction_date") >= w_start).cast("int")).alias("tx_count_window"),
@@ -44,18 +62,14 @@ def transaction_features(tx: DataFrame, cohort: DataFrame, window_days: int) -> 
         F.countDistinct("payment_method_id").alias("tx_distinct_methods"),
         F.min("transaction_date").alias("_first_tx"),
         F.max("transaction_date").alias("_last_tx"),
-        F.max_by("payment_plan_days", last).alias("last_plan_days"),
-        F.max_by("plan_list_price", last).alias("last_list_price"),
-        F.max_by("actual_amount_paid", last).alias("last_amount_paid"),
-        F.max_by("is_auto_renew", last).alias("last_auto_renew"),
-        F.max_by("payment_method_id", last).alias("last_payment_method"),
-        F.max_by("is_cancel", last).alias("last_is_cancel"),
+        _last_tx_row(),
         F.first("snapshot").alias("_snap"),
     ).select(
         "*",
+        *_last_tx_fields(),
         F.datediff(_d("_snap"), _d("_first_tx")).alias("tenure_days"),
         F.datediff(_d("_snap"), _d("_last_tx")).alias("days_since_last_tx"),
-    ).drop("_first_tx", "_last_tx", "_snap")
+    ).drop("_first_tx", "_last_tx", "_snap", "_last")
 
 
 def usage_features(user_logs: DataFrame, cohort: DataFrame, window_days: int) -> DataFrame:
@@ -132,7 +146,6 @@ def _transaction_features_multi(tx: DataFrame, cohort: DataFrame, windows: list[
     t = tx.join(s, "msno").filter(F.col("transaction_date") < F.col("snapshot"))
     for w in windows:
         t = t.withColumn(f"_in{w}", F.col("transaction_date") >= _int_date(F.date_sub(_d("snapshot"), w)))
-    last = F.struct("transaction_date", "membership_expire_date")
     per_w = []
     for w in windows:
         per_w += [
@@ -147,19 +160,15 @@ def _transaction_features_multi(tx: DataFrame, cohort: DataFrame, windows: list[
         F.countDistinct("payment_method_id").alias("tx_distinct_methods"),
         F.min("transaction_date").alias("_first_tx"),
         F.max("transaction_date").alias("_last_tx"),
-        F.max_by("payment_plan_days", last).alias("last_plan_days"),
-        F.max_by("plan_list_price", last).alias("last_list_price"),
-        F.max_by("actual_amount_paid", last).alias("last_amount_paid"),
-        F.max_by("is_auto_renew", last).alias("last_auto_renew"),
-        F.max_by("payment_method_id", last).alias("last_payment_method"),
-        F.max_by("is_cancel", last).alias("last_is_cancel"),
+        _last_tx_row(),
         F.first("snapshot").alias("_snap"),
         *per_w,
     ).select(
         "*",
+        *_last_tx_fields(),
         F.datediff(_d("_snap"), _d("_first_tx")).alias("tenure_days"),
         F.datediff(_d("_snap"), _d("_last_tx")).alias("days_since_last_tx"),
-    ).drop("_first_tx", "_last_tx", "_snap")
+    ).drop("_first_tx", "_last_tx", "_snap", "_last")
 
 
 def _usage_features_multi(user_logs: DataFrame, cohort: DataFrame, windows: list[int]) -> DataFrame:

@@ -66,3 +66,32 @@ def test_multi_window_matches_single_window(spark, window):
     assert set(mapped) == set(single)
     for k, v in single.items():
         assert mapped[k] == pytest.approx(v, rel=1e-9, abs=1e-12), k
+
+
+def test_last_transaction_is_one_row_even_on_ties(spark):
+    """ADR-008: two transactions with the same date and expiry used to give run-dependent, mixed fields."""
+    tie = [("a", 36, 30, 99, 99, 0, 20170114, 20170215, 1)]  # same day and expiry as the second base row, but a cancellation
+    want = {"last_payment_method": 36, "last_plan_days": 30, "last_list_price": 99, "last_amount_paid": 99,
+            "last_auto_renew": 0, "last_is_cancel": 1}
+    for order in (tie, tie[::-1]):
+        tx, ul, mb, cohort = _frames(spark, extra_tx=order)
+        for parts in (1, 4):  # partitioning must not change the answer
+            row = build_features(tx.repartition(parts), ul, mb, cohort, window_days=30).first().asDict()
+            assert {k: row[k] for k in want} == want
+
+
+def test_feature_columns_are_in_a_fixed_order():
+    import pandas as pd
+
+    from src.models.baseline import feature_columns
+    a = pd.DataFrame(columns=["msno", "label", "tx_count", "age", "cohort", "last_plan_days"])
+    assert feature_columns(a) == feature_columns(a[a.columns[::-1]]) == ["age", "last_plan_days", "tx_count"]
+
+
+def test_rows_are_in_a_fixed_order():
+    import pandas as pd
+
+    from src.models.baseline import canonical_rows
+    a = pd.DataFrame({"msno": ["b", "a", "c", "a"], "cohort": [201703, 201703, 201702, 201702], "x": [1, 2, 3, 4]})
+    assert canonical_rows(a).equals(canonical_rows(a.sample(frac=1, random_state=3)))
+    assert list(canonical_rows(a)["x"]) == [4, 3, 2, 1]

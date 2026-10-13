@@ -21,7 +21,7 @@ resources:
   jobs:
     churn_p6:
       name: churn-p6-reproduce
-      description: Build k=14, W=30 features with PySpark, retrain the champion, check parity with the local build, register it in Unity Catalog.
+      description: Build k=14, W=30 features with PySpark, retrain the champion, check parity with the local build, register it in Unity Catalog, publish result tables.
       max_concurrent_runs: 1
       tasks:
         - task_key: build_features
@@ -35,6 +35,13 @@ resources:
           environment_key: ml
           spark_python_task:
             python_file: scripts/databricks_train_register.py
+        - task_key: publish_tables
+          depends_on:
+            - task_key: train_register
+          run_if: ALL_DONE            # publish whatever exists, even if the gate failed
+          environment_key: spark
+          spark_python_task:
+            python_file: scripts/databricks_publish_tables.py
       environments:
         - environment_key: spark
           spec:

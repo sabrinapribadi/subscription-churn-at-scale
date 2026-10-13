@@ -14,6 +14,18 @@ PARAMS = dict(objective="binary", learning_rate=0.05, num_leaves=63, min_child_s
               n_estimators=3000, verbose=-1, random_state=7)
 
 
+def feature_columns(data: pd.DataFrame) -> list[str]:
+    """Model inputs in a fixed (alphabetical) order. LightGBM samples columns by position (feature_fraction),
+    so the same features in a different column order train a different model (ADR-008)."""
+    return sorted(c for c in data.columns if c not in NON_FEATURES)
+
+
+def canonical_rows(data: pd.DataFrame) -> pd.DataFrame:
+    """Rows in a fixed order (cohort, member). Spark writes rows in a platform-dependent order, and LightGBM's
+    bagging samples rows by position, so the same rows in a different order train a different model (ADR-008)."""
+    return data.sort_values(["cohort", "msno"], kind="mergesort").reset_index(drop=True)
+
+
 def prepare(data: pd.DataFrame) -> pd.DataFrame:
     data = data.copy()
     data["cohort"] = data["cohort"].astype(int)

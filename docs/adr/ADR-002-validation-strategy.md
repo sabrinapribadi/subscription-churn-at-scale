@@ -1,6 +1,6 @@
 # ADR-002: Validation Strategy — Out-of-Time Cohorts, PR-AUC, and Profit@k
 
-**Status:** Proposed
+**Status:** Accepted (applied in every phase gate, P0–P6)
 **Date:** 2026-10-09
 **Deciders:** Sabrina Pribadi
 

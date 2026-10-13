@@ -23,8 +23,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.evaluation.metrics import evaluate  # noqa: E402
-from src.features.build import select_window  # noqa: E402
-from src.models.baseline import NON_FEATURES, fit, holdout_split, prepare  # noqa: E402
+from src.models.baseline import canonical_rows, feature_columns, fit, holdout_split, prepare  # noqa: E402
 from src.models.ranking import (ece, fit_isotonic, fit_lambdamart, member_value, prior_shift_em,  # noqa: E402
                                 profit_at, profit_curve, relevance, value_curve)
 
@@ -42,11 +41,10 @@ def calib_summary(y, p):
 def main() -> None:
     cfg = yaml.safe_load(Path("configs/default_config.yaml").read_text())
     biz, frac, W = cfg["business"], cfg["validation"]["top_k_fraction"], cfg["framing"]["window_days_selected"]
-    store = Path(cfg["paths"]["parquet_dir"]).expanduser().parent
-    raw = ds.dataset(store / "features" / f"k{K}_wmulti", format="parquet", partitioning=None).to_table().to_pandas()
-    mapping = select_window(list(raw.columns), W)
-    data = prepare(raw[list(mapping)].rename(columns=mapping)); del raw; gc.collect()
-    feats = [c for c in data.columns if c not in NON_FEATURES]
+    # same build as the Databricks job (scripts/build_dataset.py --W 30), features in a fixed order (ADR-008)
+    data = canonical_rows(prepare(ds.dataset(Path(cfg["paths"]["features_dir"]).expanduser() / f"k{K}_w{W}", format="parquet",
+                                             partitioning=None).to_table().to_pandas()))
+    feats = feature_columns(data)
     train = data[data["cohort"] == TRAIN].reset_index(drop=True)
     test = data[data["cohort"] == TEST].reset_index(drop=True)
     del data; gc.collect()

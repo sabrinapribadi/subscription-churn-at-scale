@@ -47,7 +47,7 @@ The question: **"How do we serve scores, reasons and call lists so apps and AI a
 
 | Check | Result |
 |---|---|
-| Serving store reproduces P4 | Top-10% realised profit 12,458,816 — identical to P4 |
+| Serving store reproduces P4 | Top-10% realised profit 12,431,437, identical to P4 (re-exported 2026-10-13 after the ADR-008 determinism fixes; first export 12,458,816) |
 | End to end over HTTP (real artefacts, 862,158 members) | MCP client → gateway → explain-svc → scoring-svc: 80 ms first answer, 7 ms repeat |
 | Contract tests (all endpoints, 404s, input validation, ordering) | Pass |
 | MCP tools over the real protocol (in-memory and HTTP) | Pass, including clean errors for unknown members |

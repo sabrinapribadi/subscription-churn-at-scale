@@ -10,13 +10,22 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
 
 from pyspark.sql import functions as F
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+def _repo_root() -> Path:  # Databricks runs job scripts through exec(), without __file__
+    for c in (globals().get("__file__"), sys.argv[0] if sys.argv else None, os.path.join(os.getcwd(), "_")):
+        if c and (Path(c).resolve().parents[1] / "src" / "config.py").exists():
+            return Path(c).resolve().parents[1]
+    raise RuntimeError("repo root not found")
+
+
+sys.path.insert(0, str(_repo_root()))
 from src.data.cohorts import build_cohort_labels_fast, last_expiry_before, month_bounds  # noqa: E402
 from src.features.build import add_snapshot, build_features, build_features_multi  # noqa: E402
 from src.config import ON_DATABRICKS, load_config  # noqa: E402

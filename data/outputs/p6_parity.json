@@ -1,0 +1,52 @@
+{
+  "setup": {
+    "train": 201702,
+    "test": 201703,
+    "lead_days": 14,
+    "window_days": 30,
+    "train_members": 879478,
+    "test_members": 862158,
+    "test_churners": 62616,
+    "best_iteration": 214
+  },
+  "feature_parity": {
+    "members_ours": 1741636,
+    "members_reference": 1741636,
+    "only_ours": 0,
+    "only_reference": 0,
+    "rows_identical": 1.0,
+    "features_with_differences": {}
+  },
+  "databricks": {
+    "pr_auc": 0.5594029992450711,
+    "roc_auc": 0.8909114703846533,
+    "churners_reached": 0.6521176696052128,
+    "profit_expected_value": 12431437.073016161,
+    "estimated_march_rate": 0.06064284522407102
+  },
+  "local_p4": {
+    "pr_auc": 0.5594029992450711,
+    "roc_auc": 0.8909114703846533,
+    "churners_reached": 0.6521176696052128,
+    "profit_expected_value": 12431437.073016161,
+    "estimated_march_rate": 0.06064284522407102
+  },
+  "checks": {
+    "same_members_and_churners": true,
+    "features_match_local": true,
+    "pr_auc_reproduced": true,
+    "churners_reached_reproduced": true,
+    "profit_reproduced": true,
+    "registered_model_reloads": true
+  },
+  "gate_passed": true,
+  "train_seconds": 46,
+  "registry": {
+    "model": "workspace.churn.churn_lgbm",
+    "version": 3,
+    "run_id": "42c11d4cd3094252ba553060afc92af3",
+    "reload_scores_identical": true,
+    "alias": "champion"
+  },
+  "total_seconds": 122
+}

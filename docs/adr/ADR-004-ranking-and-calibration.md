@@ -66,21 +66,23 @@ The question: **"Which ordering of the call list protects the most money for the
 | LambdaMART > EV sort across the grid | Interactions between risk and value the product misses | Ship LambdaMART; add to serving (P5) |
 | ECE not reduced below 0.010 | Shift is not purely in the churn rate | Report; add monthly recalibration on matured labels as a lagged check |
 
-## Results (2026-10-12)
+## Results (2026-10-12; re-run 2026-10-13)
+
+*Re-run on 13 Oct with the deterministic pipeline from ADR-008 (one last-transaction row on ties, fixed feature order, fixed row order). First-run values are kept in brackets. No verdict changed.*
 
 **Ranking** — Mar-2017, top 10% (86,215 calls), central case s = 0.20, c = 20:
 
 | Order | Profit / month | Churners reached | Value at risk reached |
 |---|---|---|---|
-| probability | 12,445,531 | 65.3% | 65.7% |
-| expected_value | 12,458,816 | 64.6% | 65.7% |
-| lambdamart | 9,731,189 | 49.0% | 53.1% |
+| probability | 12,408,456 (12,445,531) | 65.2% | 65.5% |
+| expected_value | 12,431,437 (12,458,816) | 64.4% | 65.6% |
+| lambdamart | 9,699,163 (9,731,189) | 48.9% | 53.0% |
 
-Expected-value sort wins **9 of 9** grid scenarios, by ~0.1% (plans are priced 99–149, so value barely reorders the list). LambdaMART loses all 9 (−22% at the central case): NDCG with exponential gains concentrates the top of each group on top-tier churners and drops lower-value ones. Not tuned further — that would be chasing a failed gate.
+Expected-value sort wins **9 of 9** grid scenarios, by 0.2–0.4% (first run: ~0.1%; plans are priced 99–149, so value barely reorders the list). LambdaMART loses all 9 (−22% at the central case, as in the first run): NDCG with exponential gains concentrates the top of each group on top-tier churners and drops lower-value ones. Not tuned further — that would be chasing a failed gate.
 
-**Calibration** — ECE raw 0.0158 → isotonic 0.0158 → + EM 0.0128. EM estimated March churn at 5.98% (actual 7.26%; Feb training 5.55%).
+**Calibration** — ECE raw 0.0156 → isotonic 0.0156 → + EM 0.0120 (first run: 0.0158 → 0.0158 → 0.0128). EM estimated March churn at 6.06% (first run 5.98%; actual 7.26%; Feb training 5.55%).
 
-**Verdicts:** G1 failed (LambdaMART < probability sort). G2 failed (0.0128 > 0.010). Falsification rows: "LambdaMART ≤ probability sort → keep probability or EV sort" and "ECE not below 0.010 → shift is not purely in the churn rate; add a lagged monthly recalibration on matured labels". **Adopted:** expected-value sort with isotonic + EM scores; ties broken by the raw score (isotonic is a step function).
+**Verdicts:** G1 failed (LambdaMART < probability sort). G2 failed (0.0120 > 0.010). Falsification rows: "LambdaMART ≤ probability sort → keep probability or EV sort" and "ECE not below 0.010 → shift is not purely in the churn rate; add a lagged monthly recalibration on matured labels". **Adopted:** expected-value sort with isotonic + EM scores; ties broken by the raw score (isotonic is a step function).
 
 ## Consequences
 

@@ -1,0 +1,565 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Churn Build Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Technical walkthrough (portfolio rule R14). Same tokens as index.html so the two pages read as one set. */
+:root {
+  --bg: #f5f7fa; --surface: #ffffff; --fg: #16202a; --muted: #5a6573; --line: #dde2e9; --tint: #eef1f7;
+  --accent: #3b4fd8; --accent-soft: #e3e7fc;
+  --stay: #13836f; --stay-soft: #dff2ec; --churn: #c2452d; --churn-soft: #f8e4df; --amber: #b7791f; --amber-soft: #f7ecd9;
+  --lane-a: #f3f5fb; --lane-b: #fafbfd;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141a; --surface: #161d25; --fg: #e6ebf0; --muted: #98a3b0; --line: #2a333e; --tint: #1b2430;
+  --accent: #8e9cff; --accent-soft: #252c55;
+  --stay: #3cc5a6; --stay-soft: #133a32; --churn: #f07a5f; --churn-soft: #43231c; --amber: #e0a542; --amber-soft: #3a2c14;
+  --lane-a: #141b23; --lane-b: #11171e;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f141a; --surface: #161d25; --fg: #e6ebf0; --muted: #98a3b0; --line: #2a333e; --tint: #1b2430;
+  --accent: #8e9cff; --accent-soft: #252c55;
+  --stay: #3cc5a6; --stay-soft: #133a32; --churn: #f07a5f; --churn-soft: #43231c; --amber: #e0a542; --amber-soft: #3a2c14;
+  --lane-a: #141b23; --lane-b: #11171e;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.6 var(--font-body); }
+.wrap { max-width: 1160px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(28px, 4vw, 42px); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 15px; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font: 600 12px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+header.top { display: grid; gap: 14px; padding-block: 8px 24px; border-bottom: 1px solid var(--line); }
+header.top .lede { font-size: 17px; max-width: 66ch; }
+.links { display: flex; flex-wrap: wrap; gap: 8px 18px; font: 500 13px var(--font-mono); }
+.links a { text-decoration: none; }
+.links a:hover { text-decoration: underline; }
+
+section.block { display: grid; gap: 18px; padding-block: 34px 6px; }
+.howto { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.howto div { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; display: grid; gap: 2px; }
+.howto b { font-size: 14px; }
+.howto span { font-size: 13px; color: var(--muted); }
+
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { font: 600 11.5px var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); background: var(--tint); }
+tr:last-child td { border-bottom: 0; }
+
+/* system map */
+.map { min-width: 980px; }
+.map th.ph { cursor: pointer; white-space: nowrap; }
+.map th.ph:hover, .map th.ph.on { color: var(--accent); }
+.map th.ph.on { background: var(--accent-soft); }
+.map td.lane { font: 600 12px var(--font-mono); color: var(--muted); white-space: nowrap; background: var(--tint); }
+.map td.cell { font-size: 12.5px; line-height: 1.4; }
+.map td.cell.on { background: var(--accent-soft); }
+.map td.cell span { display: block; }
+.map td.cell span + span { margin-top: 4px; }
+
+/* verdict chips */
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 600 11px/1 var(--font-mono); letter-spacing: 0.03em; padding: 5px 8px; border-radius: 999px; white-space: nowrap; }
+.chip.pass { background: var(--stay-soft); color: var(--stay); }
+.chip.fail { background: var(--churn-soft); color: var(--churn); }
+.chip.run { background: var(--amber-soft); color: var(--amber); }
+.chip.plan { background: var(--tint); color: var(--muted); }
+
+/* phase picker */
+.picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.picker button { font: 600 13px var(--font-mono); border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; padding: 8px 12px; cursor: pointer; display: grid; gap: 4px; justify-items: start; }
+.picker button small { font: 500 11px var(--font-body); color: var(--muted); }
+.picker button[aria-selected="true"] { border-color: var(--accent); background: var(--accent-soft); }
+@media (max-width: 600px) {
+  .picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .picker button { padding: 7px 9px; min-width: 0; }
+  .picker button small { display: none; }
+  .picker .chip { white-space: normal; line-height: 1.25; }
+}
+
+.phase-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 16px; }
+.phase-head .dates { font: 500 12px var(--font-mono); color: var(--muted); }
+
+.scqa { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.scqa div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 6px; align-content: start; }
+.scqa b { font: 600 11px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.scqa p { font-size: 13.5px; line-height: 1.5; }
+@media (max-width: 860px) { .scqa { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .scqa { grid-template-columns: minmax(0, 1fr); } }
+
+/* swimlane */
+.lanewrap { display: grid; gap: 10px; }
+.walk { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.walk button { font: 600 13px var(--font-body); border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+.walk button.primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.walk button:disabled { opacity: 0.45; cursor: default; }
+.walk .pos { font: 600 12px var(--font-mono); color: var(--muted); }
+svg.swim { display: block; }
+svg.swim .lane-bg { fill: var(--lane-a); }
+svg.swim .lane-bg.alt { fill: var(--lane-b); }
+svg.swim .lane-label { fill: var(--muted); font: 600 11px var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; }
+svg.swim .lane-line { stroke: var(--line); }
+svg.swim .edge { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+svg.swim .arrowhead { fill: var(--muted); }
+svg.swim g.step { cursor: pointer; outline: none; }
+svg.swim g.step rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+svg.swim g.step text { fill: var(--fg); font: 500 11.5px var(--font-body); }
+svg.swim g.step .num { fill: var(--accent); font: 700 11px var(--font-mono); }
+svg.swim g.step.kind-fail rect { stroke: var(--churn); }
+svg.swim g.step.kind-fix rect { stroke: var(--stay); }
+svg.swim g.step.kind-plan rect { stroke-dasharray: 4 3; }
+svg.swim g.step:hover rect, svg.swim g.step:focus rect { stroke: var(--accent); stroke-width: 2; }
+svg.swim g.step.current rect { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.4; }
+svg.swim g.step.done rect { fill: var(--tint); }
+.lane-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); }
+.lane-legend i { display: inline-block; width: 18px; height: 11px; border-radius: 3px; border: 1.5px solid var(--line); vertical-align: -1px; margin-right: 6px; background: var(--surface); }
+.lane-legend i.fail { border-color: var(--churn); }
+.lane-legend i.fix { border-color: var(--stay); }
+.lane-legend i.plan { border-style: dashed; }
+
+.detail { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px; }
+.detail .kv { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4px 12px; font-size: 13.5px; }
+.detail .kv b { font: 600 11px var(--font-mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); padding-top: 3px; }
+.detail code, td code { font: 12px var(--font-mono); background: var(--tint); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 860px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.box { display: grid; gap: 10px; min-width: 0; }
+ul.points { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
+.star { margin: 0; border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; font-size: 15px; font-style: italic; }
+.obst td:first-child { width: 22%; }
+.verdict-ok { color: var(--stay); font-weight: 600; }
+.verdict-no { color: var(--churn); font-weight: 600; }
+.verdict-wait { color: var(--amber); font-weight: 600; }
+
+.tip { position: fixed; z-index: 10; max-width: 300px; background: var(--fg); color: var(--bg); font-size: 12.5px; line-height: 1.45; padding: 8px 10px; border-radius: 8px; pointer-events: none; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); }
+.tip b { display: block; margin-bottom: 2px; }
+footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+</style>
+
+<div class="wrap">
+<header class="top">
+  <span class="eyebrow">Technical walkthrough · CHN-1 · subscription churn at scale</span>
+  <h1>How the churn system was built, phase by phase</h1>
+  <p class="lede">Eight phases, each with a pass/fail gate written before the work. For every phase: the question, the build steps, what broke, and what it taught.</p>
+  <div class="links">
+    <a href="./">← Hiring-team view (results)</a>
+    <a href="https://github.com/sabrinapribadi/subscription-churn-at-scale">Code and ADRs</a>
+    <a href="https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/CHANGELOG.md">Change log (STAR)</a>
+  </div>
+</header>
+
+<section class="block" aria-labelledby="h-read">
+  <span class="eyebrow" id="h-read">How to read each phase</span>
+  <div class="howto">
+    <div><b>SCQA</b><span>Situation · Complication · Question · Answer (the gate result)</span></div>
+    <div><b>Swimlane</b><span>Build steps by layer; step through with Next</span></div>
+    <div><b>Decisions</b><span>What was chosen, with the ADR that records why</span></div>
+    <div><b>Obstacles</b><span>Symptom → root cause → fix → prevention</span></div>
+    <div><b>Result vs gate</b><span>Pass/fail against the bar set in advance</span></div>
+    <div><b>Lessons + STAR</b><span>What carries over, and the one-line interview story</span></div>
+  </div>
+</section>
+
+<section class="block" aria-labelledby="h-map">
+  <div class="phase-head"><h2 id="h-map">System map</h2><span class="muted">What each phase added to each layer. Click a phase to open it.</span></div>
+  <div class="scroll"><table class="map" id="map"></table></div>
+</section>
+
+<section class="block" aria-labelledby="h-phase">
+  <span class="eyebrow" id="h-phase">Phase</span>
+  <div class="picker" id="picker" role="tablist" aria-label="Phases"></div>
+  <article id="phase" class="block" style="padding-top:8px"></article>
+</section>
+
+<footer>
+  <span>Every number comes from <code>data/outputs/*.json</code>, the ADRs and <code>CHANGELOG.md</code> in the repository. Dataset: KKBox churn prediction (WSDM Cup 2018, Kaggle).</span>
+  <span>Sabrina Pribadi · last updated 13 Oct 2026 · <a href="./">results page</a> · <a href="https://github.com/sabrinapribadi/subscription-churn-at-scale">github.com/sabrinapribadi/subscription-churn-at-scale</a></span>
+</footer>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+const REPO = "https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/";
+const ADR = {
+  "001": "docs/adr/ADR-001-task-framing.md", "002": "docs/adr/ADR-002-validation-strategy.md", "003": "docs/adr/ADR-003-behaviour-encoder.md",
+  "004": "docs/adr/ADR-004-ranking-and-calibration.md", "005": "docs/adr/ADR-005-service-boundaries.md", "006": "docs/adr/ADR-006-genai-module.md",
+  "007": "docs/adr/ADR-007-retention-planner-agent.md", "008": "docs/adr/ADR-008-databricks-port.md"
+};
+const LANES = ["Data", "Compute (PySpark)", "Model", "Evaluation", "Serving & AI", "Platform", "Decision"];
+
+// Steps: [lane, short title, what, why, where (file), kind] — kind: "" | "fail" | "fix" | "plan"
+const PHASES = [
+{
+  id: "p0", tag: "P0", name: "Labels and Spark ETL", dates: "9 Oct 2026", verdict: ["fail", "Gate failed · documented"],
+  scqa: ["KKBox (WSDM Cup 2018): 6.8M members, 23M transactions, 410M listening logs. Official labels exist for Feb and Mar 2017 only.",
+         "More training months need labels we rebuild ourselves. The organiser's labeller is Scala with undocumented ordering quirks.",
+         "Can we rebuild the official labels exactly, fast enough for about 20 monthly cohorts?",
+         "Port proven correct and 20× faster, but agreement is 98.77% / 97.00%, under the 99% bar. Official labels become test truth."],
+  steps: [
+    ["Data", "Download + stream logs", "Kaggle download; 7z archives streamed straight into month-partitioned Parquet.", "The 30 GB CSV would not fit on disk next to its Parquet copy.", "scripts/stream_user_logs_to_parquet.py"],
+    ["Compute (PySpark)", "Port the Scala labeller", "Pure-Python core (testable without Spark) plus a Spark applyInPandas wrapper, quirks kept.", "Labels must match the organiser's rule exactly before any model.", "src/data/labels.py"],
+    ["Evaluation", "One test per rule", "10 unit tests, one per rule in the Scala comments, plus a Spark end-to-end test.", "Turns 'I think it matches' into checks that fail loudly.", "tests/test_labels.py"],
+    ["Compute (PySpark)", "Rewrite as window functions", "Per-member Python loop replaced by a 4-column Spark sort and window functions.", "The loop ran 75+ minutes without finishing; now 3.5 minutes.", "src/data/cohorts.py", "fix"],
+    ["Evaluation", "Prove equivalence", "Old and new labellers compared on 400 random member histories.", "A faster version is only useful if it gives the same answers.", "tests/test_cohorts_spark.py"],
+    ["Evaluation", "Agreement gate", "Rebuilt vs official labels on members in both: 98.77% Feb, 97.00% Mar.", "The bar (≥ 99%) was set before running.", "scripts/validate_labels.py", "fail"],
+    ["Evaluation", "Test 3 hypotheses", "Port bug: rejected. Full-history window: rejected. Different source data: supported (99.5% of disagreements show a real renewal).", "Find the cause before touching the threshold.", "data/outputs/p0_label_agreement.json"],
+    ["Decision", "Official labels = test truth", "Option D: score on official labels; rebuilt labels must earn a place in training.", "Keeps the bar honest and turns the failure into a test.", "ADR-002"]
+  ],
+  decisions: [["Point-in-time snapshot k days before expiry, not at expiry", "001"], ["Out-of-time cohort validation; official labels as test truth", "002"]],
+  results: [["Label agreement, Feb 2017", "≥ 99%", "98.77%", "no"], ["Label agreement, Mar 2017", "≥ 99%", "97.00%", "no"], ["Labelling time", "—", "75+ min → 3.5 min", ""]],
+  obstacles: [
+    ["Python labeller ran 75+ min, never finished", "Row-by-row Python over 23M transactions", "Express the ordering as a Spark sort + window functions", "Write the slow, obviously-correct version first and use it as the test oracle"],
+    ["30 GB log CSV did not fit next to Parquet", "Laptop disk budget", "Stream 7z → Parquet month by month, never extract", "Plan disk space before converting; keep raw data outside cloud sync"],
+    ["PySpark 3.5 failed on Python 3.12", "Version support gap", "Move to PySpark 4.0 (also matches Databricks serverless)", "Pin versions that match the target platform from day one"],
+    ["Agreement 98.77%, below 99%", "Shipped transactions differ from the organiser's source data", "Keep the bar; record the failure and the cause", "Write gates before the work; test hypotheses before changing anything"]
+  ],
+  lessons: ["A failed gate with a proven cause is a result, not a setback.", "Port reference code with its quirks, and test every rule.", "Make it correct, then fast, with the slow version as the oracle."],
+  star: "My first gate failed. I didn't move the bar. I proved my code was right, showed the benchmark labels came from different data, and turned that into a test."
+},
+{
+  id: "p1", tag: "P1", name: "Point-in-time features and baseline", dates: "9 Oct 2026", verdict: ["pass", "Passed"],
+  scqa: ["Labels are settled; no model exists yet.",
+         "February labels are not yet known on March prediction day, and features must not peek past the snapshot.",
+         "How good is a leak-free model on a future month, against today's rule?",
+         "PR-AUC 0.568 vs 0.342 for the rule; the top 10% of the list catches 65% of churners. Realistic setup: 0.505."],
+  steps: [
+    ["Data", "Cohorts + snapshots", "Members expiring in a month; snapshot = expiry − 14 days.", "A prediction is only useful if it leaves time to act.", "src/data/cohorts.py"],
+    ["Compute (PySpark)", "30 features, 5 cohorts", "Payment, renewal, listening and profile features; about 4.3M member-snapshots from 410M log rows.", "One feature definition, reused by every later phase.", "src/features/build.py"],
+    ["Evaluation", "Leakage test", "Inject rows after the snapshot; no feature may change.", "Leakage is the most common reason churn models look better than they are.", "tests/test_features.py"],
+    ["Platform", "Pin the JDK", "Spark was silently running on Java 20; the session factory now pins Java 17.", "Spark 4 supports Java 17/21 only; failures were confusing.", "src/spark_session.py", "fix"],
+    ["Model", "LightGBM + MLflow", "Early stopping on a 10% member-level hold-out; every run logged.", "Strong tabular baseline; member-level split avoids optimistic stopping.", "src/models/baseline.py"],
+    ["Evaluation", "Three training setups", "Benchmark (Feb labels), realistic (Nov–Jan rebuilt), combined; all tested on March.", "Shows what a team gets with the labels it actually has.", "data/outputs/p1_baseline.json"],
+    ["Evaluation", "Practitioner report", "Churners per 100 calls, budget dial; Gini vs PR-AUC compared.", "Practitioners ask about calls, not curves.", "scripts/practitioner_report.py"]
+  ],
+  decisions: [["k = 14 days lead time; W = 120 days history (revisited in P2)", "001"], ["PR-AUC primary; Gini and lift reported in the appendix", "002"]],
+  results: [["Out-of-time PR-AUC reported", "reported", "0.568 (rule 0.342)", "ok"], ["Leakage test", "pass", "pass", "ok"], ["Realistic setup (labels known on the day)", "—", "0.505", ""]],
+  obstacles: [
+    ["Spark failures that looked random", "Shell JAVA_HOME pointed to JDK 20", "Session factory overrides JAVA_HOME (CHURN_JAVA_HOME)", "The code owns its runtime, not the shell"],
+    ["Rebuilt labels lowered the score (0.561)", "Label noise from P0's source-data gap", "Dropped from training; official labels only", "Every data source must earn its place on the metric"],
+    ["Gini ranked the realistic model below the rule", "Gini rewards the whole ranking, not the top of the list", "Reported in the appendix; PR-AUC and top-10% capture lead", "Choose the metric that matches the decision (who to call)"]
+  ],
+  lessons: ["Report the prediction-day number (0.505) next to the headline (0.568).", "Test for leakage with injected future rows.", "Pick metrics for the decision, not by habit."],
+  star: "The headline number is 0.568, but I also report 0.505: what you'd get if you trained only on labels you actually have on prediction day."
+},
+{
+  id: "p2", tag: "P2", name: "How early, how much history", dates: "9 Oct 2026", verdict: ["pass", "Passed"],
+  scqa: ["P1 used a 14-day lead time and 120 days of history by assumption.",
+         "A 2026 study on this dataset put the history 'knee' anywhere from 30 to 120 days; a separate build per setting would take hours.",
+         "How early can we call, and how much history do we need?",
+         "Lead time costs churners (68% → 65% → 60% at 7/14/30 days). History does not: 30–180 days are within noise. Use 30."],
+  steps: [
+    ["Compute (PySpark)", "5 windows in one pass", "Every window computed in a single join over 410M log rows (columns suffixed __w30 … __w180).", "One pass instead of five per lead time.", "src/features/build.py"],
+    ["Evaluation", "Equivalence test", "Multi-window columns must equal the single-window build.", "Speed-ups are only safe if outputs are identical.", "tests/test_features.py"],
+    ["Model", "Refactor into src/", "Model and metric code moved out of scripts; P1 reproduced to 0.0 difference.", "Refactor only behind a reproduction check.", "src/models/baseline.py"],
+    ["Model", "20 models", "4 lead times × 5 windows, February → March.", "A grid, not a guess.", "scripts/window_curve.py"],
+    ["Evaluation", "Measure the noise floor", "Same features, different column order: 0.003 PR-AUC.", "Without a noise floor, small gaps look like findings.", "data/outputs/p2_window_curve.json"],
+    ["Decision", "k = 14, W = 30", "Keep 14 days of warning; use 30 days of history.", "Each extra week costs about 3,600 churners a month; history buys nothing.", "ADR-001 Am. 3"]
+  ],
+  decisions: [["Window W = 30 days (flat beyond 30)", "001"]],
+  results: [["Curve and knee reported per lead time", "reported", "reported; knee at or below 30 days", "ok"]],
+  obstacles: [
+    ["20 feature builds would take ~7 hours", "Each build re-joins 410M log rows", "One pass with all windows as suffixed columns", "Compute grids in one pass; test equivalence"],
+    ["P1 logic lived in scripts", "Fast prototyping", "Moved to src/ with a reproduction check (0.0)", "Refactor with a test that the old number reproduces"],
+    ["Differences of 0.001–0.003 looked meaningful", "Run-to-run noise", "Measured it (column order: 0.003)", "Measure noise before claiming a gain"]
+  ],
+  lessons: ["Measure the noise floor first.", "Lead time is a business trade-off; show it in churners, not AUC.", "Grids beat assumptions when they are cheap to compute."],
+  star: "I measured my own noise floor, 0.003 PR-AUC, and used it to show that 180 days of history buys nothing over 30, while each extra week of warning costs real churners."
+},
+{
+  id: "p3", tag: "P3", name: "Listening behaviour (embeddings)", dates: "12 Oct 2026", verdict: ["fail", "Gate failed · documented"],
+  scqa: ["A third of churners are auto-renew members who cancel; the list reaches only 1 in 4 of them.",
+         "Their payment record looks safe. Listening changes might warn earlier, but deep models cost time and memory (8 GB laptop).",
+         "Does listening shape add at least +0.02 PR-AUC out of time?",
+         "No arm passes: best +0.004, within noise. Nothing shipped to scoring; five personas kept for messaging."],
+  steps: [
+    ["Data", "60-day sequences", "Daily listening per member, about 22M member-days per month.", "Shape over time, not totals.", "scripts/build_sequences.py"],
+    ["Model", "Arm A: shape statistics", "Hand-crafted trend, volatility and gap features.", "The cheap baseline every learned arm must beat.", "src/models/behaviour.py"],
+    ["Model", "Arm B: masked autoencoder", "Self-supervised; labels never used.", "Learns structure without overfitting labels.", "src/models/behaviour.py"],
+    ["Model", "Arm C: Mantis-8M", "Frozen 2025 time-series foundation model embeddings; 100k sample per month.", "Tests whether a pretrained encoder sees more.", "scripts/behaviour_ablation.py"],
+    ["Platform", "Stage the job", "LightGBM and PyTorch in separate processes; data loaded before torch.", "macOS OpenMP crash and an Arrow/PyTorch deadlock.", "scripts/behaviour_ablation.py", "fix"],
+    ["Evaluation", "Same sample for every arm", "Each arm re-scored on the identical 100k sample against the +0.02 bar.", "Fair comparison under a memory limit.", "data/outputs/p3_behaviour.json", "fail"],
+    ["Model", "Five personas", "Clusters for messaging, e.g. silent payers and re-engaging long-time members.", "Negative result turned into something the CRM team can use.", "data/outputs/p3_behaviour.json"]
+  ],
+  decisions: [["Embeddings stay an ablation; not added to scoring", "003"]],
+  results: [["PR-AUC gain, best arm", "≥ +0.02", "+0.004", "no"], ["Gain on auto-renew cancellers", "—", "none", ""]],
+  obstacles: [
+    ["Segfault when LightGBM and PyTorch ran together", "Two OpenMP runtimes in one process on macOS", "Separate processes per stage", "Isolate native libraries that ship their own OpenMP"],
+    ["Job hung reading data after importing torch", "Arrow/PyTorch thread deadlock", "Load data with Arrow before importing torch", "Fix import order in long jobs"],
+    ["Full feature set did not fit in 8 GB", "22M member-days per month", "100k sample per month, same sample for every arm", "Compare arms on one shared sample"],
+    ["Whole test suite crashed", "The PyTorch test shared a process with LightGBM tests", "Run that test in a child process", "Tests mirror production process boundaries"]
+  ],
+  lessons: ["Always include a cheap baseline arm.", "A pre-registered bar stops 'promising' results from shipping.", "Negative results can still produce a product (personas)."],
+  star: "I tested a hand-crafted baseline, a self-supervised encoder and a foundation model on the same split. None beat the bar, so none went into scoring, and the work became personas the CRM team can use."
+},
+{
+  id: "p4", tag: "P4", name: "Calibration and call-list order", dates: "12 Oct 2026", verdict: ["fail", "Both gates failed · rule adopted"],
+  scqa: ["Scores ran low (top group predicted 37%, observed 48%); the list ignored that members are worth different amounts.",
+         "March churned more than February, and March labels are unknown on prediction day.",
+         "Can scores be corrected without March labels, and which order protects the most money?",
+         "Isotonic + prior shift helped but missed the 0.010 bar. Probability × value won 9/9 scenarios; LambdaMART lost 22%."],
+  steps: [
+    ["Model", "Isotonic calibration", "Fitted on the training hold-out.", "Makes scores read as probabilities.", "src/models/ranking.py"],
+    ["Model", "Prior-shift EM", "Re-estimates March's churn rate from unlabelled scores (Saerens et al.).", "Corrects for a busier month without its labels.", "src/models/ranking.py"],
+    ["Data", "Member value", "Paid per day × 365.", "Two members at the same risk are not worth the same call.", "src/models/ranking.py"],
+    ["Model", "LambdaMART", "Learning-to-rank with value-tercile relevance.", "The 'fancy' option, judged on profit.", "src/models/ranking.py"],
+    ["Evaluation", "Profit in 9 scenarios", "3 save rates × 3 call costs, top 10% of the list.", "Rankers are judged on money, not NDCG.", "scripts/rank_and_calibrate.py", "fail"],
+    ["Model", "Fix tie ordering", "Isotonic output is a step function; ties broken by the raw score.", "Without it, ordering inside a step was arbitrary.", "scripts/rank_and_calibrate.py", "fix"],
+    ["Decision", "Ship probability × value", "Wins every scenario; simplest to explain.", "LambdaMART lost 22% of the money.", "ADR-004"]
+  ],
+  decisions: [["Order the call list by probability × member value", "004"], ["Isotonic + prior shift, with the ECE miss on record", "004"]],
+  results: [["G1: LambdaMART profit@10% > probability sort", "higher", "−22%", "no"], ["G2: calibration error (ECE)", "≤ 0.010", "0.0120", "no"], ["Probability × value vs probability", "—", "wins 9/9, +0.2%", ""]],
+  obstacles: [
+    ["Order inside score ties was arbitrary", "Isotonic calibration outputs steps", "Break ties with the raw score", "Check ranking stability after any monotone transform"],
+    ["Calibration still ran low after EM", "EM recovered only part of the churn shift", "Recorded as a miss; forecasts labelled conservative", "Track last month's realised rate"],
+    ["Reviewers asked what '9 cost scenarios' meant", "Absolute tables, no explanation", "Scenario picker on the results page", "Make assumptions explorable, not asserted"]
+  ],
+  lessons: ["Judge rankers on the business metric.", "The simple rule can beat the sophisticated model.", "Calibration under a shifted month is only partly fixable without labels."],
+  star: "The fancy ranker lost 22% of the money; the one-line rule, probability times value, won every scenario. I shipped the rule and wrote down why."
+},
+{
+  id: "p5", tag: "P5", name: "Services, GenAI notes, MCP, agent", dates: "12–13 Oct 2026", verdict: ["pass", "Passed"],
+  scqa: ["The model and call list lived in batch scripts.",
+         "CRM screens and AI assistants need answers on demand; LLM explanations can invent facts, cost money, and be slow.",
+         "Can apps and agents get typed answers, with notes that cannot invent facts, at a known cost?",
+         "Four services + MCP gateway; notes 60/60 grounded at $0.048 per 1,000; planner agent 45/45 at $0.22 per 1,000; CI green."],
+  steps: [
+    ["Serving & AI", "Export serving artefacts", "Model, calibration and scored cohort, versioned by a hash.", "Serving reproduces P4's profit exactly.", "scripts/export_serving_artifacts.py"],
+    ["Serving & AI", "Four FastAPI services", "Features, scoring, explanation; pydantic contracts; local and HTTP clients.", "One owner per concern; typed answers tests can pin.", "src/services/"],
+    ["Serving & AI", "MCP gateway", "Four tools from one registry, served over MCP.", "Any AI assistant gets the same answers as the apps.", "src/gateway/mcp_server.py"],
+    ["Serving & AI", "Grounded notes", "Versioned prompt → rule-based grader → template fallback; cache checked first.", "A note can never state a number the model did not produce.", "src/genai/"],
+    ["Evaluation", "Live LLM evaluation", "60 cases (48 real members); first live run passed 3 of 12.", "Measured cost and latency (rule R13).", "scripts/llm_eval.py", "fix"],
+    ["Serving & AI", "Planner agent", "One tool-using agent; every number checked against tool results.", "Managers ask multi-step questions.", "src/genai/agent.py"],
+    ["Evaluation", "Agent evaluation", "15 questions × 3 runs; first try 13/15.", "Tool choice and arguments are tested, not assumed.", "scripts/agent_eval.py", "fix"],
+    ["Platform", "Docker + CI", "One image, four services; GitHub Actions runs every test without an API key.", "The gate is only passed when CI says so.", ".github/workflows/ci.yml"]
+  ],
+  decisions: [["Four services + MCP gateway", "005"], ["Rule-based grader with template fallback; budgets for cost and latency", "006"], ["One agent, not several", "007"]],
+  results: [["Contract tests + LLM evaluation in CI", "pass", "115 tests pass", "ok"], ["Notes grounded (live)", "100%", "60/60", "ok"], ["Cost per 1,000 notes", "≤ $0.20", "$0.048", "ok"], ["Live note latency, p95", "≤ 2 s", "3.6 s (network floor 1.6 s)", "no"], ["Agent task success", "≥ 80%", "45/45", "ok"]],
+  obstacles: [
+    ["Live notes cut off mid-sentence; 3/12 passed", "Reasoning model spent the output budget thinking", "reasoning_effort: none", "Check reasoning tokens when output looks truncated"],
+    ["Model paraphrased reasons; grader rejected them", "Exact-match grader vs free wording", "Prompt v2 asks for exact reason wording", "Adapt the prompt to a strict grader, not the reverse"],
+    ["Agent asked for a 1,000,000-member list", "Unclear tool descriptions and no cap", "Parameter descriptions, 'use this for…' hints, cap at 50", "Tool descriptions are part of the agent's design"],
+    ["CI failed before running a test", "pip cache had no requirements file to key on", "cache-dependency-path to the CI requirement files", "Don't claim a gate until CI shows it"],
+    ["Serving image pulled in Spark", "Feature schema imported from the Spark module", "Moved to a Spark-free schema module; clean-venv check", "Keep serving dependencies minimal and tested"]
+  ],
+  lessons: ["Deterministic graders make LLM features testable in CI.", "Measure the network floor before blaming the model for latency.", "Start with one agent; add more only when one cannot cope."],
+  star: "The first live run passed a quarter of the notes. Three fixes later it passed all of them at five cents per thousand, and I kept the one budget it still misses on the record."
+},
+{
+  id: "p6", tag: "P6", name: "Databricks port and model registry", dates: "13 Oct 2026", verdict: ["pass", "Passed on run 3"],
+  scqa: ["Everything ran on one laptop: local Spark, LightGBM, MLflow on SQLite.",
+         "Free Edition is serverless-only, with a daily compute quota and restricted internet; the code must not fork.",
+         "Can the same code reproduce the champion's numbers on Databricks and promote it through a registry?",
+         "Yes, identically, after run 1 failed and exposed three determinism bugs. Model registered as 'champion'."],
+  steps: [
+    ["Data", "Upload 4.3 GB to volumes", "Only the champion's inputs (Dec 2016–Mar 2017 logs, transactions, members, labels) into Unity Catalog volumes.", "Upload runs at about 3.5 MB/s; the other 14 GB are never read.", "configs/databricks.yaml"],
+    ["Platform", "Config overlay + session", "Volume paths applied automatically on Databricks; caching turned off on serverless.", "Same scripts locally and on Databricks.", "src/config.py · src/spark_session.py"],
+    ["Platform", "Asset Bundle job", "Three serverless tasks, packages pinned to local versions; no workspace URL in the repo.", "Job definition is versioned with the code.", "databricks.yml"],
+    ["Compute (PySpark)", "Features on serverless", "Same build script; about 2–3 minutes for both cohorts.", "Proves the PySpark pipeline runs on the platform.", "scripts/build_dataset.py"],
+    ["Evaluation", "Run 1: parity gate fails", "PR-AUC 0.5670 vs 0.5614 (tolerance 0.002); profit +0.7%.", "Tolerances were committed before the run.", "docs/adr/ADR-008-databricks-port.md", "fail"],
+    ["Evaluation", "Root cause, locally", "Databricks features on the laptop reproduce Databricks exactly: the platform is innocent, the inputs differ.", "Separate platform effects from pipeline effects without spending quota.", "ADR-008 Results"],
+    ["Compute (PySpark)", "Fix ties + column order", "Last transaction becomes one row with a total order; features enter LightGBM alphabetically.", "max_by picked any tied row; column sampling is by position.", "src/features/build.py · src/models/baseline.py", "fix"],
+    ["Evaluation", "Run 2: close, not equal", "Features 100% identical; PR-AUC 0.5606 vs 0.5589, inside tolerance but not identical.", "'Close enough' hid one more cause.", "ADR-008 Results"],
+    ["Model", "Fix row order", "Sort by cohort and member before training.", "Bagging samples rows by position; Spark row order differs by platform.", "src/models/baseline.py", "fix"],
+    ["Evaluation", "Run 3: identical", "PR-AUC 0.5594 and profit 12,431,437 on both platforms.", "Reproducible bit for bit, not just within tolerance.", "data/outputs/p6_parity.json"],
+    ["Platform", "Registry + tables", "Unity Catalog model v3 with alias 'champion'; features and scores published as tables.", "Promotion through a registry; results browsable in SQL.", "scripts/databricks_publish_tables.py"]
+  ],
+  decisions: [["Asset Bundle job on serverless; upload the champion's inputs only", "008"], ["Alias 'champion' only when every parity check passes", "008"], ["Keep the tolerances; fix the pipeline and rerun", "008"]],
+  results: [["Same members and churners", "identical", "862,158 · 62,616", "ok"], ["Features identical", "≥ 99.9% of members", "100% (1,741,636)", "ok"], ["PR-AUC", "± 0.002", "0.5594 · 0.5594", "ok"], ["Churners reached, top 10%", "± 0.2 pts", "65.21% · 65.21%", "ok"], ["Profit, central scenario", "± 0.5%", "12,431,437 · 12,431,437", "ok"], ["Registered model reloads", "identical scores", "identical", "ok"], ["Run 1 (on record)", "all checks", "PR-AUC, reach, profit failed", "no"]],
+  obstacles: [
+    ["Job failed: __file__ not defined", "Serverless runs Python tasks through exec()", "Find the repo root from argv or the working directory", "Test entry points the way the platform calls them"],
+    ["Caching and sparkContext unavailable", "Serverless (Spark Connect) restrictions", "cache()/uncache() helpers that are no-ops on Databricks", "Wrap platform-specific calls in one module"],
+    ["No internet to Kaggle from the workspace", "Free Edition allows trusted domains only", "Upload from the laptop, only what the job reads", "Check egress rules before designing data landing"],
+    ["Run 1: PR-AUC off by 0.006", "Tied last-transaction rows; column order changes LightGBM's column sampling", "One deterministic row; alphabetical feature order", "A cross-platform parity test catches what one machine hides"],
+    ["Run 2: inside tolerance, not identical", "Bagging samples rows by position; row order differs", "Sort rows by cohort and member before training", "Treat 'within tolerance' as a lead when exact is possible"],
+    ["The job retried a failed task by itself", "Failed task retried automatically", "Cancelled it once the cause was known", "Read the failure before spending more quota"]
+  ],
+  lessons: ["Reproduce on a second platform to expose hidden nondeterminism.", "Prove the platform innocent with same-input runs before changing code.", "Keep the gate; fix the pipeline; rerun until identical."],
+  star: "Databricks matched my laptop bit for bit on the same inputs. My first run still failed the gate, because my own pipeline wasn't deterministic. Three fixes later, both platforms give identical numbers."
+},
+{
+  id: "p7", tag: "P7", name: "Dashboard and monitoring", dates: "planned", verdict: ["plan", "Planned"],
+  scqa: ["The model, services and Databricks job exist; results are browsable as tables.",
+         "A retention team needs a monthly view and a warning when the data drifts.",
+         "Can the team see this month's list and the model's health without asking an engineer?",
+         "Planned."],
+  steps: [
+    ["Platform", "Dashboard on scores", "A Databricks dashboard on the scores table: list size, value at risk, risk mix.", "The team's monthly view.", "planned", "plan"],
+    ["Evaluation", "Drift check", "Compare this month's feature and score distributions with training.", "Know when to retrain before results degrade.", "planned", "plan"],
+    ["Evaluation", "Fresh agent questions", "A held-out question set written without seeing the agent's answers.", "P5's 45/45 used the same questions that found the fixes.", "planned", "plan"]
+  ],
+  decisions: [], results: [["Page and dashboard published", "published", "planned", "wait"]], obstacles: [], lessons: [], star: ""
+}
+];
+
+// Columns for the system map (what each phase added per layer)
+const MAP = {
+  "Data": {p0: ["7z → Parquet stream", "Official labels"], p1: ["Cohorts; snapshot = expiry − 14 d"], p3: ["60-day daily sequences"], p4: ["Member value"], p6: ["Unity Catalog volumes (4.3 GB)"]},
+  "Compute (PySpark)": {p0: ["Labeller port; window functions"], p1: ["30 point-in-time features"], p2: ["5 windows in one pass"], p6: ["Serverless; deterministic features"]},
+  "Model": {p1: ["LightGBM + MLflow"], p3: ["Shape stats · MAE · Mantis-8M"], p4: ["Isotonic + prior shift", "LambdaMART (lost)"], p6: ["Fixed row and column order", "UC registry · champion"]},
+  "Evaluation": {p0: ["Label agreement gate"], p1: ["Out-of-time; leakage test"], p2: ["Noise floor 0.003"], p3: ["+0.02 bar, same sample"], p4: ["Profit in 9 scenarios"], p5: ["Contract tests; LLM + agent evals"], p6: ["Parity gate: identical"], p7: ["Drift check"]},
+  "Serving & AI": {p5: ["4 services + MCP", "Grounded notes", "Planner agent"]},
+  "Platform": {p1: ["Pinned JDK"], p3: ["Staged processes"], p5: ["Docker + GitHub Actions"], p6: ["Asset Bundle job", "Tables in Catalog"], p7: ["Dashboard"]}
+};
+
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const tip = $("#tip");
+function showTip(e, html) {
+  tip.innerHTML = html; tip.hidden = false;
+  const r = tip.getBoundingClientRect(), x = (e.clientX ?? e.x) + 14, y = (e.clientY ?? e.y) + 14;
+  tip.style.left = Math.max(8, Math.min(x, innerWidth - r.width - 8)) + "px";
+  tip.style.top = Math.max(8, Math.min(y, innerHeight - r.height - 8)) + "px";
+}
+function hideTip() { tip.hidden = true; }
+const chip = v => `<span class="chip ${v[0]}">${esc(v[1])}</span>`;
+const adrLink = n => `<a href="${REPO}${ADR[n]}">ADR-${n}</a>`;
+const fileLink = f => f === "planned" ? '<span class="muted">planned</span>'
+  : f.split(" · ").map(x => /^(ADR|CHANGELOG)/.test(x) ? esc(x) : `<code>${esc(x)}</code>`).join(" · ");
+
+// ---------- system map
+function renderMap() {
+  const head = `<thead><tr><th>Layer</th>${PHASES.map(p => `<th class="ph" data-id="${p.id}" tabindex="0" title="Open ${p.tag}">${p.tag}<br><span class="muted" style="text-transform:none;font-weight:500">${esc(p.name.split(" ")[0])}…</span></th>`).join("")}</tr></thead>`;
+  const rows = Object.keys(MAP).map(lane => `<tr><td class="lane">${esc(lane)}</td>${PHASES.map(p =>
+    `<td class="cell" data-id="${p.id}">${(MAP[lane][p.id] || []).map(t => `<span>${esc(t)}</span>`).join("") || '<span class="muted">·</span>'}</td>`).join("")}</tr>`).join("");
+  $("#map").innerHTML = head + "<tbody>" + rows + "</tbody>";
+  $("#map").querySelectorAll("th.ph, td.cell").forEach(el => {
+    const p = PHASES.find(x => x.id === el.dataset.id);
+    el.addEventListener("click", () => select(p.id, true));
+    el.addEventListener("keydown", e => { if (e.key === "Enter") select(p.id, true); });
+    el.addEventListener("mousemove", e => showTip(e, `<b>${esc(p.tag)} · ${esc(p.name)}</b>${esc(p.verdict[1])}. Click to open.`));
+    el.addEventListener("mouseleave", hideTip);
+  });
+}
+
+// ---------- phase picker
+function renderPicker() {
+  $("#picker").innerHTML = PHASES.map(p => `<button role="tab" data-id="${p.id}" aria-selected="false">${p.tag} ${chip(p.verdict)}<small>${esc(p.name)}</small></button>`).join("");
+  $("#picker").querySelectorAll("button").forEach(b => b.addEventListener("click", () => select(b.dataset.id, false)));
+}
+
+// ---------- swimlane (SVG, laid out from the step list)
+const COL = 150, BOX_W = 132, BOX_H = 62, LANE_H = 86, LABEL_W = 132, PAD = 14;
+function wrap(text, max) {
+  const words = text.split(" "), lines = []; let cur = "";
+  for (const w of words) { if ((cur + " " + w).trim().length > max && cur) { lines.push(cur); cur = w; } else cur = (cur + " " + w).trim(); }
+  if (cur) lines.push(cur); return lines.slice(0, 3);
+}
+function renderSwim(p, state) {
+  const lanes = LANES.filter(l => p.steps.some(s => s[0] === l));
+  const W = LABEL_W + p.steps.length * COL + PAD, H = lanes.length * LANE_H;
+  const pos = p.steps.map((s, i) => ({x: LABEL_W + i * COL + (COL - BOX_W) / 2, y: lanes.indexOf(s[0]) * LANE_H + (LANE_H - BOX_H) / 2}));
+  let svg = `<svg class="swim" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(p.tag)} build steps by layer">
+    <defs><marker id="ah-${p.id}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="arrowhead" d="M0,0 L8,4 L0,8 z"/></marker></defs>`;
+  lanes.forEach((l, i) => {
+    svg += `<rect class="lane-bg${i % 2 ? " alt" : ""}" x="0" y="${i * LANE_H}" width="${W}" height="${LANE_H}"/>`;
+    svg += `<line class="lane-line" x1="0" x2="${W}" y1="${(i + 1) * LANE_H}" y2="${(i + 1) * LANE_H}"/>`;
+    wrap(l, 14).forEach((t, k, arr) => svg += `<text class="lane-label" x="12" y="${i * LANE_H + LANE_H / 2 + (k - (arr.length - 1) / 2) * 14 + 4}">${esc(t)}</text>`);
+  });
+  for (let i = 0; i < pos.length - 1; i++) {
+    const a = pos[i], b = pos[i + 1], x1 = a.x + BOX_W, y1 = a.y + BOX_H / 2, x2 = b.x - 2, y2 = b.y + BOX_H / 2, mx = (x1 + x2) / 2;
+    svg += `<path class="edge" marker-end="url(#ah-${p.id})" d="M${x1},${y1} H${mx} V${y2} H${x2}"/>`;
+  }
+  p.steps.forEach((s, i) => {
+    const {x, y} = pos[i], kind = s[5] ? ` kind-${s[5]}` : "", cls = i === state.i ? " current" : i < state.i ? " done" : "";
+    const lines = wrap(s[1], 19);
+    svg += `<g class="step${kind}${cls}" data-i="${i}" tabindex="0" role="button" aria-label="Step ${i + 1}: ${esc(s[1])}">
+      <rect x="${x}" y="${y}" width="${BOX_W}" height="${BOX_H}" rx="8"/>
+      <text class="num" x="${x + 9}" y="${y + 16}">${i + 1}</text>
+      ${lines.map((t, k) => `<text x="${x + 24}" y="${y + 17 + k * 15}">${esc(t)}</text>`).join("")}</g>`;
+  });
+  return svg + "</svg>";
+}
+function stepDetail(p, i) {
+  const s = p.steps[i], kind = {fail: "Where it failed", fix: "A fix", plan: "Planned"}[s[5]] || "";
+  return `<div class="detail" aria-live="polite"><span class="eyebrow">Step ${i + 1} of ${p.steps.length} · ${esc(s[0])}${kind ? " · " + kind : ""}</span>
+    <h3>${esc(s[1])}</h3><div class="kv"><b>What</b><span>${esc(s[2])}</span><b>Why</b><span>${esc(s[3])}</span><b>Where</b><span>${fileLink(s[4])}</span></div></div>`;
+}
+
+// ---------- phase body
+const state = {id: "p0", i: 0};
+function renderPhase() {
+  const p = PHASES.find(x => x.id === state.id);
+  const scqa = ["Situation", "Complication", "Question", "Answer"].map((h, k) => `<div><b>${h}</b><p>${esc(p.scqa[k])}</p></div>`).join("");
+  const res = p.results.map(r => `<tr><td>${esc(r[0])}</td><td class="mono">${esc(r[1])}</td><td class="mono">${esc(r[2])}</td><td>${
+    r[3] === "ok" ? '<span class="verdict-ok">pass</span>' : r[3] === "no" ? '<span class="verdict-no">fail</span>' : r[3] === "wait" ? '<span class="verdict-wait">pending</span>' : '<span class="muted">info</span>'}</td></tr>`).join("");
+  const obs = p.obstacles.length ? `<div class="box"><span class="eyebrow">Obstacles · symptom → root cause → fix → prevention</span>
+    <div class="scroll"><table class="obst"><thead><tr><th>Symptom</th><th>Root cause</th><th>Fix</th><th>Prevention</th></tr></thead><tbody>${
+    p.obstacles.map(o => `<tr>${o.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div>` : "";
+  $("#phase").innerHTML = `
+    <div class="phase-head"><h2>${esc(p.tag)} · ${esc(p.name)}</h2>${chip(p.verdict)}<span class="dates">${esc(p.dates)}</span></div>
+    <div class="scqa">${scqa}</div>
+    <div class="lanewrap">
+      <div class="walk"><span class="eyebrow">Build steps</span>
+        <button type="button" id="prev">◀ Prev</button><button type="button" class="primary" id="next">Next ▶</button>
+        <span class="pos" id="pos"></span></div>
+      <div class="scroll" id="swim"></div>
+      <div class="lane-legend"><span><i></i>step</span><span><i class="fail"></i>where it failed</span><span><i class="fix"></i>a fix</span><span><i class="plan"></i>planned</span><span>Hover a step for a summary; click or use Next for details.</span></div>
+      <div id="detail"></div>
+    </div>
+    <div class="two">
+      <div class="box"><span class="eyebrow">Result vs gate (set before the work)</span>
+        <div class="scroll"><table><thead><tr><th>Check</th><th>Target</th><th>Result</th><th></th></tr></thead><tbody>${res}</tbody></table></div></div>
+      <div class="box"><span class="eyebrow">Key decisions</span>${p.decisions.length ? `<ul class="points">${p.decisions.map(d => `<li>${esc(d[0])} · ${adrLink(d[1])}</li>`).join("")}</ul>` : '<p class="muted">To be decided.</p>'}
+        ${p.lessons.length ? `<span class="eyebrow">Lessons learned</span><ul class="points">${p.lessons.map(l => `<li>${esc(l)}</li>`).join("")}</ul>` : ""}</div>
+    </div>
+    ${obs}
+    ${p.star ? `<div class="box"><span class="eyebrow">STAR talking point</span><p class="star">“${esc(p.star)}”</p></div>` : ""}`;
+  $("#prev").addEventListener("click", () => step(-1));
+  $("#next").addEventListener("click", () => step(1));
+  drawSteps();
+}
+function drawSteps() {
+  const p = PHASES.find(x => x.id === state.id);
+  $("#swim").innerHTML = renderSwim(p, state);
+  $("#detail").innerHTML = stepDetail(p, state.i);
+  $("#pos").textContent = `Step ${state.i + 1} of ${p.steps.length}`;
+  $("#prev").disabled = state.i === 0; $("#next").disabled = state.i === p.steps.length - 1;
+  $("#swim").querySelectorAll("g.step").forEach(g => {
+    const s = p.steps[+g.dataset.i];
+    const go = () => { state.i = +g.dataset.i; drawSteps(); $(`#swim g.step[data-i="${state.i}"]`).focus({preventScroll: true}); };
+    g.addEventListener("click", go);
+    g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+    g.addEventListener("mousemove", e => showTip(e, `<b>${+g.dataset.i + 1}. ${esc(s[1])}</b>${esc(s[2])}`));
+    g.addEventListener("mouseleave", hideTip);
+    g.addEventListener("focus", () => { const r = g.getBoundingClientRect(); showTip({clientX: r.left, clientY: r.bottom}, `<b>${+g.dataset.i + 1}. ${esc(s[1])}</b>${esc(s[2])}`); });
+    g.addEventListener("blur", hideTip);
+  });
+  const cur = $("#swim g.step.current");
+  if (cur) { const box = $("#swim"), r = cur.getBoundingClientRect(), b = box.getBoundingClientRect();
+    if (r.left < b.left || r.right > b.right) box.scrollLeft += r.left - b.left - 40; }
+}
+function step(d) { const p = PHASES.find(x => x.id === state.id); state.i = Math.max(0, Math.min(p.steps.length - 1, state.i + d)); hideTip(); drawSteps(); }
+function select(id, scroll) {
+  state.id = id; state.i = 0; hideTip();
+  document.querySelectorAll("#picker button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.id === id)));
+  document.querySelectorAll("#map th.ph, #map td.cell").forEach(el => el.classList.toggle("on", el.dataset.id === id));
+  renderPhase();
+  try { history.replaceState(null, "", "#" + id); } catch (e) { /* sandboxed viewers */ }
+  if (scroll) $("#h-phase").scrollIntoView({behavior: "smooth", block: "start"});
+}
+document.addEventListener("keydown", e => {
+  if (e.target.closest("input, textarea")) return;
+  if (e.key === "ArrowRight") step(1); else if (e.key === "ArrowLeft") step(-1);
+});
+addEventListener("scroll", hideTip, {passive: true});
+
+renderMap(); renderPicker();
+const start = (location.hash || "").slice(1);
+select(PHASES.some(p => p.id === start) ? start : "p0", false);
+</script>

@@ -1,9 +1,9 @@
 PRODUCT REQUIREMENT DOCUMENT (PRD)
 Project: Subscription Churn at Scale — Who Leaves, When, Why, and Who to Call First
-Version: 0.9 (P5: services, grounded GenAI notes, MCP gateway, CI)
+Version: 1.0 (P6: Databricks port reproduces the champion exactly; planner agent; technical walkthrough page)
 Author: Sabrina Pribadi
 Date: October 9, 2026
-Status: Active — P0–P5 complete (P0, P3, P4 gates failed, documented); P6 next
+Status: Active — P0–P6 complete (P0, P3, P4 gates failed, documented; P6 passed on run 3); P7 next
 
 
 1. EXECUTIVE SUMMARY
@@ -97,18 +97,19 @@ User Stories:
 - As a retention lead, I can request the top-k members by revenue-at-risk for next week's expiries.
 - As a CRM agent, I can ask in plain English why a member is at risk and get a grounded answer.
 - As a data scientist, I can see the PR-AUC vs observation-window curve for each design.
-- As an ML engineer, I can call /score and /explain with typed requests and get versioned responses.
-- As an AI agent (via MCP), I can call customer_risk(id) and priority_list(k).
+- As an ML engineer, I can call /members/{id}/score and /members/{id}/explanation with typed requests and get versioned responses.
+- As an AI agent (via MCP), I can call member_risk(id), why_at_risk(id), call_list(share) and what_if(save_rate, cost).
+- As a retention manager, I can ask a planning question in plain words (POST /ask) and get an answer whose numbers come from the tools.
 
 
 5. FUNCTIONAL REQUIREMENTS
 
 Module A: Data & Labels — defined in ADR-001
 Module B: Features (RFM, payment, engagement, trend) — Phase 1
-Module C: Behavioural encoder — Phase 3 (ADR pending)
-Module D: Ranking — Phase 4 (ADR pending)
-Module E: Services & GenAI — Phase 5 (ADR pending)
-Module F: Databricks port & MLflow registry — Phase 6 (ADR pending)
+Module C: Behavioural encoder — Phase 3 (ADR-003)
+Module D: Ranking and calibration — Phase 4 (ADR-004)
+Module E: Services, GenAI notes and planner agent — Phase 5 (ADR-005, ADR-006, ADR-007)
+Module F: Databricks port & MLflow registry — Phase 6 (ADR-008)
 
 
 7. DATA STRATEGY
