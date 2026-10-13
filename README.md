@@ -79,7 +79,20 @@ SERVICE=scoring SERVING_DIR=~/data/kkbox/serving uvicorn src.services.apps:app -
 SERVING_DIR=~/data/kkbox/serving python -m src.gateway.mcp_server   # MCP over stdio for an AI assistant
 SERVING_DIR_HOST=~/data/kkbox/serving docker compose up --build    # all four services
 python scripts/llm_eval.py                                     # grounding, cost and latency report
+python scripts/agent_eval.py --repeats 3                       # planner agent, live (needs OPENAI_API_KEY)
 ```
+
+A manager can also ask in plain words: `POST /ask` on explain-svc runs the planner agent (ADR-007). It picks the tools, and every number in its answer must come from a tool result.
+
+## Run it on Databricks (Free Edition)
+
+```bash
+databricks auth login --host <your workspace URL> --profile portfolio
+databricks bundle deploy -p portfolio        # job definition: databricks.yml
+databricks bundle run churn_p6 -p portfolio  # features (PySpark) → retrain + parity check + registry → tables
+```
+
+Inputs go to the Unity Catalog volume `workspace.churn.raw` first (ADR-008). Results land in `workspace.churn.features_k14_w30` and `workspace.churn.scores_march_2017`; the model is `workspace.churn.churn_lgbm@champion`.
 
 | Tool (MCP) | Answers |
 |---|---|

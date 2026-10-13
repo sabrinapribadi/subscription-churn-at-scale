@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.15.1] — 2026-10-13 — Audit: every document matches the results and the rules
+**Files:** docs/index.html, docs/build.html, README.md, docs/PRD.md, docs/adr/ADR-002-validation-strategy.md, docs/adr/ADR-005-service-boundaries.md, docs/adr/ADR-008-databricks-port.md, docs/adr/README.md
+- **Situation:** After P6 and the P4 re-run, many numbers had moved, and seven phases of documents had accumulated small drifts.
+- **Task:** Check every document and output against the result files and the portfolio rules (R1–R14) before calling P6 done.
+- **Action:** Swept for stale numbers (old profit, LambdaMART loss, calibration error, CI counts) and replaced each with values traced to `data/outputs/*.json`, keeping first-run values only where they are history. Fixed the phase-gate table order and added the P6 row; added ADR-007/008 to the ADR index; set ADR-002 to Accepted; corrected PRD modules and user stories (real tool names). Added missing sources to ADR-005 and ADR-008 (R2). Rewrote "Our take" to cover P5 and P6 and removed a stale P3 line. Split the three visible passages over ~20 words (R7). Collapsed the source list into a closed section, which brings the collapsed page from 7.3 to 6.7 screens (R12). Added the agent and Databricks run instructions to the README. Verified every file the walkthrough names exists and every ADR link resolves; scanned code and history for employer names, AI attribution and secrets.
+- **Result:** No stale number left outside history notes; browser checks pass (results page 16/16 tooltips × 3 modes, 47/47 controls; walkthrough 333/333); collapsed results page 6.67 screens.
+- **Talking point:** "Before closing a phase I audit the documents like a reviewer would: every number traced to a result file, every rule checked."
+
 ## [0.15.0] — 2026-10-13 — P6: Databricks reproduces the champion exactly (after the gate failed once)
 **Files:** databricks.yml (new), configs/databricks.yaml (new), src/config.py (new), src/spark_session.py, src/features/build.py, src/models/baseline.py, scripts/build_dataset.py, scripts/databricks_train_register.py (new), scripts/databricks_publish_tables.py (new), scripts/rank_and_calibrate.py, scripts/export_serving_artifacts.py, tests/test_features.py, data/outputs/p4_rank_calibrate.json, data/outputs/p6_parity.json (new), docs/adr/ADR-008-databricks-port.md (new), docs/adr/ADR-004-ranking-and-calibration.md, docs/adr/ADR-005-service-boundaries.md, docs/adr/ADR-002-validation-strategy.md, docs/adr/README.md, docs/PRD.md, docs/index.html, docs/build.html, README.md, .gitignore
 - **Situation:** Every result came from one laptop. The PRD's P6 gate asks for the same metrics on Databricks Free Edition: serverless only, a daily quota, no internet to Kaggle.

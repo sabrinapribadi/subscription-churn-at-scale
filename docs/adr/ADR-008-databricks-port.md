@@ -88,3 +88,11 @@ Each fix has a test: two tied rows in both orders and two partitionings; column 
 ## Related Decisions
 
 - ADR-001 (lead time and window), ADR-002 (out-of-time validation), ADR-004 (calibration and value ordering), ADR-005 (serving)
+
+## References
+
+- Databricks Free Edition limitations (serverless only, quotas, restricted outbound internet): https://docs.databricks.com/aws/en/getting-started/free-edition-limitations
+- Databricks serverless environment versions (version 6: Python 3.12.3): https://docs.databricks.com/aws/en/release-notes/serverless/environment-version/
+- Databricks Asset Bundles: https://docs.databricks.com/aws/en/dev-tools/bundles/
+- Apache Spark `max_by` (non-deterministic on ties): https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.max_by.html
+- LightGBM parameters (`feature_fraction`, `bagging_fraction` sample by position): https://lightgbm.readthedocs.io/en/latest/Parameters.html

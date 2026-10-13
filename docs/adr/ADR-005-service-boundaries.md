@@ -64,3 +64,9 @@ The question: **"How do we serve scores, reasons and call lists so apps and AI a
 
 - ADR-004 (calibration and value ordering served by scoring-svc)
 - ADR-006 (GenAI module used by explain-svc and the MCP gateway)
+
+## References
+
+- FastAPI documentation: https://fastapi.tiangolo.com/
+- Pydantic documentation (models as contracts): https://docs.pydantic.dev/
+- Model Context Protocol specification: https://modelcontextprotocol.io/

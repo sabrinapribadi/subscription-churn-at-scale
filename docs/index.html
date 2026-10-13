@@ -227,6 +227,10 @@ section.block > *, .more-body > *, .pane > *, .results-grid > * { min-width: 0; 
 .gates td:nth-child(3) { white-space: nowrap; }
 footer { margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--line); display: grid; gap: 10px; font-size: 13px; color: var(--muted); }
 footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+footer details.sources > summary { cursor: pointer; list-style: none; padding-block: 4px; }
+footer details.sources > summary::after { content: " ▸"; color: var(--muted); }
+footer details.sources[open] > summary::after { content: " ▾"; }
+footer details.sources > ol { margin-top: 8px; }
 
 @media (max-width: 860px) {
   .method { grid-template-columns: minmax(0, 1fr); gap: 18px; }
@@ -366,7 +370,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
         <svg class="plot" id="pf-svg" viewBox="0 0 640 260" role="img" aria-label="Monthly profit by share of members called for three call-list orders"></svg>
         <div class="legend"><span><i style="background:var(--accent)"></i>Probability × value</span><span><i style="background:var(--muted)"></i>Probability</span><span><i style="background:var(--churn)"></i>LambdaMART</span></div>
         <div class="readout" id="pf-out"></div>
-        <p class="muted" style="font-size:13px">Save rate and cost per call are not in the data, so they are assumptions; prices are in the dataset's units (plans cost 99–149 a month). Member value = 12 months of the current plan. The <a href="#p4-scenarios" >9 tested scenarios</a> are in the appendix.</p>
+        <ul class="points muted" style="font-size:13px"><li>Save rate and cost per call are assumptions; prices are in the dataset's units (plans cost 99–149).</li><li>Member value = 12 months of the current plan.</li><li>All <a href="#p4-scenarios" >9 tested scenarios</a> are in the appendix.</li></ul>
       </div>
       <div class="explain">
         <span class="eyebrow">What P4 showed</span>
@@ -479,8 +483,8 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
   <span class="eyebrow">5 · Our take</span>
   <h2>Working view, revised as results come in</h2>
   <div class="take">
-    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Warning time is the real trade-off;</b> history length is not. 30 days of logs is enough.</li><li><b>Simple beats clever three times:</b> shape statistics vs encoders (P3), probability × value vs LambdaMART (P4).</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark scores overstate:</b> a realistic setup loses 0.06 PR-AUC versus training on labels that arrive too late.</li><li><b>The open gap is auto-renew cancellers:</b> a third of churners, and the list reaches 1 in 4. That is where Phase 3 behaviour signals have to earn their keep.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
-    <div><span class="eyebrow">What would change our mind</span><ul class="points"><li><b>Answered by P2:</b> lead time is not free (−5 points of reach from 14 to 30 days). We keep 14 days; 7 if campaigns can move faster.</li><li><b>Answered by P3:</b> embeddings missed their gate (+0.004 vs +0.02), so they serve personas only. Auto-renew cancellers need a different signal, such as payment-failure history or offer response (CHN-2).</li></ul></div>
+    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Warning time is the real trade-off;</b> history length is not. 30 days of logs is enough.</li><li><b>Simple beats clever three times:</b> shape statistics vs encoders (P3), probability × value vs LambdaMART (P4), one AI agent vs several (P5).</li><li><b>Reproduce before you trust:</b> Databricks exposed three hidden sources of randomness; results are now identical on both platforms (P6).</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark scores overstate:</b> a realistic setup loses 0.06 PR-AUC versus training on labels that arrive too late.</li><li><b>The open gap is auto-renew cancellers:</b> a third of churners; the list reaches 1 in 4. Listening signals (P3) did not close it.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
+    <div><span class="eyebrow">What would change our mind</span><ul class="points"><li><b>Answered by P2:</b> lead time is not free (−5 points of reach from 14 to 30 days). We keep 14 days; 7 if campaigns can move faster.</li><li><b>Answered by P3:</b> embeddings missed their gate (+0.004 vs +0.02); personas only. Auto-renew cancellers need another signal, e.g. payment failures (CHN-2).</li></ul></div>
   </div>
 </section>
 
@@ -916,7 +920,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 </section>
 
 <footer>
-  <span class="eyebrow">Sources</span>
+  <details class="sources"><summary><span class="eyebrow">Sources · 20 journals, datasets and vendor docs</span></summary>
   <ol>
     <li>WSDM Cup 2018 — KKBox's Churn Prediction Challenge, data and official labeller. <a href="https://www.kaggle.com/c/kkbox-churn-prediction-challenge">kaggle.com/c/kkbox-churn-prediction-challenge</a></li>
     <li>How Early Is Early Enough? Design-dependent observation-window sufficiency in subscription churn prediction (2026). <a href="https://arxiv.org/abs/2607.00473">arXiv 2607.00473</a></li>
@@ -939,6 +943,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
     <li>Model Context Protocol. <a href="https://modelcontextprotocol.io">modelcontextprotocol.io</a></li>
     <li>Ascarza (2018). Retention futility: targeting high-risk customers might be ineffective. Journal of Marketing Research 55(1). <a href="https://doi.org/10.1509/jmr.16.0163">doi:10.1509/jmr.16.0163</a></li>
   </ol>
+  </details>
   <p>Simulations use synthetic data generated in the browser. Sabrina Pribadi · last updated 13 Oct 2026 · code and change log: <a href="https://github.com/sabrinapribadi/subscription-churn-at-scale">github.com/sabrinapribadi/subscription-churn-at-scale</a> · <a href="build.html">technical walkthrough</a></p>
 </footer>
 </div>
