@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.13.3] — 2026-10-13 — Evaluation set grown to 60 cases, 48 of them real members
+**Files:** scripts/build_eval_cases.py (new), tests/llm_eval/cases.json, scripts/llm_eval.py, docs/adr/ADR-006-genai-module.md, docs/index.html, README.md
+- **Situation:** "12 of 12 notes passed" rested on 12 hand-written cases, too few to trust and none from real members.
+- **Task:** Test the AI notes on real scored members, including the rare ones where a hidden demographic reason is near the top.
+- **Action:** Wrote a reproducible builder: 16 real members per risk level, spread across top reasons, fixed seed, ids replaced by labels; kept the 12 edge cases. Measured how often age, gender or city rank in a member's top 5 reasons (1.7%, 0%, 0.7%) and included 6 such members on purpose. The evaluation report now splits results by source and lists every failing note. A first version scanned all 862k members with TreeSHAP and ran for an hour; it now scans 30,000 per level (3 minutes).
+- **Result:** Live on OpenAI, 60/60 notes passed every check before any fallback (edge 12/12, real 48/48); no note mentioned a hidden reason; $0.048 per 1,000 notes. The larger sample shows a longer latency tail: p50 2.0 s, p95 3.6 s (12 cases had shown 2.26 s), and that is now on the record.
+- **Talking point:** "I didn't trust 12 out of 12, so I tested 48 real members, including the 2% whose top reasons are demographic. Still 100%, and the bigger sample made my latency number worse, not better, so I reported the worse one."
+
 ## [0.13.2] — 2026-10-13 — Live OpenAI run: notes 12/12 grounded, $0.05 per 1,000, latency miss recorded
 **Files:** src/genai/providers.py, src/genai/prompts/explain_member.v2.yaml (renamed from v1), src/genai/explain.py, src/genai/registry.py, src/genai/grader.py, scripts/llm_eval.py, configs/default_config.yaml, tests/test_genai.py, tests/test_services.py, docs/adr/ADR-006-genai-module.md, docs/index.html, README.md
 - **Situation:** P5 had only estimated the LLM's cost and speed: CI runs the free template writer, and the real model had never been called.

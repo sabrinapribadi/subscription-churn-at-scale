@@ -1,16 +1,21 @@
 {
  "provider": "openai",
  "model": "gpt-6-luna",
- "cases": 12,
+ "cases": 60,
  "raw_pass_rate": 1.0,
  "grounded_after_guard": 1.0,
  "action_accuracy": 1.0,
- "latency_ms_p50": 1694.9,
- "latency_ms_p95": 2263.2,
- "avg_input_tokens": 198.4,
- "avg_output_tokens": 56.2,
- "cost_per_1000_usd": 0.048,
+ "latency_ms_p50": 2001.5,
+ "latency_ms_p95": 3589.6,
+ "avg_input_tokens": 197.3,
+ "avg_output_tokens": 55.7,
+ "raw_pass_by_source": {
+  "edge": "12/12",
+  "real": "48/48"
+ },
+ "cost_per_1000_usd": 0.0476,
  "budget_cost_per_1000_usd": 0.2,
  "budget_p95_ms": 2000,
- "passed": false
+ "passed": false,
+ "raw_failures": []
 }

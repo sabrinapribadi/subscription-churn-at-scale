@@ -32,7 +32,7 @@ def main() -> None:
     if a.provider == "openai" and prov.name != "openai":
         sys.exit("OPENAI_API_KEY is not set; refusing to report template results as OpenAI results.")
     cases = json.loads(Path("tests/llm_eval/cases.json").read_text())
-    raw_ok, grounded, action_ok, lat, cost, tin, tout = [], [], [], [], [], [], []
+    raw_ok, grounded, action_ok, lat, cost, tin, tout, failed = [], [], [], [], [], [], [], []
     for c in cases:
         s = Score(member_id=c["id"], churn_probability=c["p"], risk_level=c["risk"], member_value=c["value"],
                   expected_value_at_risk=c["p"] * c["value"], priority_rank=1, priority_percentile=100, expiry_date=c["expiry"], model_version="eval")
@@ -41,7 +41,12 @@ def main() -> None:
         ex = Explainer(prov)
         system, user = ex.prompt.render(facts)
         out = prov.complete(system, user, facts)
-        raw_ok.append(all(grade(out.text, facts).values()) and not mentions_any(out.text, c["must_not_mention"]))
+        checks = {k: v for k, v in grade(out.text, facts).items() if not v}
+        if mentions_any(out.text, c["must_not_mention"]):
+            checks["must_not_mention"] = False
+        raw_ok.append(not checks)
+        if checks:
+            failed.append({"id": c["id"], "failed": sorted(checks), "text": out.text})
         e = ex.explain(s, rs)
         grounded.append(e.grounded and not mentions_any(e.narrative, c["must_not_mention"]))
         action_ok.append(e.suggested_action == c["expected_action"])
@@ -53,8 +58,11 @@ def main() -> None:
               "action_accuracy": round(float(np.mean(action_ok)), 3),
               "latency_ms_p50": round(float(np.percentile(lat, 50)), 1), "latency_ms_p95": round(float(np.percentile(lat, 95)), 1),
               "avg_input_tokens": round(float(np.mean(tin)), 1), "avg_output_tokens": round(float(np.mean(tout)), 1),
+              "raw_pass_by_source": {src: f"{sum(r for r, x in zip(raw_ok, cases) if x.get('source', 'edge') == src)}/{sum(x.get('source', 'edge') == src for x in cases)}"
+                                     for src in sorted({x.get("source", "edge") for x in cases})},
               "cost_per_1000_usd": round(per_1000, 4), "budget_cost_per_1000_usd": cfg["budget_cost_per_1000"], "budget_p95_ms": budget_ms}
     report["passed"] = report["grounded_after_guard"] == 1.0 and report["action_accuracy"] == 1.0 and per_1000 <= cfg["budget_cost_per_1000"] and report["latency_ms_p95"] <= budget_ms
+    report["raw_failures"] = failed
     print(json.dumps(report, indent=1))
     Path("data/outputs").mkdir(parents=True, exist_ok=True)
     Path(f"data/outputs/p5_llm_eval_{prov.name}.json").write_text(json.dumps(report, indent=1))

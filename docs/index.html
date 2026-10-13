@@ -739,7 +739,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
               <tr><td>Cost per 1,000 AI notes</td><td class="num">≤ $0.20</td><td class="num">$0.048 (gpt-6-luna, live) · $0 template</td></tr>
               <tr><td>Repeat question (cached), p95</td><td class="num">≤ 50 ms</td><td class="num">0.13 ms in-process · 7 ms over HTTP</td></tr>
               <tr><td>First answer, template note, p95</td><td class="num">≤ 50 ms</td><td class="num">49 ms in-process · 80 ms over HTTP</td></tr>
-              <tr><td>First answer, live LLM, p95</td><td class="num">≤ 2 s</td><td class="num"><b>2.26 s — missed</b> (1.6 s is the network round trip); agents read nightly or cached notes instead</td></tr>
+              <tr><td>First answer, live LLM, p95</td><td class="num">≤ 2 s</td><td class="num"><b>3.6 s — missed</b> (1.6 s is the network round trip); agents read nightly or cached notes instead</td></tr>
               <tr><td>Whole monthly call list as a nightly batch</td><td class="num">—</td><td class="num">≈ $2 (Batch API price)</td></tr>
             </tbody></table></div>
         </div>
@@ -747,7 +747,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
           <span class="eyebrow">Why agents can trust the note</span>
           <ul class="points">
             <li>Every number in the note must appear in the model's facts.</li>
-            <li>Live test on OpenAI: 12 of 12 notes passed every check before any fallback.</li>
+            <li>Live test on OpenAI: 60 of 60 notes (48 real members) passed every check before any fallback.</li>
             <li>The top reason must be named; no other feature may be.</li>
             <li>Age, gender and city are never quoted to agents.</li>
             <li>The note ends with one action from a fixed list.</li>
@@ -802,7 +802,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
         <tr><td>P1 · Baseline</td><td>Out-of-time PR-AUC reported; leakage tests pass</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>PR-AUC <b>0.568</b> vs rule <b>0.342</b></li><li>Top 10% of the list catches <b>65%</b> of churners</li><li>Leakage tests pass</li></ul></td></tr>
         <tr><td>P2 · Window</td><td>Window curve and knee reported for each k</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>Lead time: PR-AUC 0.676 (0 d) → 0.602 (7 d) → 0.561 (14 d) → 0.476 (30 d)</li><li>History: flat from 30 to 180 days → use 30</li></ul></td></tr>
         <tr><td>P3 · Embeddings</td><td>PR-AUC(GBM + embeddings) ≥ PR-AUC(GBM) + 0.02 out-of-time</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>Best: shape statistics +0.004; encoder +0.002; Mantis +0.003 (sample)</li><li>Kept for personas only (ADR-003)</li></ul></td></tr>
-        <tr><td>P5 · Serving</td><td>Contract tests and LLM evaluation set pass in CI</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>CI green: 55 tests + 1 local-only (PyTorch); 12/12 evaluation cases grounded (<a href="https://github.com/sabrinapribadi/subscription-churn-at-scale/actions/runs/38279575714">run</a>)</li><li>Live OpenAI run: 12/12 notes grounded before any fallback; $0.05 per 1,000 notes; live p95 2.26 s vs 2 s target (missed, recorded)</li></ul></td></tr>
+        <tr><td>P5 · Serving</td><td>Contract tests and LLM evaluation set pass in CI</td><td><span class="chip pass">Passed</span></td><td><ul class="points"><li>CI green: 55 tests + 1 local-only (PyTorch); 12/12 evaluation cases grounded (<a href="https://github.com/sabrinapribadi/subscription-churn-at-scale/actions/runs/38279575714">run</a>)</li><li>Live OpenAI run: 60/60 notes grounded before any fallback (48 real members); $0.05 per 1,000 notes; live p95 3.6 s vs 2 s target (missed, recorded)</li></ul></td></tr>
         <tr><td>P4 · Ranking</td><td>profit@10%(LambdaMART) &gt; profit@10%(probability sort); ECE ≤ 0.010</td><td><span class="chip fail">Failed</span></td><td><ul class="points"><li>LambdaMART −22% vs probability sort</li><li>Probability × value wins all 9 scenarios (+0.1%) → recommended</li><li>ECE 0.0158 → 0.0128 (gate 0.010)</li></ul></td></tr>
       </tbody>
     </table>

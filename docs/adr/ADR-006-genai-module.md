@@ -1,6 +1,6 @@
 # ADR-006: GenAI Module — Provider Interface, Versioned Prompts, Shared Tools, Grounding Grader
 
-**Status:** Accepted — evaluation set 100% grounded (12/12 live on OpenAI); cost within budget; live latency p95 2.26 s misses the 2 s budget (see Results)
+**Status:** Accepted — evaluation set 100% grounded (60/60 live on OpenAI, 48 real members); cost within budget; live latency p95 3.6 s misses the 2 s budget (see Results)
 **Date:** 2026-10-12
 **Deciders:** Sabrina Pribadi
 
@@ -63,19 +63,19 @@ Measured per explanation ≈ 200 input + 56 output tokens → **≈ $0.00005 eac
 
 ## Results (2026-10-12)
 
-- Evaluation set (12 cases, template provider): raw pass 100%, grounded after guard 100%, action accuracy 100%.
+- Evaluation set (60 cases: 12 hand-written edge cases + 48 real members, template provider): raw pass 100%, grounded after guard 100%, action accuracy 100%.
 - Guard verified with a scripted OpenAI client: invented facts → fallback to the template; grounded text → used and metered.
 - Latency (real artefacts): first note p95 49 ms in-process, 80 ms over HTTP; cached p95 0.13 ms in-process, 7 ms over HTTP.
 - Cost: template $0.
 
-### Live OpenAI run (2026-10-13, `gpt-6-luna`, prompt `explain_member.v2`)
+### Live OpenAI run (2026-10-13, `gpt-6-luna`, prompt `explain_member.v2`, 60 cases)
 
 | Metric | Result | Budget |
 |---|---|---|
-| Raw pass rate (before the guard) | **12/12 (100%)** | reported |
+| Raw pass rate (before the guard) | **60/60 (100%)**: edge 12/12, real 48/48 | reported |
 | Grounded after guard · action accuracy | 100% · 100% | 100% |
-| Cost per 1,000 notes | **$0.048** (≈ 198 input + 56 output tokens) | ≤ $0.20 ✅ |
-| Live latency p50 / p95 | 1.69 s / **2.26 s** | p95 ≤ 2.0 s ❌ |
+| Cost per 1,000 notes | **$0.048** (≈ 197 input + 56 output tokens) | ≤ $0.20 ✅ |
+| Live latency p50 / p95 (60 calls) | 2.00 s / **3.59 s** | p95 ≤ 2.0 s ❌ |
 | Network floor ("Say OK", 10 calls) | 1.40 s / 1.60 s | — |
 
 How we got there, in three runs:
@@ -83,6 +83,8 @@ How we got there, in three runs:
 1. **First run failed:** the API rejected `temperature` for this model. It is now optional in config (`null`) and sent only when set.
 2. **Raw pass 25%, p95 3.6 s:** `gpt-6-luna` is a reasoning model, and reasoning tokens (80–140) used up the 160-token output limit, cutting notes off mid-sentence. Fixed with `reasoning_effort: none` (config).
 3. **Raw pass 5/12:** the model paraphrased reasons ("a 410-day plan" for "plan length in days"), which the exact-match grader rejects. Prompt v2 asks for each reason's exact wording, first reason first, risk level and percentage up front, so the grader stays strict and the prompt adapts to it. The eval's banned-word check now matches whole words (a banned "19" had fired inside "2190").
+
+**Evaluation set (rebuilt 2026-10-13 by `scripts/build_eval_cases.py`):** 12 hand-written edge cases with human-set actions, plus 48 real scored members (16 per risk level, spread across top reasons, fixed seed; ids replaced by labels). Age or city ranks in a member's top 5 reasons for only about 2% of members (age 1.7%, city 0.7%, gender 0% in a 50,000-member sample), so 6 such members are included on purpose; none of their notes mentioned the hidden reason. With 12 cases the p95 was 2.26 s; 60 calls show a longer tail (3.6 s).
 
 **Latency decision:** the 2 s budget is kept, and the miss is recorded. About 1.6 s of the p95 is the network round trip, so a faster model would not fix it. Agents do not wait on this path: call-list notes are written in the nightly batch, and repeat questions are cached (7 ms over HTTP). The live path serves only first-time, on-demand questions. The next lever, if needed, is streaming, so the first words appear before the full note.
 
