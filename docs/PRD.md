@@ -1,9 +1,9 @@
 PRODUCT REQUIREMENT DOCUMENT (PRD)
 Project: Subscription Churn at Scale — Who Leaves, When, Why, and Who to Call First
-Version: 1.0 (P6: Databricks port reproduces the champion exactly; planner agent; technical walkthrough page)
+Version: 1.1 (P7: dashboard, drift check, held-out agent questions)
 Author: Sabrina Pribadi
 Date: October 9, 2026
-Status: Active — P0–P6 complete (P0, P3, P4 gates failed, documented; P6 passed on run 3); P7 next
+Status: Complete — P0–P7 done (P0, P3, P4 gates failed, documented; P6 passed on run 3; P7 passed)
 
 
 1. EXECUTIVE SUMMARY

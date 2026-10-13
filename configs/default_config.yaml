@@ -8,6 +8,7 @@ paths:
   parquet_dir: ~/data/kkbox/parquet
   cohorts_dir: ~/data/kkbox/cohorts
   features_dir: ~/data/kkbox/features
+  serving_dir: ~/data/kkbox/serving        # model.txt + calibration.json (ADR-005)
   outputs_dir: data/outputs          # small, committed artefacts only
 
 # ----- Task framing (ADR-001) -----

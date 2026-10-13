@@ -14,6 +14,7 @@ This directory documents the key design decisions for the subscription churn pro
 | [ADR-006](ADR-006-genai-module.md) | GenAI module: provider, prompts, tool registry | Accepted | Template and OpenAI providers, versioned prompts, rule-based grounding grader with template fallback, cache, shared MCP/OpenAI tool registry; cost and latency budgets (rule R13). |
 | [ADR-007](ADR-007-retention-planner-agent.md) | One tool-using agent, not a multi-agent system | Accepted | Retention planner over the shared tools (Responses API function calling), number check with tool-built fallback, POST /ask; 45/45 live test runs at $0.22 per 1,000 questions. |
 | [ADR-008](ADR-008-databricks-port.md) | Databricks port: Asset Bundle, Unity Catalog, serverless job, MLflow registry | Accepted (gate passed) | Same code locally and on serverless; champion inputs in Unity Catalog volumes; MLflow UC registry with a `champion` alias gated on parity. Run 1 failed; three determinism fixes; run 3 identical to local. |
+| [ADR-009](ADR-009-monitoring-and-operations.md) | Operating monthly: dashboard, drift check, held-out agent questions | Accepted (gates passed) | Dashboard as code in the bundle; PSI per feature and for the score (0.10 / 0.25 bands); lagged realised-vs-expected check; 15 held-out agent questions written before any run (42/45). |
 
 ## How to Read an ADR
 
@@ -36,4 +37,5 @@ ADR-005 (services)
         └── ADR-007 (planner agent — uses the ADR-006 tool registry)
 ADR-004 + ADR-005
   └── ADR-008 (Databricks port — reproduces the ADR-004 champion; registry feeds serving)
+        └── ADR-009 (operations — dashboard and drift on the ADR-008 tables)
 ```

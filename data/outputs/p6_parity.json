@@ -40,13 +40,13 @@
     "registered_model_reloads": true
   },
   "gate_passed": true,
-  "train_seconds": 46,
+  "train_seconds": 50,
   "registry": {
     "model": "workspace.churn.churn_lgbm",
-    "version": 3,
-    "run_id": "42c11d4cd3094252ba553060afc92af3",
+    "version": 6,
+    "run_id": "be33870e6fc44accb91f9d3b0d9761bf",
     "reload_scores_identical": true,
     "alias": "champion"
   },
-  "total_seconds": 122
+  "total_seconds": 127
 }

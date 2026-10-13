@@ -213,7 +213,8 @@ const REPO = "https://github.com/sabrinapribadi/subscription-churn-at-scale/blob
 const ADR = {
   "001": "docs/adr/ADR-001-task-framing.md", "002": "docs/adr/ADR-002-validation-strategy.md", "003": "docs/adr/ADR-003-behaviour-encoder.md",
   "004": "docs/adr/ADR-004-ranking-and-calibration.md", "005": "docs/adr/ADR-005-service-boundaries.md", "006": "docs/adr/ADR-006-genai-module.md",
-  "007": "docs/adr/ADR-007-retention-planner-agent.md", "008": "docs/adr/ADR-008-databricks-port.md"
+  "007": "docs/adr/ADR-007-retention-planner-agent.md", "008": "docs/adr/ADR-008-databricks-port.md",
+  "009": "docs/adr/ADR-009-monitoring-and-operations.md"
 };
 const LANES = ["Data", "Compute (PySpark)", "Model", "Evaluation", "Serving & AI", "Platform", "Decision"];
 
@@ -274,7 +275,7 @@ const PHASES = [
 {
   id: "p2", tag: "P2", name: "How early, how much history", dates: "9 Oct 2026", verdict: ["pass", "Passed"],
   scqa: ["P1 used a 14-day lead time and 120 days of history by assumption.",
-         "A 2026 study on this dataset put the history 'knee' anywhere from 30 to 120 days; a separate build per setting would take hours.",
+         "A 2026 study put the history 'knee' anywhere from 30 to 120 days; one build per setting would take hours.",
          "How early can we call, and how much history do we need?",
          "Lead time costs churners (68% → 65% → 60% at 7/14/30 days). History does not: 30–180 days are within noise. Use 30."],
   steps: [
@@ -407,17 +408,32 @@ const PHASES = [
   star: "Databricks matched my laptop bit for bit on the same inputs. My first run still failed the gate, because my own pipeline wasn't deterministic. Three fixes later, both platforms give identical numbers."
 },
 {
-  id: "p7", tag: "P7", name: "Dashboard and monitoring", dates: "planned", verdict: ["plan", "Planned"],
+  id: "p7", tag: "P7", name: "Dashboard, drift and held-out agent test", dates: "13 Oct 2026", verdict: ["pass", "Passed"],
   scqa: ["The model, services and Databricks job exist; results are browsable as tables.",
-         "A retention team needs a monthly view and a warning when the data drifts.",
-         "Can the team see this month's list and the model's health without asking an engineer?",
-         "Planned."],
+         "A team needs a monthly view, a warning when data shifts, and an agent tested on questions it never saw.",
+         "Can the team run this monthly without an engineer, and does the agent hold up on fresh questions?",
+         "Yes: dashboard matches the tables, drift alerts explained, held-out agent 42/45."],
   steps: [
-    ["Platform", "Dashboard on scores", "A Databricks dashboard on the scores table: list size, value at risk, risk mix.", "The team's monthly view.", "planned", "plan"],
-    ["Evaluation", "Drift check", "Compare this month's feature and score distributions with training.", "Know when to retrain before results degrade.", "planned", "plan"],
-    ["Evaluation", "Fresh agent questions", "A held-out question set written without seeing the agent's answers.", "P5's 45/45 used the same questions that found the fixes.", "planned", "plan"]
+    ["Decision", "Gates + 15 new questions", "ADR-009 gates and held-out questions committed before any run.", "A score on questions that found the fixes is not a held-out score.", "docs/adr/ADR-009-monitoring-and-operations.md"],
+    ["Evaluation", "PSI drift module", "Population Stability Index per feature and for the score; missing values get their own bin.", "One banded number per input, familiar to risk teams.", "src/monitoring/drift.py"],
+    ["Evaluation", "Explain the alerts", "Two alerts: a 3-day calendar shift (short February) and a month of ageing; score stable.", "An alert is a question for a person, not a verdict.", "data/outputs/p7_drift.json", "fail"],
+    ["Evaluation", "Lagged check", "List expected 33,808 churners; 40,300 happened (16% short).", "Labels arrive late; check them when they do.", "scripts/monitor_drift.py"],
+    ["Platform", "Drift task + schedule", "New job task after training; monthly schedule defined, paused for the quota.", "Monitoring runs with the model, not as an afterthought.", "databricks.yml"],
+    ["Platform", "Fix volume write", "LightGBM appends when saving; volumes do not allow it. Save locally, then copy.", "Found on the first run of the new task.", "scripts/databricks_train_register.py", "fix"],
+    ["Serving & AI", "Dashboard as code", "Counters, risk mix, drift chart and top-25 list; deployed by the bundle.", "Versioned with the job; counters equal the scores table.", "dashboards/churn_monthly.lvdash.json"],
+    ["Evaluation", "Held-out agent run", "15 new questions × 3: 42/45, $0.21 per 1,000, p95 6.3 s.", "Same bar as P5 (≥ 80%).", "data/outputs/p7_agent_holdout.json"],
+    ["Serving & AI", "Fix sign in number check", "The 3 misses were correct negative answers; the check dropped the minus sign.", "Fix the instrument, report the score as measured.", "src/genai/agent.py", "fix"]
   ],
-  decisions: [], results: [["Page and dashboard published", "published", "planned", "wait"]], obstacles: [], lessons: [], star: ""
+  decisions: [["PSI with 0.10 / 0.25 bands, per feature and for the score", "009"], ["Dashboard and schedule as code in the bundle", "009"], ["Report 42/45 as measured; no re-scoring after the fix", "009"]],
+  results: [["G1: dashboard counters = scores table", "equal", "862,158 · 86,215 · 60,918,657", "ok"], ["G2: PSI for every feature + score", "100%", "30/30 + score; 2 alerts explained", "ok"], ["G3: lagged check reported", "reported", "33,808 expected vs 40,300", "ok"], ["G4: held-out agent questions", "≥ 80%", "42/45 (93%)", "ok"], ["G4: cost · p95", "≤ $1.00 · ≤ 8 s", "$0.21 · 6.3 s", "ok"]],
+  obstacles: [
+    ["Two features in the drift alert band", "February is 3 days shorter; members age a month", "Explained in ADR-009; score PSI stable", "Express recency relative to the billing cycle next time"],
+    ["Model save failed on the volume", "LightGBM appends to its file; volumes do not support append", "Save to local disk, then copy", "Write to volumes in one go"],
+    ["Correct agent answer rejected 3 times", "Number check ignored minus signs", "Keep signs; test negatives", "Test the grader on losses, not only gains"],
+    ["Two extra model versions registered", "The save failed after registration", "Documented; champion on version 6", "Register last, after every file is written"]
+  ],
+  lessons: ["Monitoring proves itself by raising alerts a person can explain.", "Write held-out questions before the first run, and keep the score as measured.", "Graders are code too: test them on edge cases like negative numbers."],
+  star: "The drift check raised two alerts in its first month. Neither was real drift: February is three days shorter. The score stayed stable, and I wrote down how to fix the feature."
 }
 ];
 
@@ -426,9 +442,9 @@ const MAP = {
   "Data": {p0: ["7z → Parquet stream", "Official labels"], p1: ["Cohorts; snapshot = expiry − 14 d"], p3: ["60-day daily sequences"], p4: ["Member value"], p6: ["Unity Catalog volumes (4.3 GB)"]},
   "Compute (PySpark)": {p0: ["Labeller port; window functions"], p1: ["30 point-in-time features"], p2: ["5 windows in one pass"], p6: ["Serverless; deterministic features"]},
   "Model": {p1: ["LightGBM + MLflow"], p3: ["Shape stats · MAE · Mantis-8M"], p4: ["Isotonic + prior shift", "LambdaMART (lost)"], p6: ["Fixed row and column order", "UC registry · champion"]},
-  "Evaluation": {p0: ["Label agreement gate"], p1: ["Out-of-time; leakage test"], p2: ["Noise floor 0.003"], p3: ["+0.02 bar, same sample"], p4: ["Profit in 9 scenarios"], p5: ["Contract tests; LLM + agent evals"], p6: ["Parity gate: identical"], p7: ["Drift check"]},
-  "Serving & AI": {p5: ["4 services + MCP", "Grounded notes", "Planner agent"]},
-  "Platform": {p1: ["Pinned JDK"], p3: ["Staged processes"], p5: ["Docker + GitHub Actions"], p6: ["Asset Bundle job", "Tables in Catalog"], p7: ["Dashboard"]}
+  "Evaluation": {p0: ["Label agreement gate"], p1: ["Out-of-time; leakage test"], p2: ["Noise floor 0.003"], p3: ["+0.02 bar, same sample"], p4: ["Profit in 9 scenarios"], p5: ["Contract tests; LLM + agent evals"], p6: ["Parity gate: identical"], p7: ["PSI drift; lagged check", "Held-out agent 42/45"]},
+  "Serving & AI": {p5: ["4 services + MCP", "Grounded notes", "Planner agent"], p7: ["Dashboard as code"]},
+  "Platform": {p1: ["Pinned JDK"], p3: ["Staged processes"], p5: ["Docker + GitHub Actions"], p6: ["Asset Bundle job", "Tables in Catalog"], p7: ["Dashboard + paused schedule"]}
 };
 
 const $ = (s, el = document) => el.querySelector(s);

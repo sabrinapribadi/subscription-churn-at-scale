@@ -1,0 +1,315 @@
+{
+  "reference_cohort": 201702,
+  "current_cohort": 201703,
+  "model_version": "lgbm-k14w30-ef067b38",
+  "features_checked": 30,
+  "model_features": 30,
+  "bands": {
+    "stable": 28,
+    "alert": 2,
+    "watch": 1
+  },
+  "alert_threshold": 0.25,
+  "alerts": [
+    "days_since_last_tx",
+    "tenure_days"
+  ],
+  "watch": [
+    "tx_mean_discount"
+  ],
+  "score_psi": 0.0143,
+  "lagged": {
+    "list_size": 86215,
+    "expected_churners_on_list": 33807.7,
+    "realised_churners_on_list": 40300,
+    "expected_churn_rate": 0.06064,
+    "realised_churn_rate": 0.07263,
+    "training_churn_rate": 0.05545,
+    "shortfall_on_list": 0.1611
+  },
+  "table": [
+    {
+      "feature": "score (calibrated)",
+      "psi": 0.0143,
+      "band": "stable",
+      "reference_mean": 0.05886,
+      "current_mean": 0.06064,
+      "reference_missing": 0.0,
+      "current_missing": 0.0
+    },
+    {
+      "feature": "days_since_last_tx",
+      "psi": 1.8124,
+      "band": "alert",
+      "reference_mean": 21.77783,
+      "current_mean": 20.28962,
+      "reference_missing": 0.00058,
+      "current_missing": 0.00014
+    },
+    {
+      "feature": "tenure_days",
+      "psi": 0.431,
+      "band": "alert",
+      "reference_mean": 470.48647,
+      "current_mean": 488.08432,
+      "reference_missing": 0.00058,
+      "current_missing": 0.00014
+    },
+    {
+      "feature": "tx_mean_discount",
+      "psi": 0.163,
+      "band": "watch",
+      "reference_mean": -2.77599,
+      "current_mean": -2.62113,
+      "reference_missing": 0.00058,
+      "current_missing": 0.00014
+    },
+    {
+      "feature": "tx_count",
+      "psi": 0.0115,
+      "band": "stable",
+      "reference_mean": 14.97962,
+      "current_mean": 15.54282,
+      "reference_missing": 0.00058,
+      "current_missing": 0.00014
+    },
+    {
+      "feature": "registration_days",
+      "psi": 0.0072,
+      "band": "stable",
+      "reference_mean": 1169.57317,
+      "current_mean": 1189.8722,
+      "reference_missing": 0.12605,
+      "current_missing": 0.12237
+    },
+    {
+      "feature": "use_decline_ratio",
+      "psi": 0.0052,
+      "band": "stable",
+      "reference_mean": 1.01602,
+      "current_mean": 1.0527,
+      "reference_missing": 0.22907,
+      "current_missing": 0.22621
+    },
+    {
+      "feature": "last_payment_method",
+      "psi": 0.0046,
+      "band": "stable",
+      "reference_mean": 39.0256,
+      "current_mean": 38.93518,
+      "reference_missing": 0.0,
+      "current_missing": 0.0
+    },
+    {
+      "feature": "last_list_price",
+      "psi": 0.0031,
+      "band": "stable",
+      "reference_mean": 148.67369,
+      "current_mean": 151.20879,
+      "reference_missing": 0.00058,
+      "current_missing": 0.00014
+    },
+    {
+      "feature": "last_amount_paid",
+      "psi": 0.0023,
+      "band": "stable",
+      "reference_mean": 148.31681,
+      "current_mean": 150.87768,
+      "reference_missing": 0.00058,
+      "current_missing": 0.00014
+    },
+    {
+      "feature": "last_plan_days",
+      "psi": 0.0021,
+      "band": "stable",
+      "reference_mean": 34.95473,
+      "current_mean": 35.38243,
+      "reference_missing": 0.00058,
+      "current_missing": 0.00014
+    },
+    {
+      "feature": "use_active_days_recent",
+      "psi": 0.0018,
+      "band": "stable",
+      "reference_mean": 6.13066,
+      "current_mean": 6.25416,
+      "reference_missing": 0.0,
+      "current_missing": 0.0
+    },
+    {
+      "feature": "days_since_last_play",
+      "psi": 0.0014,
+      "band": "stable",
+      "reference_mean": 3.32942,
+      "current_mean": 3.26489,
+      "reference_missing": 0.22907,
+      "current_missing": 0.22621
+    },
+    {
+      "feature": "use_unique_songs_mean",
+      "psi": 0.0012,
+      "band": "stable",
+      "reference_mean": 24.80398,
+      "current_mean": 24.3143,
+      "reference_missing": 0.22907,
+      "current_missing": 0.22621
+    },
+    {
+      "feature": "tx_distinct_methods",
+      "psi": 0.0011,
+      "band": "stable",
+      "reference_mean": 1.15544,
+      "current_mean": 1.16482,
+      "reference_missing": 0.00058,
+      "current_missing": 0.00014
+    },
+    {
+      "feature": "tx_auto_renew_share",
+      "psi": 0.0011,
+      "band": "stable",
+      "reference_mean": 0.86962,
+      "current_mean": 0.86592,
+      "reference_missing": 0.00058,
+      "current_missing": 0.00014
+    },
+    {
+      "feature": "tx_cancels",
+      "psi": 0.001,
+      "band": "stable",
+      "reference_mean": 0.23846,
+      "current_mean": 0.24915,
+      "reference_missing": 0.00058,
+      "current_missing": 0.00014
+    },
+    {
+      "feature": "tx_count_window",
+      "psi": 0.0009,
+      "band": "stable",
+      "reference_mean": 0.99097,
+      "current_mean": 0.9911,
+      "reference_missing": 0.00058,
+      "current_missing": 0.00014
+    },
+    {
+      "feature": "use_secs",
+      "psi": 0.0009,
+      "band": "stable",
+      "reference_mean": 100759.49019,
+      "current_mean": 98741.36235,
+      "reference_missing": 0.0,
+      "current_missing": 0.0
+    },
+    {
+      "feature": "use_secs_per_day",
+      "psi": 0.0009,
+      "band": "stable",
+      "reference_mean": 3358.64967,
+      "current_mean": 3291.37875,
+      "reference_missing": 0.0,
+      "current_missing": 0.0
+    },
+    {
+      "feature": "tx_cancels_window",
+      "psi": 0.0008,
+      "band": "stable",
+      "reference_mean": 0.01292,
+      "current_mean": 0.0142,
+      "reference_missing": 0.00058,
+      "current_missing": 0.00014
+    },
+    {
+      "feature": "registered_via",
+      "psi": 0.0008,
+      "band": "stable",
+      "reference_mean": 5.89941,
+      "current_mean": 5.91023,
+      "reference_missing": 0.0,
+      "current_missing": 0.0
+    },
+    {
+      "feature": "last_auto_renew",
+      "psi": 0.0007,
+      "band": "stable",
+      "reference_mean": 0.88164,
+      "current_mean": 0.87841,
+      "reference_missing": 0.00058,
+      "current_missing": 0.00014
+    },
+    {
+      "feature": "last_is_cancel",
+      "psi": 0.0006,
+      "band": "stable",
+      "reference_mean": 0.00527,
+      "current_mean": 0.00563,
+      "reference_missing": 0.00058,
+      "current_missing": 0.00014
+    },
+    {
+      "feature": "use_full_listen_share",
+      "psi": 0.0005,
+      "band": "stable",
+      "reference_mean": 0.69354,
+      "current_mean": 0.69532,
+      "reference_missing": 0.22907,
+      "current_missing": 0.22621
+    },
+    {
+      "feature": "use_active_days",
+      "psi": 0.0003,
+      "band": "stable",
+      "reference_mean": 12.95582,
+      "current_mean": 12.87078,
+      "reference_missing": 0.0,
+      "current_missing": 0.0
+    },
+    {
+      "feature": "use_skip_share",
+      "psi": 0.0003,
+      "band": "stable",
+      "reference_mean": 0.19203,
+      "current_mean": 0.19111,
+      "reference_missing": 0.22907,
+      "current_missing": 0.22621
+    },
+    {
+      "feature": "city",
+      "psi": 0.0002,
+      "band": "stable",
+      "reference_mean": 4.51863,
+      "current_mean": 4.57457,
+      "reference_missing": 0.0,
+      "current_missing": 0.0
+    },
+    {
+      "feature": "gender",
+      "psi": 0.0002,
+      "band": "stable",
+      "reference_mean": 0.39418,
+      "current_mean": 0.4054,
+      "reference_missing": 0.0,
+      "current_missing": 0.0
+    },
+    {
+      "feature": "use_secs_per_day_recent",
+      "psi": 0.0002,
+      "band": "stable",
+      "reference_mean": 3384.03475,
+      "current_mean": 3431.82977,
+      "reference_missing": 0.0,
+      "current_missing": 0.0
+    },
+    {
+      "feature": "age",
+      "psi": 0.0001,
+      "band": "stable",
+      "reference_mean": 29.94925,
+      "current_mean": 29.9124,
+      "reference_missing": 0.64997,
+      "current_missing": 0.64515
+    }
+  ],
+  "checks": {
+    "G2_psi_for_every_feature_and_score": true,
+    "G3_lagged_check_reported": true
+  }
+}

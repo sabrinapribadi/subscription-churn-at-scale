@@ -2,6 +2,7 @@
 
     workspace.churn.features_k14_w30   point-in-time features, February and March 2017
     workspace.churn.scores_march_2017  scored March cohort, as served (with the actual outcome)
+    workspace.churn.drift_psi          drift per feature and for the score (ADR-009)
 
 The parity check itself is not a table: it is the P6 gate, recorded in MLflow and ADR-008.
 """
@@ -67,6 +68,13 @@ def main() -> None:
             "model_version": "Unity Catalog model and version that produced the score"})
         published.append(t)
 
+    if (out / "drift_psi.parquet").exists():
+        t = f"{schema}.drift_psi"
+        spark.read.parquet(str(out / "drift_psi.parquet")).write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(t)
+        comment(spark, t, "Population Stability Index per model feature and for the score, training vs scored cohort (ADR-009).", {
+            "psi": "population stability index", "band": "stable < 0.10 · watch 0.10-0.25 · alert > 0.25",
+            "reference_mean": "mean in the training cohort", "current_mean": "mean in the scored cohort"})
+        published.append(t)
     print("published:", published)
 
 

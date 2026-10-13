@@ -29,7 +29,7 @@ Answer in at most 120 words, plain English, no tables."""
 MAX_WORDS = 120
 OUT_OF_SCOPE = ("I can help with member churn risk, the reasons behind it, who to call first, and what calling costs and earns. "
                 "Ask me about a member, a call list, or a save rate and cost per call.")
-_NUM = re.compile(r"(?<![\w.])(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d+))?\s*(%|[kKmM]\b)?")
+_NUM = re.compile(r"(?<![\w.])([-−]?)(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d+))?\s*(%|[kKmM]\b)?")  # sign kept: a loss is not a profit
 
 
 # ------------------------------------------------------------------ grounding
@@ -42,7 +42,7 @@ def _leaves(x, out: list[float]) -> None:
             out += [x // 10000, x // 100 % 100, x % 100]
     elif isinstance(x, str):
         for m in _NUM.finditer(x):
-            out.append(float((m.group(1).replace(",", "")) + (f".{m.group(2)}" if m.group(2) else "")))
+            out.append(_value(m))
         for d in re.findall(r"\d{4}-\d{2}-\d{2}", x):
             out += [float(p) for p in d.split("-")]
     elif isinstance(x, dict):
@@ -53,12 +53,17 @@ def _leaves(x, out: list[float]) -> None:
             _leaves(v, out)
 
 
+def _value(m: re.Match) -> float:
+    v = float(m.group(2).replace(",", "") + (f".{m.group(3)}" if m.group(3) else ""))
+    return -v if m.group(1) else v
+
+
 def answer_numbers(text: str) -> list[tuple[str, float, float]]:
     """(as written, value, rounding tolerance) for each number in the answer; 12.5M -> 12,500,000 ± 50,000."""
     out = []
     for m in _NUM.finditer(text):
-        whole, dec, unit = m.group(1).replace(",", ""), m.group(2) or "", (m.group(3) or "").lower()
-        v = float(whole + (f".{dec}" if dec else ""))
+        dec, unit = m.group(3) or "", (m.group(4) or "").lower()
+        v = _value(m)
         tol = 0.5 * 10 ** -len(dec)
         scale = {"k": 1e3, "m": 1e6}.get(unit, 1.0)
         out.append((m.group(0).strip(), v * scale, tol * scale))

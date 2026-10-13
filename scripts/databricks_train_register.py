@@ -14,7 +14,9 @@ from __future__ import annotations
 import gc
 import json
 import os
+import shutil
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -164,6 +166,13 @@ def main() -> None:
                            "model_version": f"{D['model_name']}/{version}"})
 
     out = Path(P["outputs_dir"]); out.mkdir(parents=True, exist_ok=True)
+    serving = Path(P["serving_dir"]); serving.mkdir(parents=True, exist_ok=True)  # same files the services load (ADR-005)
+    with tempfile.TemporaryDirectory() as tmp:  # LightGBM appends to the file; Unity Catalog volumes do not support append
+        clf.booster_.save_model(f"{tmp}/model.txt")
+        shutil.copyfile(f"{tmp}/model.txt", serving / "model.txt")
+    (serving / "calibration.json").write_text(json.dumps({"model_version": f"{D['model_name']}/{version}", "features": feats,
+        "iso_x": [float(x) for x in iso.X_thresholds_], "iso_y": [float(y) for y in iso.y_thresholds_],
+        "prior_train": prior_train, "prior_new": float(pi_hat)}))
     (out / "p6_parity.json").write_text(json.dumps(report, indent=2))
     scores.to_parquet(out / "scores_201703.parquet", index=False)
     print(json.dumps(report, indent=2), flush=True)

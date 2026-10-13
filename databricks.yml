@@ -12,6 +12,12 @@ sync:
     - tests/**
     - "*.db"
 
+variables:
+  warehouse_id:
+    description: SQL warehouse for the dashboard, looked up by name (no IDs in the repo)
+    lookup:
+      warehouse: Serverless Starter Warehouse
+
 targets:
   dev:
     mode: development
@@ -21,8 +27,12 @@ resources:
   jobs:
     churn_p6:
       name: churn-p6-reproduce
-      description: Build k=14, W=30 features with PySpark, retrain the champion, check parity with the local build, register it in Unity Catalog, publish result tables.
+      description: Build k=14, W=30 features with PySpark, retrain the champion, check parity with the local build, register it in Unity Catalog, check drift, publish result tables.
       max_concurrent_runs: 1
+      schedule:                     # monthly, after outcomes for the previous month mature (ADR-009)
+        quartz_cron_expression: "0 0 6 5 * ?"
+        timezone_id: UTC
+        pause_status: PAUSED        # Free Edition quota: run on demand
       tasks:
         - task_key: build_features
           environment_key: spark
@@ -35,9 +45,15 @@ resources:
           environment_key: ml
           spark_python_task:
             python_file: scripts/databricks_train_register.py
-        - task_key: publish_tables
+        - task_key: monitor_drift
           depends_on:
             - task_key: train_register
+          environment_key: ml
+          spark_python_task:
+            python_file: scripts/monitor_drift.py
+        - task_key: publish_tables
+          depends_on:
+            - task_key: monitor_drift
           run_if: ALL_DONE            # publish whatever exists, even if the gate failed
           environment_key: spark
           spark_python_task:
@@ -56,3 +72,9 @@ resources:
               - scikit-learn==1.9.1
               - mlflow==3.17.0
               - pyyaml
+
+  dashboards:
+    churn_monthly:
+      display_name: "Churn: monthly call list and model health"
+      file_path: ./dashboards/churn_monthly.lvdash.json
+      warehouse_id: ${var.warehouse_id}

@@ -114,3 +114,11 @@ def test_ask_endpoint(client, store):
     body = app.post("/ask", json={"question": "Who should we call?"}).json()
     assert PlannerAnswer(**body).tool_calls[0].name == "what_if" and app.get("/health").json()["planner"] == "m"
     assert app.post("/ask", json={"question": ""}).status_code == 422
+
+
+def test_negative_numbers_keep_their_sign():
+    """Held-out run (ADR-009): a correct '-7,245,823' was rejected because the sign was dropped."""
+    src = [{"summary": {"expected_profit": -7245823.0}}]
+    assert ungrounded_numbers("Expected profit is -7,245,823, so calls lose money.", src) == []
+    assert ungrounded_numbers("Expected profit is −7.2M.", src) == []
+    assert ungrounded_numbers("Expected profit is 7,245,823.", src) == ["7,245,823"]

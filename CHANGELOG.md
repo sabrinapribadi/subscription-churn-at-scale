@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.16.0] — 2026-10-13 — P7: dashboard, drift check, held-out agent test
+**Files:** docs/adr/ADR-009-monitoring-and-operations.md (new), src/monitoring/drift.py (new), scripts/monitor_drift.py (new), dashboards/churn_monthly.lvdash.json (new), tests/test_monitoring.py (new), tests/llm_eval/planner_questions_holdout.json (new), databricks.yml, scripts/databricks_train_register.py, scripts/databricks_publish_tables.py, scripts/agent_eval.py, src/genai/agent.py, tests/test_agent.py, configs/default_config.yaml, configs/databricks.yaml, data/outputs/p7_drift.json (new), data/outputs/p7_agent_holdout.json (new), data/outputs/p6_parity.json, Makefile, docs/index.html, docs/build.html, docs/adr/README.md, docs/PRD.md, README.md
+- **Situation:** The champion ran on Databricks, but nobody could see the monthly list without code, nothing warned when the data shifted, and the agent's 45/45 came from the questions that had found its fixes.
+- **Task:** Make the system operable month to month, with gates and 15 new agent questions committed before any run (ADR-009).
+- **Action:** Added a PSI drift module (per feature and for the score, missing values in their own bin, 0.10 / 0.25 bands) with tests, a drift task in the job, a lagged realised-vs-expected check, a dashboard defined as a file and deployed by the bundle (warehouse looked up by name), and a paused monthly schedule. Investigated both drift alerts. Fixed two failures found on the way: model saving on Unity Catalog volumes (no append) and the agent's number check dropping minus signs.
+- **Result:** G1–G4 passed. Dashboard counters equal the scores table (862,158 · 86,215 · 60,918,657). Drift: 28 stable, 1 watch, 2 alert; both alerts are a short-February calendar effect and ageing, and the score is stable (PSI 0.014); Databricks and local identical. Lagged: 33,808 churners expected on the list, 40,300 happened. Held-out agent: 42/45 at $0.21 per 1,000, p95 6.3 s; the 3 misses were correct negative answers rejected by the sign bug, reported as measured.
+- **Talking point:** "My drift check raised two alerts in its first month, and neither was real drift: February is three days shorter. Monitoring earns trust when a person can explain every alert."
+
 ## [0.15.2] — 2026-10-13 — Walkthrough page: clear spacing between parts
 **Files:** docs/build.html
 - **Situation:** On the walkthrough, section labels sat tight against the table above them ("Result vs gate" under the step panel, "Obstacles" under the table); on phones the four-column obstacles table squeezed into narrow columns.

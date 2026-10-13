@@ -35,6 +35,7 @@ Churner: a member who does not renew within 30 days after their membership expir
 | P4 · Call list | Who to call first, given revenue at risk? | LambdaMART profit beats probability sort; ECE ≤ 0.010 | **Failed** — LambdaMART −22%; probability × value wins all 9 scenarios (+0.2%) and is adopted |
 | P5 · Services + GenAI | Can apps and agents use it? | Contract tests + LLM eval in CI | **Passed** — 4 services + MCP gateway; notes 100% grounded (60/60 live on OpenAI, 48 real members); $0.05 per 1,000 AI notes; planning agent 45/45 live test runs at $0.22 per 1,000 questions |
 | P6 · Databricks | Does it run on a real platform? | Same metrics on Databricks | **Passed** — identical to the local run (PR-AUC 0.5594, profit 12,431,437); model registered in Unity Catalog as `champion`. Run 1 failed and exposed three determinism bugs, now fixed and tested |
+| P7 · Operations | Can the team run it monthly? | Dashboard = scores table; drift for every input; held-out agent ≥ 80% | **Passed** — dashboard deployed by the bundle; drift: 2 alerts explained (short February), score stable; held-out agent questions 42/45 |
 
 ## How it works
 
@@ -92,7 +93,7 @@ databricks bundle deploy -p portfolio        # job definition: databricks.yml
 databricks bundle run churn_p6 -p portfolio  # features (PySpark) → retrain + parity check + registry → tables
 ```
 
-Inputs go to the Unity Catalog volume `workspace.churn.raw` first (ADR-008). Results land in `workspace.churn.features_k14_w30` and `workspace.churn.scores_march_2017`; the model is `workspace.churn.churn_lgbm@champion`.
+Inputs go to the Unity Catalog volume `workspace.churn.raw` first (ADR-008). Results land in `workspace.churn.features_k14_w30`, `workspace.churn.scores_march_2017` and `workspace.churn.drift_psi`; the model is `workspace.churn.churn_lgbm@champion`; the dashboard *Churn: monthly call list and model health* is deployed by the same bundle. The job's monthly schedule is defined but paused (Free Edition quota).
 
 | Tool (MCP) | Answers |
 |---|---|

@@ -4,6 +4,7 @@ paths:
   parquet_dir: /Volumes/workspace/churn/raw/parquet
   features_dir: /Volumes/workspace/churn/data/features
   outputs_dir: /Volumes/workspace/churn/data/outputs
+  serving_dir: /Volumes/workspace/churn/data/outputs/serving   # written by train_register
   reference_dir: /Volumes/workspace/churn/raw/reference   # local P4 features, uploaded for the parity check
 
 databricks:

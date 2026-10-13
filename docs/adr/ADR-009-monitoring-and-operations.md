@@ -1,6 +1,6 @@
 # ADR-009: Operating the Model Monthly — Dashboard, Drift Check, Held-Out Agent Questions
 
-**Status:** Proposed — gates written before the work
+**Status:** Accepted — G1–G4 passed (2026-10-13)
 **Date:** 2026-10-13
 **Deciders:** Sabrina Pribadi
 
@@ -49,9 +49,22 @@ The question: **"Can the team see this month's list and the model's health witho
 
 G2 and G3 test that monitoring works, not that there is no drift: February → March is known to have shifted (+1.7 points of churn).
 
-## Results
+## Results (2026-10-13)
 
-Pending.
+| # | Check | Result | |
+|---|---|---|---|
+| G1 | Dashboard counters = scores table | 862,158 members · 86,215 calls · 60,918,657 value at risk · 33,808 expected and 40,300 actual churners on the list, from the dashboard's own queries | ✅ |
+| G2 | PSI for every feature and the score | 30/30 features + score; 28 stable, 1 watch, 2 alert; score PSI 0.014 (stable). Databricks and local identical to 4 decimals | ✅ |
+| G3 | Lagged check | List expected 33,808 churners, 40,300 happened: 16% short, because scores still run low (ADR-004) | ✅ |
+| G4 | Held-out agent questions | 42/45 (93%) · $0.21 per 1,000 · p95 6.3 s | ✅ |
+
+**What the alerts mean.** `days_since_last_tx` (PSI 1.81) and `tenure_days` (0.43) crossed 0.25, yet the score barely moved. Most members are on 30-day auto-renew plans. February expiries were last charged in January (31 days), March expiries in February (28 days), so on scoring day (expiry − 14) the typical value moved from 17 to 14 days. That is a calendar effect, not a change in behaviour; tenure grows by a month for the same members. Recommendation for the next model: express recency relative to the billing cycle (e.g. days since the last charge minus the plan length), so short months stop looking like drift.
+
+**The three held-out failures** are one question ("Is it worth calling 30%… at 60 per call?"). The agent used the right tool and arguments and answered "expected profit is -7,245,823", which is correct. The number check dropped the minus sign and rejected it, so the guard showed the tool-built answer instead. The check now keeps signs (with a test). The score is reported as measured, 42/45; re-scoring the same questions after the fix would no longer be a held-out score.
+
+**Platform notes.** LightGBM saves models by appending to the file, which Unity Catalog volumes do not support; the job now saves to local disk and copies. That failure happened after registration, so model versions 4 and 5 exist from those attempts (same model); version 6 holds `champion`.
+
+**Operations.** The job (`databricks.yml`) has a monthly schedule (5th of the month, 06:00 UTC), paused on Free Edition. The dashboard is deployed by the same bundle.
 
 ## References
 

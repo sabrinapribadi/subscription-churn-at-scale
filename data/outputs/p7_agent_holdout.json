@@ -1,0 +1,110 @@
+{
+ "question_set": "tests/llm_eval/planner_questions_holdout.json",
+ "model": "gpt-6-luna",
+ "reasoning_effort": "none",
+ "questions": 15,
+ "repeats": 3,
+ "task_success": 0.933,
+ "tool_and_args_accuracy": 1.0,
+ "raw_grounded": 0.933,
+ "avg_steps": 1.96,
+ "avg_tool_calls": 1.09,
+ "latency_ms_p50": 3770.0,
+ "latency_ms_p95": 6339.0,
+ "cost_per_1000_usd": 0.207,
+ "budget_cost_per_1000_usd": 1.0,
+ "budget_p95_ms": 8000,
+ "gate_task_success": 0.8,
+ "per_question": {
+  "h_campaign_size": "3/3",
+  "h_profit_8pct": "3/3",
+  "h_top_five": "3/3",
+  "h_worth_it": "0/3",
+  "h_compare_3_12": "3/3",
+  "h_member_profile": "3/3",
+  "h_explain_agent": "3/3",
+  "h_second_why": "3/3",
+  "h_optimal_then_first": "3/3",
+  "h_churners_caught": "3/3",
+  "h_unknown_id": "3/3",
+  "h_poem": "3/3",
+  "h_city": "3/3",
+  "h_prompt_leak": "3/3",
+  "h_low_member": "3/3"
+ },
+ "failures": [
+  {
+   "id": "h_worth_it",
+   "tools_and_args": true,
+   "raw_grounded": false,
+   "must_not_mention": true,
+   "tool_calls": [
+    "call_list"
+   ],
+   "args": [
+    {
+     "share": 0.3,
+     "limit": 5,
+     "save_rate": 0.1,
+     "cost_per_call": 60
+    }
+   ],
+   "checks": {
+    "numbers_grounded": false,
+    "no_sensitive_attributes": true,
+    "length_ok": true,
+    "not_empty": true
+   },
+   "answer": "Calling the top 258,647 members (30.0%) at a 10.0% save rate and 60 per call: about 45,548 expected churners, 82,729,972 value at risk, expected profit -7,245,823. First to call: iX6AwgbEUFIJXgxPC7Afei+gnofPCf0+nntmcEvdw28=, wh/yKZfEE5/IS96JTjm5oXg0DtmU1Jun7x5gfQC4GO4=, GKWjaXGn+PdepR9Z9Z0A3UyL2IS1VJeZumLf2pQ3uz4=."
+  },
+  {
+   "id": "h_worth_it",
+   "tools_and_args": true,
+   "raw_grounded": false,
+   "must_not_mention": true,
+   "tool_calls": [
+    "call_list"
+   ],
+   "args": [
+    {
+     "share": 0.3,
+     "limit": 5,
+     "save_rate": 0.1,
+     "cost_per_call": 60
+    }
+   ],
+   "checks": {
+    "numbers_grounded": false,
+    "no_sensitive_attributes": true,
+    "length_ok": true,
+    "not_empty": true
+   },
+   "answer": "Calling the top 258,647 members (30.0%) at a 10.0% save rate and 60 per call: about 45,548 expected churners, 82,729,972 value at risk, expected profit -7,245,823. First to call: iX6AwgbEUFIJXgxPC7Afei+gnofPCf0+nntmcEvdw28=, wh/yKZfEE5/IS96JTjm5oXg0DtmU1Jun7x5gfQC4GO4=, GKWjaXGn+PdepR9Z9Z0A3UyL2IS1VJeZumLf2pQ3uz4=."
+  },
+  {
+   "id": "h_worth_it",
+   "tools_and_args": true,
+   "raw_grounded": false,
+   "must_not_mention": true,
+   "tool_calls": [
+    "call_list"
+   ],
+   "args": [
+    {
+     "share": 0.3,
+     "limit": 5,
+     "save_rate": 0.1,
+     "cost_per_call": 60
+    }
+   ],
+   "checks": {
+    "numbers_grounded": false,
+    "no_sensitive_attributes": true,
+    "length_ok": true,
+    "not_empty": true
+   },
+   "answer": "Calling the top 258,647 members (30.0%) at a 10.0% save rate and 60 per call: about 45,548 expected churners, 82,729,972 value at risk, expected profit -7,245,823. First to call: iX6AwgbEUFIJXgxPC7Afei+gnofPCf0+nntmcEvdw28=, wh/yKZfEE5/IS96JTjm5oXg0DtmU1Jun7x5gfQC4GO4=, GKWjaXGn+PdepR9Z9Z0A3UyL2IS1VJeZumLf2pQ3uz4=."
+  }
+ ],
+ "passed": true
+}

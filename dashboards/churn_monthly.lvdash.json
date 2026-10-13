@@ -1,0 +1,685 @@
+{
+  "datasets": [
+    {
+      "name": "kpi",
+      "displayName": "List headline numbers",
+      "queryLines": [
+        "SELECT count(*) AS members,\n",
+        " sum(CAST(in_top_10pct AS INT)) AS calls_on_list,\n",
+        " round(sum(CASE WHEN in_top_10pct THEN expected_value_at_risk END)) AS value_at_risk_on_list,\n",
+        " round(sum(CASE WHEN in_top_10pct THEN churn_probability END)) AS expected_churners_on_list,\n",
+        " sum(CASE WHEN in_top_10pct AND actual_churned THEN 1 ELSE 0 END) AS realised_churners_on_list\n",
+        "FROM workspace.churn.scores_march_2017"
+      ]
+    },
+    {
+      "name": "risk",
+      "displayName": "Risk mix",
+      "queryLines": [
+        "SELECT risk_level, count(*) AS members, sum(CAST(in_top_10pct AS INT)) AS on_list FROM workspace.churn.scores_march_2017 GROUP BY risk_level"
+      ]
+    },
+    {
+      "name": "top",
+      "displayName": "Top of the call list",
+      "queryLines": [
+        "SELECT call_priority_rank AS rank, left(member_id, 10) AS member, risk_level,\n",
+        " round(churn_probability, 3) AS churn_probability, round(member_value) AS member_value,\n",
+        " round(expected_value_at_risk) AS value_at_risk, expiry_date\n",
+        "FROM workspace.churn.scores_march_2017 WHERE call_priority_rank <= 25 ORDER BY call_priority_rank"
+      ]
+    },
+    {
+      "name": "drift",
+      "displayName": "Drift (PSI)",
+      "queryLines": [
+        "SELECT feature, psi, band FROM workspace.churn.drift_psi ORDER BY psi DESC"
+      ]
+    },
+    {
+      "name": "alerts",
+      "displayName": "Drift alerts",
+      "queryLines": [
+        "SELECT count_if(band = 'alert' AND feature <> 'score (calibrated)') AS alerts, max(CASE WHEN feature = 'score (calibrated)' THEN psi END) AS score_psi FROM workspace.churn.drift_psi"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "monthly",
+      "displayName": "Monthly call list",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Churn: monthly call list and model health\n",
+                "March 2017 members scored by the Unity Catalog champion (ADR-008). Top 10% by probability \u00d7 member value. ",
+                "Drift = PSI, training month vs scored month: < 0.10 stable \u00b7 0.10\u20130.25 watch \u00b7 > 0.25 alert (ADR-009)."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "c_members",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi",
+                  "fields": [
+                    {
+                      "name": "members",
+                      "expression": "`members`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "members",
+                  "displayName": "Members scored"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Members scored"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_calls",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi",
+                  "fields": [
+                    {
+                      "name": "calls_on_list",
+                      "expression": "`calls_on_list`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "calls_on_list",
+                  "displayName": "Calls on the list (top 10%)"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Calls on the list (top 10%)"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_var",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi",
+                  "fields": [
+                    {
+                      "name": "value_at_risk_on_list",
+                      "expression": "`value_at_risk_on_list`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "value_at_risk_on_list",
+                  "displayName": "Value at risk on the list"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Value at risk on the list"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_exp",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi",
+                  "fields": [
+                    {
+                      "name": "expected_churners_on_list",
+                      "expression": "`expected_churners_on_list`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "expected_churners_on_list",
+                  "displayName": "Expected churners on the list"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Expected churners on the list"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_real",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi",
+                  "fields": [
+                    {
+                      "name": "realised_churners_on_list",
+                      "expression": "`realised_churners_on_list`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "realised_churners_on_list",
+                  "displayName": "Churners who actually left (lagged)"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Churners who actually left (lagged)"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 5,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_alerts",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "alerts",
+                  "fields": [
+                    {
+                      "name": "alerts",
+                      "expression": "`alerts`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "alerts",
+                  "displayName": "Features in the drift alert band"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Features in the drift alert band"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 5,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "b_risk",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "risk",
+                  "fields": [
+                    {
+                      "name": "risk_level",
+                      "expression": "`risk_level`"
+                    },
+                    {
+                      "name": "sum(members)",
+                      "expression": "SUM(`members`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "risk_level",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Risk level"
+                },
+                "y": {
+                  "fieldName": "sum(members)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Members"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Risk mix",
+                "showDescription": true,
+                "description": "Members by risk level (high \u2265 30%, medium \u2265 10%)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "b_drift",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "drift",
+                  "fields": [
+                    {
+                      "name": "feature",
+                      "expression": "`feature`"
+                    },
+                    {
+                      "name": "sum(psi)",
+                      "expression": "SUM(`psi`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "feature",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
+                  },
+                  "displayName": "Feature"
+                },
+                "y": {
+                  "fieldName": "sum(psi)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "PSI"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Drift by feature",
+                "showDescription": true,
+                "description": "Above 0.25 = alert; explain before acting (ADR-009)"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 8,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "top_list",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top",
+                  "fields": [
+                    {
+                      "name": "rank",
+                      "expression": "`rank`"
+                    },
+                    {
+                      "name": "member",
+                      "expression": "`member`"
+                    },
+                    {
+                      "name": "risk_level",
+                      "expression": "`risk_level`"
+                    },
+                    {
+                      "name": "churn_probability",
+                      "expression": "`churn_probability`"
+                    },
+                    {
+                      "name": "member_value",
+                      "expression": "`member_value`"
+                    },
+                    {
+                      "name": "value_at_risk",
+                      "expression": "`value_at_risk`"
+                    },
+                    {
+                      "name": "expiry_date",
+                      "expression": "`expiry_date`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "rank",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "integer",
+                    "displayAs": "number",
+                    "visible": true,
+                    "order": 0,
+                    "title": "Rank",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "Rank"
+                  },
+                  {
+                    "fieldName": "member",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 1,
+                    "title": "Member",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "Member"
+                  },
+                  {
+                    "fieldName": "risk_level",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 2,
+                    "title": "Risk",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "Risk"
+                  },
+                  {
+                    "fieldName": "churn_probability",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "visible": true,
+                    "order": 3,
+                    "title": "Churn probability",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "Churn probability"
+                  },
+                  {
+                    "fieldName": "member_value",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "visible": true,
+                    "order": 4,
+                    "title": "Member value",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "Member value"
+                  },
+                  {
+                    "fieldName": "value_at_risk",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "visible": true,
+                    "order": 5,
+                    "title": "Value at risk",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "Value at risk"
+                  },
+                  {
+                    "fieldName": "expiry_date",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "integer",
+                    "displayAs": "number",
+                    "visible": true,
+                    "order": 6,
+                    "title": "Expiry",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "Expiry"
+                  }
+                ]
+              },
+              "invisibleColumns": [],
+              "allowHTMLByDefault": false,
+              "itemsPerPage": 25,
+              "paginationSize": "default",
+              "condensed": true,
+              "withRowNumber": false,
+              "frame": {
+                "showTitle": true,
+                "title": "Top 25 of the call list (ordered by expected value at risk)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 14,
+            "width": 6,
+            "height": 9
+          }
+        }
+      ]
+    }
+  ]
+}
