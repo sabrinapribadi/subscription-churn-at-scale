@@ -61,3 +61,17 @@ class HttpClient:
 
     def what_if(self, save_rate: float, cost_per_call: float) -> WhatIf:
         return WhatIf(**self._get(f"{self.s}/what-if?save_rate={save_rate}&cost_per_call={cost_per_call}"))
+
+
+class ExplainingClient:
+    """A remote client whose explanations are written in this process (explain-svc hosts the planner agent)."""
+
+    def __init__(self, client, explainer):
+        self.client, self.explainer = client, explainer
+
+    def __getattr__(self, name):
+        return getattr(self.client, name)
+
+    def explanation(self, member_id: str) -> Explanation:
+        s = self.client.score(member_id)
+        return self.explainer.cached(s) or self.explainer.explain(s, self.client.reasons(member_id))

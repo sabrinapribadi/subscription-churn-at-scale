@@ -328,6 +328,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <tr><td><b>Order of the call list</b></td><td>Probability · probability × value · LambdaMART</td><td class="chosen">Probability × value</td><td>Won all <a href="#p4-scenarios">9 cost scenarios</a>; LambdaMART −22%</td></tr>
       <tr><td><b>Labels</b></td><td>Rebuild from transactions · official</td><td class="chosen">Official</td><td>Rebuilt labels matched only 98.8%</td></tr>
       <tr><td><b>Serving</b></td><td>One API · four services + MCP gateway</td><td class="chosen">Four services + MCP</td><td>80 ms first answer, 7 ms repeat; $0.05 per 1,000 AI notes (measured)</td></tr>
+      <tr><td><b>AI agents</b></td><td>None · one planner agent · several agents</td><td class="chosen">One planner agent</td><td>45 of 45 test runs right; $0.22 per 1,000 questions</td></tr>
       <tr><td><b>Score accuracy</b></td><td>Raw · isotonic · prior-shift correction</td><td class="chosen">Prior-shift</td><td>Better, still runs low → check last month's outcomes</td></tr>
     </tbody></table></div>
   <p class="muted" style="font-size:13px">Every bar was set before training; three of five phases failed theirs, and the page reports them. Details in the deep dives below.</p>
@@ -401,7 +402,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <div class="explain">
         <span class="eyebrow">What P5 delivered</span>
         <ol class="steps">
-          <li><b>Answers on demand.</b> Four services (features, scoring, explanation, MCP gateway) give apps and AI assistants the same answers.</li>
+          <li><b>Answers on demand.</b> Four services and an MCP gateway serve apps and AI assistants; a planning agent answers managers' questions in plain words.</li>
           <li><b>Notes that cannot invent facts.</b> Every number and reason is checked against the model's output; if an LLM adds anything, the safe template note is used instead.</li>
           <li><b>Cost and speed known up front.</b> $0.05 per 1,000 AI notes, measured on OpenAI; repeat questions are cached and free; demographic reasons are never quoted to agents.</li>
           <li><b>Forecasts are conservative.</b> The service expects 10.4M a month from the top 10%; March actually delivered 12.5M, because scores still run low.</li>
@@ -417,6 +418,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
       <details><summary>Should we order the list by member value?</summary><p>Yes, but expect little: plans cost 99–149, so ordering by probability × value adds about 0.1%. A learned ranker (LambdaMART) did worse.</p></details>
       <details><summary>Why is this member on the list?</summary><p>The strongest signals: manual renewal, payment method, a recent cancellation, days since the last payment, and tenure. Per-member reasons come in Phase 5.</p></details>
       <details><summary>Can our CRM or AI assistant use this?</summary><p>Yes. The scoring and explanation services answer over HTTP, and an MCP gateway exposes four tools (member risk, why at risk, call list, what-if) to any MCP-capable assistant. Every note is checked against the model's facts before it is shown.</p></details>
+      <details><summary>Why one AI agent, not several?</summary><p>The work runs in one line (question → tools → answer), with nothing to do in parallel. Each extra agent adds a 2–3 second round trip and another place to fail, and the "critic" job is already done by a free, deterministic checker. One agent passed 45 of 45 test runs at $0.22 per 1,000 questions. Several agents fit better where independent sources can be read in parallel.</p></details>
       <details><summary>Should we just call the riskiest members?</summary><p>Not always. Some will leave whatever we offer (Ascarza, JMR 2018). Finding members who respond to an offer is the next project (uplift modelling).</p></details>
       <details><summary>How often does it need refreshing?</summary><p>Monthly: retrain on the latest outcomes and recalibrate. Drift monitoring is covered in the MLOps project.</p></details>
     </div>
@@ -712,7 +714,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 </div>
   </details>
   <details class="more" id="d-serving">
-    <summary><span>How it is served</span><small>Four services, an MCP gateway, grounding checks, cost and latency budgets, tests</small></summary>
+    <summary><span>How it is served</span><small>Four services, an MCP gateway, a planning agent, grounding checks, cost and latency budgets, tests</small></summary>
     <div class="more-body">
       <div class="flow">
         <div class="lane"><span class="who">Request path</span>
@@ -721,13 +723,19 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
           <span class="node">explain-svc <small>note + grader</small></span><span class="arrow" aria-hidden="true">→</span>
           <span class="node">scoring-svc <small>model + calibration</small></span><span class="arrow" aria-hidden="true">→</span>
           <span class="node">feature-svc <small>point-in-time rows</small></span></div>
+        <div class="lane"><span class="who">Planning agent (POST /ask)</span>
+          <span class="node">Manager's question</span><span class="arrow" aria-hidden="true">→</span>
+          <span class="node">Planner <small>picks tools, ≤ 4 rounds</small></span><span class="arrow" aria-hidden="true">→</span>
+          <span class="node">Same 4 tools <small>errors returned as data</small></span><span class="arrow" aria-hidden="true">→</span>
+          <span class="node">Number check <small>else tool-built answer</small></span><span class="arrow" aria-hidden="true">→</span>
+          <span class="node">Answer + tool trace</span></div>
       </div>
       <div class="table-wrap"><table class="compact">
         <thead><tr><th>Service</th><th>Owns</th><th>Answers</th></tr></thead>
         <tbody>
           <tr><td><b>feature-svc</b></td><td>Features per member, dated before the scoring day</td><td><span class="mono">GET /members/{id}/features</span></td></tr>
           <tr><td><b>scoring-svc</b></td><td>LightGBM, calibration, member value, call order, per-member reasons (TreeSHAP)</td><td><span class="mono">/score · /reasons · POST /call-list · /what-if</span></td></tr>
-          <tr><td><b>explain-svc</b></td><td>Plain-language note, grounding grader, cache</td><td><span class="mono">GET /members/{id}/explanation</span></td></tr>
+          <tr><td><b>explain-svc</b></td><td>Plain-language note, grounding grader, cache; the planning agent</td><td><span class="mono">GET /members/{id}/explanation · POST /ask</span></td></tr>
           <tr><td><b>mcp-gateway</b></td><td>The same four tools for AI assistants (MCP)</td><td><span class="mono">member_risk · why_at_risk · call_list · what_if</span></td></tr>
         </tbody></table></div>
       <div class="results-grid even">
@@ -756,8 +764,37 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
           <span class="eyebrow">Tested on every push</span>
           <ul class="points">
             <li>GitHub Actions on every push: unit, Spark, contract and MCP tests, the evaluation set, and a Docker build</li><li>Contract tests for every endpoint; MCP tools over the real protocol</li>
-            <li>12-case evaluation set: 100% grounded, 100% correct actions</li>
+            <li>60-case note evaluation set: 100% grounded, 100% correct actions</li>
+            <li>Planning agent tested with a scripted LLM: tool loop, errors, forced final answer, number check</li>
             <li>Docker image built in CI; no API key needed to test</li>
+          </ul>
+        </div>
+      </div>
+      <div class="results-grid even">
+        <div class="sim">
+          <span class="simtag">Planning agent · real output, March 2017 cohort</span>
+          <div class="chat">
+            <div class="msg ask"><span class="who">Manager asks</span>Find the best share to call at a 20% save rate and 20 per call, then give me the first 3 members at that share.</div>
+            <div class="msg tool"><span class="who">Agent calls <code>what_if</code> then <code>call_list(share=0.22, limit=3)</code></span>
+              <p>At a 20% save rate and 20 per call, the best share to call is 22%, with an expected monthly profit of 13,933,333. The first 3 members on the call list are iX6Awg…, GKWjaX… and wh/yKZ….</p>
+              <div class="legend"><span class="chip pass">grounded</span><span>2 tools · 6.8 s · $0.0003</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="explain">
+          <span class="eyebrow">Live test · 15 questions × 3 runs</span>
+          <div class="table-wrap"><table class="compact">
+            <thead><tr><th>Measure</th><th>Target</th><th>Measured</th></tr></thead>
+            <tbody>
+              <tr><td>Right tools, right inputs, checked answer</td><td class="num">≥ 80%</td><td class="num">45 / 45</td></tr>
+              <tr><td>Cost per 1,000 questions</td><td class="num">≤ $1.00</td><td class="num">$0.22</td></tr>
+              <tr><td>Time per question, p50 · p95</td><td class="num">p95 ≤ 8 s</td><td class="num">3.9 s · 6.6 s</td></tr>
+              <tr><td>Tool calls per question</td><td class="num">—</td><td class="num">1.1 (2 rounds)</td></tr>
+            </tbody></table></div>
+          <ul class="points">
+            <li>Covers two-step questions, an unknown member, an off-topic question and a request for a member's age and gender (refused).</li>
+            <li>First try passed 13 of 15: the agent requested a 1,000,000-member list and chose the wrong tool. Clearer tool descriptions and a list cap fixed both.</li>
+            <li>The same 15 questions found those fixes, so a fresh question set is the next check.</li>
           </ul>
         </div>
       </div>
@@ -779,6 +816,7 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
         <tr><td>Baseline model</td><td><ul class="alts"><li>Logistic regression <span class="tag rej">rejected</span></li><li>Deep sequence model first <span class="tag later">later, P3</span></li></ul></td><td class="chosen">Gradient boosting on RFM features</td><td>The strongest model family on this benchmark; it sets the bar the deep model must beat.</td><td><a href="https://arxiv.org/abs/1802.03396">arXiv 1802.03396</a></td></tr>
         <tr><td>Behaviour signal</td><td><ul class="alts"><li>Hand-crafted RFM only <span class="tag base">baseline</span></li></ul></td><td class="chosen">Self-supervised embeddings, as an ablation</td><td>They are added only if they beat RFM by +0.02 PR-AUC out-of-time. <b>P3:</b> +0.004, so kept for personas only.</td><td><a href="https://doi.org/10.1007/s10479-023-05259-9">Annals of OR (2023)</a></td></tr>
         <tr><td>Ordering the call list</td><td><ul class="alts"><li>Sort by churn probability <span class="tag base">baseline</span></li><li>LambdaMART <span class="tag rej">tested, lost 22%</span></li></ul></td><td class="chosen">Probability × member value</td><td>Two members with the same probability are not worth the same call. <b>P4:</b> won all <a href="#p4-scenarios" >9 cost scenarios</a>.</td><td>ADR-004</td></tr>
+        <tr><td>AI agents</td><td><ul class="alts"><li>No agent, MCP tools only <span class="tag rej">rejected</span></li><li>Several agents (planner, analyst, writer, critic) <span class="tag rej">rejected</span></li></ul></td><td class="chosen">One planner agent with a number check</td><td>The work is one sequence with nothing to run in parallel; every extra agent adds round trips, cost and coordination failures. <b>P5:</b> 45 of 45 test runs, $0.22 per 1,000 questions.</td><td><a href="https://arxiv.org/abs/2503.13657">arXiv 2503.13657</a> (2025)</td></tr>
       </tbody>
     </table>
   </div>
@@ -894,11 +932,12 @@ footer ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
     <li>Burges (2010). From RankNet to LambdaRank to LambdaMART: an overview. Microsoft Research MSR-TR-2010-82. <a href="https://www.microsoft.com/en-us/research/publication/from-ranknet-to-lambdarank-to-lambdamart-an-overview/">microsoft.com/research</a></li>
     <li>Zytek et al. (2024). Explingo: explaining AI predictions using large language models — narrator plus grader. <a href="https://arxiv.org/abs/2412.05145">arXiv 2412.05145</a></li>
     <li>Quality without usefulness: LLM-generated XAI narratives as trust heuristics rather than decision aids (2026). <a href="https://arxiv.org/abs/2605.26770">arXiv 2605.26770</a></li>
+    <li>Cemri, M. et al. Why do multi-agent LLM systems fail? (2025). <a href="https://arxiv.org/abs/2503.13657">arXiv 2503.13657</a></li>
     <li>OpenAI API pricing (read 12 Oct 2026). <a href="https://developers.openai.com/api/docs/pricing">developers.openai.com/api/docs/pricing</a></li>
     <li>Model Context Protocol. <a href="https://modelcontextprotocol.io">modelcontextprotocol.io</a></li>
     <li>Ascarza (2018). Retention futility: targeting high-risk customers might be ineffective. Journal of Marketing Research 55(1). <a href="https://doi.org/10.1509/jmr.16.0163">doi:10.1509/jmr.16.0163</a></li>
   </ol>
-  <p>Simulations use synthetic data generated in the browser. Sabrina Pribadi · last updated 12 Oct 2026 · code and change log: <a href="https://github.com/sabrinapribadi/subscription-churn-at-scale">github.com/sabrinapribadi/subscription-churn-at-scale</a></p>
+  <p>Simulations use synthetic data generated in the browser. Sabrina Pribadi · last updated 13 Oct 2026 · code and change log: <a href="https://github.com/sabrinapribadi/subscription-churn-at-scale">github.com/sabrinapribadi/subscription-churn-at-scale</a></p>
 </footer>
 </div>
 

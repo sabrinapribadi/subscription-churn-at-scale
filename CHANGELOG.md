@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.14.0] — 2026-10-13 — Retention planner: one tool-using agent, 45/45 live test runs
+**Files:** src/genai/agent.py (new), src/genai/tools.py, src/services/contracts.py, src/services/clients.py, src/services/apps.py, configs/default_config.yaml, scripts/agent_eval.py (new), tests/test_agent.py (new), tests/llm_eval/planner_questions.json (new), Makefile, docs/adr/ADR-007-retention-planner-agent.md (new), docs/index.html, README.md
+- **Situation:** The only LLM step wrote a note per member and decided nothing. Managers' questions span several tools ("best share to call, then the first three members"), and the question was whether the project needs several agents.
+- **Task:** Decide how many agents and build what is justified, with faithful answers and cost and latency budgeted before the first live run (rule R13).
+- **Action:** Chose one tool-using agent over a multi-agent design: the work is sequential, each extra agent adds a round trip of about 2 s, and the critic role is already a deterministic grader (ADR-007, citing Cemri et al. 2025). Built the planner on the Responses API with the shared tool registry: at most 4 rounds, tool errors returned as data, a forced final answer, and a number check that accepts rounding, units (12.5M) and percentages, with a tool-built fallback. Served as `POST /ask` on explain-svc. Wrote 15 manager questions (chains, unknown member, off-topic, prompt injection), each run 3 times. The first live run passed 13/15 at $1.11 per 1,000; clearer tool descriptions, a 50-member list cap and "quote, don't calculate" fixed both failures.
+- **Result:** 45/45 live runs passed with no fallback; $0.22 per 1,000 questions (budget $1.00); p50 3.9 s, p95 6.6 s (budget 8 s). 10 offline agent tests with a scripted LLM; 116 tests pass. Caveat recorded: the same questions found the fixes, so a fresh set is the next check. Page: approach row, decision log, FAQ, agent example and results in the serving deep dive (collapsed page 7.2 screens).
+- **Talking point:** "I was asked whether to build several agents. I measured that one round trip costs 2 seconds and the work has nothing to parallelise, so I built one agent with a strict number check. Its first failures were in the tool descriptions, not the model."
+
 ## [0.13.3] — 2026-10-13 — Evaluation set grown to 60 cases, 48 of them real members
 **Files:** scripts/build_eval_cases.py (new), tests/llm_eval/cases.json, scripts/llm_eval.py, docs/adr/ADR-006-genai-module.md, docs/index.html, README.md
 - **Situation:** "12 of 12 notes passed" rested on 12 hand-written cases, too few to trust and none from real members.

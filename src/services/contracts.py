@@ -100,3 +100,24 @@ class WhatIf(BaseModel):
     best_members_called: int
     best_monthly_profit: float
     profit_at_10pct: dict[str, float]
+
+
+class AskRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=500)
+
+
+class ToolCall(BaseModel):
+    name: str
+    arguments: dict
+    ok: bool
+
+
+class PlannerAnswer(BaseModel):
+    question: str
+    answer: str
+    grounded: bool
+    grounded_fallback: bool = Field(description="True if the agent's text failed the grader and a tool-built answer was used")
+    checks: dict[str, bool]
+    tool_calls: list[ToolCall]
+    steps: int = Field(description="LLM rounds used")
+    meter: Meter

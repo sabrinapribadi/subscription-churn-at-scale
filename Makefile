@@ -48,3 +48,7 @@ mcp:
 
 llm-eval:
 	python scripts/llm_eval.py $(if $(OPENAI_API_KEY),--provider openai,)
+
+# Live only: the planner agent needs an LLM (ADR-007)
+agent-eval:
+	python scripts/agent_eval.py --repeats 3

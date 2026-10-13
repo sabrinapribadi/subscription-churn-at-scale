@@ -33,7 +33,7 @@ Churner: a member who does not renew within 30 days after their membership expir
 | P2 · Timing | How early can we call? How much history? | Curve and knee per lead time | **Passed** — lead time costs, history does not |
 | P3 · Behaviour | Do listening habits help, esp. auto-renew cancellers? | +0.02 PR-AUC | **Failed** — best +0.004; kept as 5 personas for messaging |
 | P4 · Call list | Who to call first, given revenue at risk? | LambdaMART profit beats probability sort; ECE ≤ 0.010 | **Failed** — LambdaMART −22%; probability × value wins all 9 scenarios (+0.1%) and is adopted |
-| P5 · Services + GenAI | Can apps and agents use it? | Contract tests + LLM eval in CI | **Passed** — 4 services + MCP gateway; notes 100% grounded (60/60 live on OpenAI, 48 real members); $0.05 per 1,000 AI notes |
+| P5 · Services + GenAI | Can apps and agents use it? | Contract tests + LLM eval in CI | **Passed** — 4 services + MCP gateway; notes 100% grounded (60/60 live on OpenAI, 48 real members); $0.05 per 1,000 AI notes; planning agent 45/45 live test runs at $0.22 per 1,000 questions |
 | P6 · Databricks | Does it run on a real platform? | Same metrics on Databricks | Planned |
 
 ## How it works

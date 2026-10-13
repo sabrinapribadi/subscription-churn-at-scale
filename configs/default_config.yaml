@@ -56,3 +56,14 @@ llm:
   budget_cost_per_1000: 0.20         # USD
   budget_p95_ms_live: 2000
   budget_p95_ms_cached: 50
+
+# ----- Retention planner agent (ADR-007; budgets set before the first live run, rule R13) -----
+agent:
+  model: gpt-6-luna                  # same model as the note writer until the evaluation says otherwise
+  reasoning_effort: none
+  max_steps: 4                       # LLM rounds per question, tool calls included
+  max_output_tokens: 400
+  timeout_seconds: 20
+  budget_cost_per_1000: 1.00         # USD per 1,000 questions, including nested note-writer calls
+  budget_p95_ms: 8000                # a question takes 2-3 round trips at ~2 s each
+  gate_task_success: 0.80            # live evaluation, reported in the ADR

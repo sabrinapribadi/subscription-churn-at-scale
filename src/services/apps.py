@@ -11,10 +11,12 @@ from pathlib import Path
 import yaml
 from fastapi import FastAPI, HTTPException, Query
 
+from src.genai.agent import get_planner
 from src.genai.explain import Explainer
 from src.genai.providers import get_provider
-from src.services.clients import HttpClient
-from src.services.contracts import CallList, CallListRequest, Explanation, Health, MemberFeatures, Reasons, Score, WhatIf
+from src.services.clients import ExplainingClient, HttpClient
+from src.services.contracts import (AskRequest, CallList, CallListRequest, Explanation, Health, MemberFeatures, PlannerAnswer, Reasons,
+                                     Score, WhatIf)
 from src.services.store import ServingStore
 
 CONFIG = Path(__file__).resolve().parents[2] / "configs" / "default_config.yaml"
@@ -76,14 +78,16 @@ def scoring_app(store: ServingStore) -> FastAPI:
     return app
 
 
-def explain_app(client, explainer: Explainer) -> FastAPI:
-    """client: any object with score() and reasons() (LocalClient in tests, HttpClient to scoring-svc in containers)."""
+def explain_app(client, explainer: Explainer, planner=None) -> FastAPI:
+    """client: any object with score() and reasons() (LocalClient in tests, HttpClient to scoring-svc in containers).
+    planner: the retention planner agent (ADR-007); None when no LLM key is set."""
     app = FastAPI(title="explain-svc", version="1")
 
     @app.get("/health")
     def health():
         return {"service": "explain-svc", "status": "ok", "provider": explainer.provider.name, "model": explainer.provider.model,
-                "prompt": f"{explainer.prompt.name}.{explainer.prompt.version}", "cached": len(explainer.cache)}
+                "prompt": f"{explainer.prompt.name}.{explainer.prompt.version}", "cached": len(explainer.cache),
+                "planner": planner.model if planner else None}
 
     @app.get("/members/{member_id}/explanation", response_model=Explanation)
     def explanation(member_id: str):
@@ -93,6 +97,12 @@ def explain_app(client, explainer: Explainer) -> FastAPI:
         except KeyError:
             _404(member_id)
 
+    @app.post("/ask", response_model=PlannerAnswer)
+    def ask(req: AskRequest):
+        if planner is None:
+            raise HTTPException(status_code=503, detail="the planner agent needs an LLM; set OPENAI_API_KEY")
+        return planner.ask(req.question)
+
     return app
 
 
@@ -101,7 +111,9 @@ def _build():
     cfg = yaml.safe_load(CONFIG.read_text())
     if service == "explain":
         client = HttpClient(scoring_url=os.environ["SCORING_URL"])
-        return explain_app(client, Explainer(get_provider(cfg["llm"])))
+        explainer = Explainer(get_provider(cfg["llm"]))
+        planner = get_planner(ExplainingClient(client, explainer), cfg) if os.environ.get("OPENAI_API_KEY") else None
+        return explain_app(client, explainer, planner)
     store = ServingStore(os.path.expanduser(os.environ["SERVING_DIR"]))
     return feature_app(store) if service == "features" else scoring_app(store)
 

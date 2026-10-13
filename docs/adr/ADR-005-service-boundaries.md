@@ -33,7 +33,7 @@ The question: **"How do we serve scores, reasons and call lists so apps and AI a
 |---------|------|-----------|
 | **feature-svc** | Point-in-time feature rows per member and cohort | `GET /members/{id}/features` |
 | **scoring-svc** | LightGBM model, calibration (isotonic + prior-shift), member value, priority order, per-member contributions (TreeSHAP via LightGBM `pred_contrib`) | `GET /members/{id}/score`, `GET /members/{id}/reasons`, `POST /call-list` |
-| **explain-svc** | Plain-language explanation from score + reasons, through the GenAI module (ADR-006), with a grounding grader | `GET /members/{id}/explanation` |
+| **explain-svc** | Plain-language explanation from score + reasons, through the GenAI module (ADR-006), with a grounding grader; hosts the planner agent (ADR-007) | `GET /members/{id}/explanation`, `POST /ask` |
 | **mcp-gateway** | MCP tools for AI agents, from the shared tool registry | tools: `member_risk`, `why_at_risk`, `call_list`, `what_if` |
 
 - **Contracts:** pydantic models in `src/services/contracts.py` are the single source of truth; every endpoint declares its response model; contract tests pin field names and types.
