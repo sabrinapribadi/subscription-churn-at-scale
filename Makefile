@@ -1,4 +1,4 @@
-.PHONY: install data cohorts train rank services dashboard test lint
+.PHONY: install data cohorts train rank services dashboard test lint preview
 
 install:
 	poetry install
@@ -59,3 +59,8 @@ agent-eval:
 # P7: questions written before any run (ADR-009)
 agent-eval-holdout:
 	python scripts/agent_eval.py --repeats 3 --questions tests/llm_eval/planner_questions_holdout.json --out data/outputs/p7_agent_holdout.json
+
+# Share-preview images for LinkedIn and other link cards (portfolio rule R18)
+NODE_DIR ?= $(HOME)/.portfolio-node
+preview:
+	mkdir -p docs/assets && cd tests/browser && NODE_PATH=$(NODE_DIR)/node_modules node preview.js $(CURDIR)/docs/index.html $(CURDIR)/docs/assets/preview.png && NODE_PATH=$(NODE_DIR)/node_modules node preview.js $(CURDIR)/docs/build.html $(CURDIR)/docs/assets/preview-build.png
