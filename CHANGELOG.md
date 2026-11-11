@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.18.0] — 2026-11-11 — Hiring-team brief (R22), rules audit fixes, member ids removed
+**Files:** docs/brief.yaml, scripts/brief.py, README.md, docs/index.html, docs/build.html, docs/PRD.md, data/outputs/p7_agent_holdout.json, tests/test_no_member_ids.py, tests/test_features.py, .github/workflows/ci.yml, tests/browser/*.js
+- **Situation:** The audit found three real member ids in a committed result and truncated ids on the page, against the competition terms; also long paragraphs, stale 0.1% figures and no browser tests in CI.
+- **Task:** Remove every member id and stop it recurring; fix the rule gaps; put a 5W1H brief first with no repeated content.
+- **Action:** Redacted the ids; a test now fails on any member-id-like string in outputs, pages or the demo snapshot; split long paragraphs; corrected 0.1% to 0.2% (re-run figure); added the brief, browser tests and gated Pages to CI.
+- **Result:** 0 member ids in current files (3 remain in git history until rewritten); 47 control and all hover checks pass; CI green.
+- **Talking point:** "The audit caught three member ids in a result file; a test now makes that impossible to commit again."
+
 ## [0.17.0] — 2026-11-11 — Public demo API and remote MCP, free host, CD with provenance
 **Files:** docs/adr/ADR-010-public-demo-api.md (new), src/services/public.py (new), src/services/public_snapshot.py (new), src/services/scenarios.py (new), src/data/synthetic.py (new), src/services/store.py, scripts/build_public_snapshot.py (new), scripts/build_deploy.py (new), scripts/smoke_test.py (new), deploy/public_snapshot.* (new), tests/test_public.py (new), tests/conftest.py, .github/workflows/ci.yml, .gitignore
 - **Situation:** The services ran only on a laptop, and the competition's data terms forbid publishing member rows.

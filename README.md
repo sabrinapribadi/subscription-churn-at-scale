@@ -1,10 +1,32 @@
 # Subscription Churn at Scale
 
-Warn a retention team **before** renewal, rank who to call first, and show the trade-offs in plain numbers. Built on ~410 million daily listening records from the public KKBox (WSDM Cup 2018) dataset.
+<!-- brief:start -->
+
+## For hiring teams: the project in 5W1H
+
+1. **What:** A churn early warning for a music-subscription retention team: risk, reasons, who to call first, and a planning agent.
+2. **Why:** Churn shows only after renewal fails; a warning 14 days earlier lets the team act. Today's rule calls only manual renewers.
+3. **Who:** Users: retention managers and call agents.
+   - Data: public KKBox (WSDM Cup 2018), 410M listening records, 6.8M members. Churner: no renewal within 30 days of expiry.
+4. **Where:** [Results page](https://sabrinapribadi.github.io/subscription-churn-at-scale/) and [technical walkthrough](https://sabrinapribadi.github.io/subscription-churn-at-scale/build.html) on GitHub Pages; monthly job, registry and dashboard on Databricks; [demo API and MCP](https://subscription-churn-at-scale.vercel.app/docs) on Vercel.
+5. **When it fails:** 8 phases with pass bars set before training; 3 failed and are reported (label rebuild, listening embeddings, learned ranker).
+   - No live A/B test: historical data only. Tests are out-of-time (train February, score March); a live call test is the next step.
+6. **How:** LightGBM on point-in-time features, calibrated, ranked by churn chance × member value; 5 alternatives tried and rejected.
+   - Result: calling the top 10% reaches 65% of churners, vs 54% for today's rule; worth ≈12.4M a month after call costs.
+
+**Skills applied** (each linked to the file or decision that shows it):
+
+- **Big data engineering:** PySpark ETL over 410M rows, point-in-time features, no future data — [src/features/build.py](src/features/build.py), [ADR-001](docs/adr/ADR-001-task-framing.md)
+- **Machine learning:** LightGBM, LambdaMART ranking, self-supervised sequence encoders — [ADR-003](docs/adr/ADR-003-behaviour-encoder.md), [ADR-004](docs/adr/ADR-004-ranking-and-calibration.md)
+- **Statistics and evaluation:** out-of-time split, PR-AUC, calibration error, profit curves, label-shift correction — [ADR-002](docs/adr/ADR-002-validation-strategy.md), [ADR-004](docs/adr/ADR-004-ranking-and-calibration.md)
+- **MLOps and CI/CD:** MLflow and Unity Catalog registry, PSI drift, dashboard as code, gated CI/CD with provenance — [ADR-009](docs/adr/ADR-009-monitoring-and-operations.md), [ci.yml](.github/workflows/ci.yml)
+- **Cloud and services:** Databricks bundle job, four FastAPI services in Docker, demo API on Vercel — [ADR-005](docs/adr/ADR-005-service-boundaries.md), [ADR-008](docs/adr/ADR-008-databricks-port.md), [ADR-010](docs/adr/ADR-010-public-demo-api.md)
+- **GenAI and agents:** grounded notes with a grader, a planning agent (42 of 45 unseen questions), MCP tools — [ADR-006](docs/adr/ADR-006-genai-module.md), [ADR-007](docs/adr/ADR-007-retention-planner-agent.md)
+- **Domain:** subscription retention (churner definition, call lists, member value) — [ADR-001](docs/adr/ADR-001-task-framing.md)
+
+<!-- brief:end -->
 
 [![ci](https://github.com/sabrinapribadi/subscription-churn-at-scale/actions/workflows/ci.yml/badge.svg)](https://github.com/sabrinapribadi/subscription-churn-at-scale/actions/workflows/ci.yml)
-
-**Showcase page (interactive, every chart hoverable):** https://sabrinapribadi.github.io/subscription-churn-at-scale/
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square) ![PySpark](https://img.shields.io/badge/PySpark-4.0-E25A1C?style=flat-square) ![LightGBM](https://img.shields.io/badge/LightGBM-4.7-2E8B57?style=flat-square) ![MLflow](https://img.shields.io/badge/MLflow-3.17-0194E2?style=flat-square)
 
@@ -14,15 +36,11 @@ Test: March 2017, 862,158 members, 62,616 churners, official benchmark labels. M
 
 | Question | Answer |
 |---|---|
-| Call the top 10% two weeks before renewal: how many churners do we reach? | **65%** (today's rule: 54%) |
 | Of 100 calls, how many reach a real churner? | **48** (rule: 39, random: 7) |
 | Extra churners reached each month, same number of calls | **+7,100** |
 | What does more warning time cost? | 7 days: 68% · 14 days: 65% · 30 days: 60% reached |
 | How much listening history is needed? | **30 days** — 30 to 180 days score the same |
-| What is the top-10% list worth? | **≈12.4M a month** after call costs (1 in 5 saved, 20 per call) |
 | Do listening habits improve the list? | **No** (+0.004 vs a +0.02 bar). They do give 5 personas, e.g. silent payers: 20% of members, list reaches 36% of their churners |
-
-Churner: a member who does not renew within 30 days after their membership expires.
 
 ## Phases
 
@@ -72,6 +90,23 @@ python scripts/window_curve.py                         # P2
 pytest tests/ -q
 ```
 
+## Try it: live demo API and MCP
+
+| Surface | Address | What it serves |
+|---|---|---|
+| REST API with interactive docs | [subscription-churn-at-scale.vercel.app/docs](https://subscription-churn-at-scale.vercel.app/docs) | Call-list totals and what-ifs for the real cohort; risk and notes for 100 demo members |
+| MCP endpoint (stateless, spec 2026-07-28) | `https://subscription-churn-at-scale.vercel.app/mcp` | The same four tools for AI assistants |
+
+- **No member data:** totals are the real cohort's; `demo-001` to `demo-100` are synthetic members scored by the real model (competition terms, ADR-010).
+- Read-only: notes were written once offline; no LLM key on the host; the planning agent runs locally only.
+- Connect an assistant: `claude mcp add --transport http churn https://subscription-churn-at-scale.vercel.app/mcp`.
+
+**Free-tier limits (R20; Vercel Hobby, read 2026-11-11):**
+- Free and non-commercial; each call gets up to 2 GB, 1 vCPU and 300 s.
+- A monthly allotment; Hobby has no billing, so Vercel pauses the project instead of charging.
+- After idle time the first call wakes the app: about 1–3 s (measured 2026-11-11).
+- **Fallback:** the [results page](https://sabrinapribadi.github.io/subscription-churn-at-scale/) is static and carries every number, even if the API is paused.
+
 ## Use it: services and AI assistants
 
 ```bash
@@ -83,7 +118,8 @@ python scripts/llm_eval.py                                     # grounding, cost
 python scripts/agent_eval.py --repeats 3                       # planner agent, live (needs OPENAI_API_KEY)
 ```
 
-A manager can also ask in plain words: `POST /ask` on explain-svc runs the planner agent (ADR-007). It picks the tools, and every number in its answer must come from a tool result.
+- **Ask in plain words:** `POST /ask` on explain-svc runs the planner agent (ADR-007).
+- The agent picks the tools; every number in its answer must come from a tool result.
 
 ## Run it on Databricks (Free Edition)
 
@@ -93,7 +129,11 @@ databricks bundle deploy -p portfolio        # job definition: databricks.yml
 databricks bundle run churn_p6 -p portfolio  # features (PySpark) → retrain + parity check + registry → tables
 ```
 
-Inputs go to the Unity Catalog volume `workspace.churn.raw` first (ADR-008). Results land in `workspace.churn.features_k14_w30`, `workspace.churn.scores_march_2017` and `workspace.churn.drift_psi`; the model is `workspace.churn.churn_lgbm@champion`; the dashboard *Churn: monthly call list and model health* is deployed by the same bundle. The job's monthly schedule is defined but paused (Free Edition quota).
+- **Inputs:** the Unity Catalog volume `workspace.churn.raw` (ADR-008).
+- **Tables:** `features_k14_w30`, `scores_march_2017` and `drift_psi` in `workspace.churn`.
+- **Model:** `workspace.churn.churn_lgbm@champion`.
+- **Dashboard:** *Churn: monthly call list and model health*, deployed by the same bundle.
+- **Schedule:** monthly, defined but paused (Free Edition quota).
 
 | Tool (MCP) | Answers |
 |---|---|
@@ -102,8 +142,11 @@ Inputs go to the Unity Catalog volume `workspace.churn.raw` first (ADR-008). Res
 | `call_list` | Top members by expected value at risk, with expected churners and profit |
 | `what_if` | Best share to call for any save rate and cost per call |
 
-An OpenAI key (in a local `.env`, never committed) switches notes from the template to `gpt-6-luna`; every note is still graded and falls back to the template if it invents anything.
+- An OpenAI key in a local `.env` (never committed) switches notes from the template to `gpt-6-luna`.
+- Every note is still graded; a note that invents anything falls back to the template.
 
 ## Data
 
-WSDM Cup 2018 — KKBox's Churn Prediction Challenge (Kaggle). Used under the competition's data terms; the data is not redistributed here. Only small aggregated results are committed (`data/outputs/`).
+- **Source:** WSDM Cup 2018 — KKBox's Churn Prediction Challenge (Kaggle).
+- **Terms:** used under the competition's data terms; the data is not redistributed here.
+- **Committed:** only small aggregated results (`data/outputs/`).

@@ -1,8 +1,8 @@
 PRODUCT REQUIREMENT DOCUMENT (PRD)
 Project: Subscription Churn at Scale — Who Leaves, When, Why, and Who to Call First
-Version: 1.1 (P7: dashboard, drift check, held-out agent questions)
+Version: 1.2 (public demo API and stateless MCP on Vercel Hobby: cohort aggregates plus synthetic members, no member rows; ADR-010)
 Author: Sabrina Pribadi
-Date: October 9, 2026
+Date: November 11, 2026
 Status: Complete — P0–P7 done (P0, P3, P4 gates failed, documented; P6 passed on run 3; P7 passed)
 
 
@@ -110,13 +110,14 @@ Module C: Behavioural encoder — Phase 3 (ADR-003)
 Module D: Ranking and calibration — Phase 4 (ADR-004)
 Module E: Services, GenAI notes and planner agent — Phase 5 (ADR-005, ADR-006, ADR-007)
 Module F: Databricks port & MLflow registry — Phase 6 (ADR-008)
+Module G: Public demo API and MCP (aggregates + synthetic members; no key, no member rows) — ADR-010
 
 
 7. DATA STRATEGY
 
 - Raw data stored outside the repo and outside cloud-synced folders: ~/data/kkbox/raw
 - Converted once to partitioned Parquet (by month) for Spark
-- Only small, aggregated outputs (metrics JSON, sample predictions) are committed
+- Only small, aggregated outputs (metrics JSON) are committed; no member id is published (a test checks outputs, pages and the demo snapshot)
 - Split: by expiry cohort (out-of-time) — never random rows (ADR-002)
 
 

@@ -19,6 +19,8 @@ jobs:
       - run: pip install -r requirements-ci.txt ruff
       - name: Lint (errors only)
         run: ruff check --select E9,F63,F7,F82 src scripts tests
+      - name: Hiring-team brief in sync with docs/brief.yaml (R22)
+        run: python scripts/brief.py --check
       - name: Unit, Spark, contract, GenAI and MCP tests (P5 gate)
         env: { CHURN_JAVA_HOME: "${{ env.JAVA_HOME }}" }
         run: pytest tests/ -q

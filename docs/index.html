@@ -249,6 +249,17 @@ footer details.sources > ol { margin-top: 8px; }
   .rank .r { grid-template-columns: 22px 62px 56px 50px minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+/* brief:css:start (rule R22, written by scripts/brief.py) */
+.brief { display: grid; gap: 12px; padding-block: 18px 4px; }
+.brief-list { list-style: none; margin: 0; padding: 0 !important; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
+.brief-list li { display: grid; align-content: start; gap: 4px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
+.brief-w { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.brief-main { font-size: 14.5px; line-height: 1.45; color: var(--fg); }
+.brief-sub { font-size: 13px; line-height: 1.45; color: var(--muted); }
+.brief-skills summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+.brief-skills ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: 13.5px; line-height: 1.45; }
+.brief-proof { font-size: 12px; margin-left: 4px; white-space: nowrap; }
+/* brief:css:end */
 </style>
 
 <div class="wrap">
@@ -256,14 +267,11 @@ footer details.sources > ol { margin-top: 8px; }
 <header class="top">
   <span class="eyebrow">Portfolio · Commercial / Churn · Sabrina Pribadi</span>
   <h1>Subscription Churn at Scale</h1>
-  <p class="lede">Warn a music-streaming retention team <b>14 days before</b> a member's renewal, and tell them who to call first.</p>
-  <div class="glance">
-    <div class="card"><span class="eyebrow">Data</span><b>410M</b><span>daily listening records, 23M transactions, 6.8M members · public KKBox dataset</span></div>
-    <div class="card"><span class="eyebrow">Problem</span><b>Too late</b><span>churn is only visible after renewal fails, when nothing can be done</span></div>
-    <div class="card"><span class="eyebrow">Approach</span><b>LightGBM</b><span>on point-in-time features, tested on a later month; 5 alternatives tried and rejected</span></div>
-    <div class="card"><span class="eyebrow">Result</span><b>65%</b><span>of churners reached by calling the top 10%, vs 54% today; ≈12.4M protected a month</span></div>
-  </div>
-  <nav class="toc" aria-label="Sections">
+<!-- brief:start -->
+<section class="brief" id="brief" aria-label="Project brief for hiring teams"><span class="eyebrow">For hiring teams · the project in 5W1H</span><ol class="brief-list"><li><span class="brief-w">1 · What</span><span class="brief-main">A churn early warning for a music-subscription retention team: risk, reasons, who to call first, and a planning agent.</span></li><li><span class="brief-w">2 · Why</span><span class="brief-main">Churn shows only after renewal fails; a warning 14 days earlier lets the team act. Today&#x27;s rule calls only manual renewers.</span></li><li><span class="brief-w">3 · Who</span><span class="brief-main">Users: retention managers and call agents.</span><span class="brief-sub">Data: public KKBox (WSDM Cup 2018), 410M listening records, 6.8M members. Churner: no renewal within 30 days of expiry.</span></li><li><span class="brief-w">4 · Where</span><span class="brief-main"><a href="https://sabrinapribadi.github.io/subscription-churn-at-scale/">Results page</a> and <a href="https://sabrinapribadi.github.io/subscription-churn-at-scale/build.html">technical walkthrough</a> on GitHub Pages; monthly job, registry and dashboard on Databricks; <a href="https://subscription-churn-at-scale.vercel.app/docs">demo API and MCP</a> on Vercel.</span></li><li><span class="brief-w">5 · When it fails</span><span class="brief-main">8 phases with pass bars set before training; 3 failed and are reported (label rebuild, listening embeddings, learned ranker).</span><span class="brief-sub">No live A/B test: historical data only. Tests are out-of-time (train February, score March); a live call test is the next step.</span></li><li><span class="brief-w">6 · How</span><span class="brief-main">LightGBM on point-in-time features, calibrated, ranked by churn chance × member value; 5 alternatives tried and rejected.</span><span class="brief-sub">Result: calling the top 10% reaches 65% of churners, vs 54% for today&#x27;s rule; worth ≈12.4M a month after call costs.</span></li></ol><details class="brief-skills" open><summary>Skills applied, with proof</summary><ul><li><b>Big data engineering</b> PySpark ETL over 410M rows, point-in-time features, no future data <a class="brief-proof" href="https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/src/features/build.py">src/features/build.py</a> <a class="brief-proof" href="https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/docs/adr/ADR-001-task-framing.md">ADR-001</a></li><li><b>Machine learning</b> LightGBM, LambdaMART ranking, self-supervised sequence encoders <a class="brief-proof" href="https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/docs/adr/ADR-003-behaviour-encoder.md">ADR-003</a> <a class="brief-proof" href="https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/docs/adr/ADR-004-ranking-and-calibration.md">ADR-004</a></li><li><b>Statistics and evaluation</b> out-of-time split, PR-AUC, calibration error, profit curves, label-shift correction <a class="brief-proof" href="https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/docs/adr/ADR-002-validation-strategy.md">ADR-002</a> <a class="brief-proof" href="https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/docs/adr/ADR-004-ranking-and-calibration.md">ADR-004</a></li><li><b>MLOps and CI/CD</b> MLflow and Unity Catalog registry, PSI drift, dashboard as code, gated CI/CD with provenance <a class="brief-proof" href="https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/docs/adr/ADR-009-monitoring-and-operations.md">ADR-009</a> <a class="brief-proof" href="https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/.github/workflows/ci.yml">ci.yml</a></li><li><b>Cloud and services</b> Databricks bundle job, four FastAPI services in Docker, demo API on Vercel <a class="brief-proof" href="https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/docs/adr/ADR-005-service-boundaries.md">ADR-005</a> <a class="brief-proof" href="https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/docs/adr/ADR-008-databricks-port.md">ADR-008</a> <a class="brief-proof" href="https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/docs/adr/ADR-010-public-demo-api.md">ADR-010</a></li><li><b>GenAI and agents</b> grounded notes with a grader, a planning agent (42 of 45 unseen questions), MCP tools <a class="brief-proof" href="https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/docs/adr/ADR-006-genai-module.md">ADR-006</a> <a class="brief-proof" href="https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/docs/adr/ADR-007-retention-planner-agent.md">ADR-007</a></li><li><b>Domain</b> subscription retention (churner definition, call lists, member value) <a class="brief-proof" href="https://github.com/sabrinapribadi/subscription-churn-at-scale/blob/main/docs/adr/ADR-001-task-framing.md">ADR-001</a></li></ul></details></section>
+<!-- brief:end -->
+
+<nav class="toc" aria-label="Sections">
     <a href="#problem"><span class="step">1</span>Problem</a>
     <a href="#data"><span class="step">2</span>Data</a>
     <a href="#approach"><span class="step">3</span>Approach</a>
@@ -388,7 +396,7 @@ footer details.sources > ol { margin-top: 8px; }
         <span class="eyebrow">What P4 showed</span>
         <ol class="steps">
           <li><b>Calling the top 10% protects about 12.4M a month</b> after call costs, covering 66% of the 107.9M at risk.</li>
-          <li><b>Ordering by value adds only 0.2%.</b> Most plans cost 99–149, so value barely reorders the list. Still the recommended order: it won in all 9 cost scenarios.</li>
+          <li><b>Ordering by value adds only 0.2%.</b> Most plans cost 99–149, so value barely reorders the list; it is still the recommended order.</li>
           <li><b>LambdaMART lost 22%.</b> It chased the highest-value churners and missed many others (49% reached vs 65%).</li>
           <li><b>Scores still run low.</b> The prediction-day correction moved the expected churn rate from 5.7% to 6.1%; the real rate was 7.3%. For budgets, check last month's outcomes.</li>
         </ol>
@@ -429,15 +437,15 @@ footer details.sources > ol { margin-top: 8px; }
 
     <div class="faq">
       <span class="eyebrow">Questions practitioners ask</span>
-      <details><summary>Isn't this just "members without auto-renew"?</summary><p>That is today's rule, and it only ever calls manual renewers. The model reaches 11 points more churners with the same calls, and finds 1 in 4 auto-renew churners the rule never calls.</p></details>
-      <details><summary>Did it use information from the future?</summary><p>No. Every input is built from data dated before the snapshot, 14 days ahead of renewal. An automated test fails if any later record changes a score.</p></details>
-      <details><summary>How many members should we call?</summary><p>Under our central assumptions (1 in 5 saved, 20 per call), profit keeps rising until about 20% of members (≈13.9M a month, vs ≈12.4M at 10%). Try your own save rate and call cost on the "What is the call list worth?" chart: it shows the best share to call for those numbers. Hover the "What is the call list worth?" chart to see the gain for any budget.</p></details>
-      <details><summary>Should we order the list by member value?</summary><p>Yes, but expect little: plans cost 99–149, so ordering by probability × value adds about 0.1%. A learned ranker (LambdaMART) did worse.</p></details>
+      <details><summary>Isn't this just "members without auto-renew"?</summary><p>That is today's rule, and it only ever calls manual renewers.</p><p>With the same calls, the model reaches 11 points more churners, including 1 in 4 auto-renew churners the rule never calls.</p></details>
+      <details><summary>Did it use information from the future?</summary><p>No. Every input uses data dated before the snapshot, 14 days ahead of renewal.</p><p>An automated test fails if any later record changes a score.</p></details>
+      <details><summary>How many members should we call?</summary><p>About 20% of members, if 1 in 5 called churners stay and a call costs 20.</p><p>Profit is then ≈13.9M a month, vs ≈12.4M when calling 10%.</p><p>Try your own save rate and call cost on the "What is the call list worth?" chart; hover it for any budget.</p></details>
+      <details><summary>Should we order the list by member value?</summary><p>Yes, but expect little: plans cost 99–149, so ordering by probability × value adds about 0.2%. A learned ranker (LambdaMART) did worse.</p></details>
       <details><summary>Why is this member on the list?</summary><p>The strongest signals: manual renewal, payment method, a recent cancellation, days since the last payment, and tenure. Per-member reasons come in Phase 5.</p></details>
-      <details><summary>Can our CRM or AI assistant use this?</summary><p>Yes. The scoring and explanation services answer over HTTP, and an MCP gateway exposes four tools (member risk, why at risk, call list, what-if) to any MCP-capable assistant. Every note is checked against the model's facts before it is shown.</p></details>
-      <details><summary>Why one AI agent, not several?</summary><p>The work runs in one line (question → tools → answer), with nothing to do in parallel. Each extra agent adds a 2–3 second round trip and another place to fail, and the "critic" job is already done by a free, deterministic checker. One agent passed 45 of 45 test runs at $0.22 per 1,000 questions. Several agents fit better where independent sources can be read in parallel.</p></details>
+      <details><summary>Can our CRM or AI assistant use this?</summary><p>Yes. Four tools (member risk, why at risk, call list, what-if) answer over HTTP and MCP.</p><p>Try them live: <a href="https://subscription-churn-at-scale.vercel.app/docs">public demo API</a> (synthetic demo members; totals are real).</p><p>Every note is checked against the model's facts before it is shown.</p></details>
+      <details><summary>Why one AI agent, not several?</summary><p>The work runs in one line (question → tools → answer); nothing runs in parallel.</p><p>Each extra agent adds a 2–3 second round trip and another place to fail.</p><p>A free, deterministic checker already does the "critic" job.</p><p>One agent passed 45 of 45 test runs at $0.22 per 1,000 questions.</p></details>
       <details><summary>Should we just call the riskiest members?</summary><p>Not always. Some will leave whatever we offer (Ascarza, JMR 2018). Finding members who respond to an offer is the next project (uplift modelling).</p></details>
-      <details><summary>How often does it need refreshing?</summary><p>Monthly. One Databricks job rebuilds features, retrains, checks drift and refreshes the dashboard. In March two features crossed the drift alert line only because February is 3 days shorter; the score stayed stable.</p></details>
+      <details><summary>How often does it need refreshing?</summary><p>Monthly. One Databricks job rebuilds features, retrains, checks drift and refreshes the dashboard.</p><p>In March two features crossed the drift alert line only because February is 3 days shorter. The score stayed stable.</p></details>
     </div>
 
   <details class="more">
@@ -495,7 +503,7 @@ footer details.sources > ol { margin-top: 8px; }
   <span class="eyebrow">5 · Our take</span>
   <h2>Working view, revised as results come in</h2>
   <div class="take">
-    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Warning time is the real trade-off;</b> history length is not. 30 days of logs is enough.</li><li><b>Simple beats clever three times:</b> shape statistics vs encoders (P3), probability × value vs LambdaMART (P4), one AI agent vs several (P5).</li><li><b>Reproduce before you trust:</b> Databricks exposed three hidden sources of randomness; results are now identical on both platforms (P6).</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark scores overstate:</b> a realistic setup loses 0.06 PR-AUC versus training on labels that arrive too late.</li><li><b>The open gap is auto-renew cancellers:</b> a third of churners; the list reaches 1 in 4. Listening signals (P3) did not close it.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
+    <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Warning time is the real trade-off;</b> history length is not. 30 days of logs is enough.</li><li><b>Simple beats clever three times:</b> shape statistics vs encoders (P3), probability × value vs LambdaMART (P4), one AI agent vs several (P5).</li><li><b>Reproduce before you trust:</b> Databricks exposed three hidden sources of randomness; results are now identical on both platforms (P6).</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark scores overstate:</b> a realistic setup loses 0.06 PR-AUC versus training on labels that arrive too late.</li><li><b>The open gap is auto-renew cancellers:</b> listening signals (P3) did not close it.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
     <div><span class="eyebrow">What would change our mind</span><ul class="points"><li><b>Answered by P2:</b> lead time is not free (−5 points of reach from 14 to 30 days). We keep 14 days; 7 if campaigns can move faster.</li><li><b>Answered by P3:</b> embeddings missed their gate (+0.004 vs +0.02); personas only. Auto-renew cancellers need another signal, e.g. payment failures (CHN-2).</li></ul></div>
   </div>
 </section>
@@ -579,7 +587,7 @@ footer details.sources > ol { margin-top: 8px; }
         <span class="lbl">Separation</span>AUC(<i>W</i>) = P( <i>r</i><sub>W</sub><sup>stay</sup> &gt; <i>r</i><sub>W</sub><sup>churn</sup> )
         <span class="lbl">Knee</span><i>W</i>* = min <i>W</i> with gain ≥ 95% of max
       </div>
-      <p class="why-here"><b>Why it matters:</b> a 2026 study on this dataset found the knee anywhere from 30 to 120 days. <b>Our real data (P2):</b> flat from 30 days, because payment behaviour carries the signal.</p>
+      <p class="why-here"><b>Why it matters:</b> a 2026 study on this dataset found the knee anywhere from 30 to 120 days.</p><p class="why-here"><b>Our real data (P2):</b> flat from 30 days, because payment behaviour carries the signal.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · 800 synthetic members, half of them churners</span>
@@ -693,7 +701,7 @@ footer details.sources > ol { margin-top: 8px; }
         <span class="lbl">Realised profit of the top k</span>Π(<i>k</i>) = Σ<sub><i>i</i> ∈ top <i>k</i></sub> ( <i>s</i> · <i>y</i><sub>i</sub> · <i>r</i><sub>i</sub> − <i>c</i> )
         <span class="lbl">Expected value per member</span>𝔼[Π<sub>i</sub>] = <i>s</i> · <i>p̂</i><sub>i</sub> · <i>r</i><sub>i</sub> − <i>c</i>
       </div>
-      <p class="why-here"><b>Why it matters:</b> s and c are stated assumptions, varied in a sensitivity table. <b>Real data (P4):</b> probability × value won all <a href="#p4-scenarios" >9 cost scenarios</a>, by about 0.1%.</p>
+      <p class="why-here"><b>Why it matters:</b> s and c are stated assumptions, varied in a sensitivity table.</p><p class="why-here"><b>Real data (P4):</b> the value order won every one of the <a href="#p4-scenarios" >cost scenarios</a> tested.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · 3,000 members, synthetic plan prices</span>
@@ -719,7 +727,7 @@ footer details.sources > ol { margin-top: 8px; }
         <span class="lbl">Quality, in plain words</span>NDCG@5 = how close the top 5 is to the best possible top 5 (0 to 1). Higher tiers count more; rank 1 counts in full, rank 2 63%, rank 3 50%, rank 4 43%, rank 5 39%.
         <span class="lbl">Quality, as a formula</span>NDCG@5 = DCG@5 / IDCG@5,&nbsp; DCG = Σ (2<sup>g</sup> − 1) / log₂(rank + 1)
       </div>
-      <p class="why-here"><b>Why it matters:</b> grades are revenue-at-risk tiers. Here λ moves the scores directly so you can watch. <b>Real data (P4):</b> it chased top-tier churners and lost 22% of profit.</p>
+      <p class="why-here"><b>Why it matters:</b> grades are revenue-at-risk tiers; here λ moves the scores directly so you can watch.</p><p class="why-here"><b>Real data (P4):</b> it chased top-tier churners and lost 22% of profit.</p>
     </div>
     <div class="sim">
       <span class="simtag">Simulation · 8 members, grade = revenue-at-risk tier (0–3)</span>
@@ -793,7 +801,7 @@ footer details.sources > ol { margin-top: 8px; }
           <div class="chat">
             <div class="msg ask"><span class="who">Manager asks</span>Find the best share to call at a 20% save rate and 20 per call, then give me the first 3 members at that share.</div>
             <div class="msg tool"><span class="who">Agent calls <code>what_if</code> then <code>call_list(share=0.195, limit=3)</code></span>
-              <p>The best share to call is 19.5% (168,120 members), with an expected monthly profit of 13,935,208. The first three members to call are iX6Awg…, wh/yKZ… and GKWjaX….</p>
+              <p>The best share to call is 19.5% (168,120 members), with an expected monthly profit of 13,935,208. Then it lists the first three members (ids withheld: competition data terms).</p>
               <div class="legend"><span class="chip pass">grounded</span><span>2 tools · 8.4 s · $0.0004</span></div>
             </div>
           </div>
@@ -832,7 +840,7 @@ footer details.sources > ol { margin-top: 8px; }
         <tr><td>Primary metric</td><td><ul class="alts"><li>Accuracy <span class="tag rej">rejected</span></li><li>ROC-AUC <span class="tag base">secondary</span></li></ul></td><td class="chosen">PR-AUC + profit@top-10%</td><td>Churn is a minority class, and the team only works the top of the list.</td><td>ADR-002</td></tr>
         <tr><td>Baseline model</td><td><ul class="alts"><li>Logistic regression <span class="tag rej">rejected</span></li><li>Deep sequence model first <span class="tag later">later, P3</span></li></ul></td><td class="chosen">Gradient boosting on RFM features</td><td>The strongest model family on this benchmark; it sets the bar the deep model must beat.</td><td><a href="https://arxiv.org/abs/1802.03396">arXiv 1802.03396</a></td></tr>
         <tr><td>Behaviour signal</td><td><ul class="alts"><li>Hand-crafted RFM only <span class="tag base">baseline</span></li></ul></td><td class="chosen">Self-supervised embeddings, as an ablation</td><td>They are added only if they beat RFM by +0.02 PR-AUC out-of-time. <b>P3:</b> +0.004, so kept for personas only.</td><td><a href="https://doi.org/10.1007/s10479-023-05259-9">Annals of OR (2023)</a></td></tr>
-        <tr><td>Ordering the call list</td><td><ul class="alts"><li>Sort by churn probability <span class="tag base">baseline</span></li><li>LambdaMART <span class="tag rej">tested, lost 22%</span></li></ul></td><td class="chosen">Probability × member value</td><td>Two members with the same probability are not worth the same call. <b>P4:</b> won all <a href="#p4-scenarios" >9 cost scenarios</a>.</td><td>ADR-004</td></tr>
+        <tr><td>Ordering the call list</td><td><ul class="alts"><li>Sort by churn probability <span class="tag base">baseline</span></li><li>LambdaMART <span class="tag rej">tested, lost 22%</span></li></ul></td><td class="chosen">Probability × member value</td><td>Two members with the same probability are not worth the same call.</td><td>ADR-004</td></tr>
         <tr><td>AI agents</td><td><ul class="alts"><li>No agent, MCP tools only <span class="tag rej">rejected</span></li><li>Several agents (planner, analyst, writer, critic) <span class="tag rej">rejected</span></li></ul></td><td class="chosen">One planner agent with a number check</td><td>The work is one sequence with nothing to run in parallel; every extra agent adds round trips, cost and coordination failures. <b>P5:</b> 45 of 45 test runs, $0.22 per 1,000 questions.</td><td><a href="https://arxiv.org/abs/2503.13657">arXiv 2503.13657</a> (2025)</td></tr>
       </tbody>
     </table>
@@ -886,7 +894,7 @@ footer details.sources > ol { margin-top: 8px; }
       <div class="table-wrap"><table class="compact">
         <thead><tr><th>Metric</th><th>What it tells you</th><th>Rule</th><th>Realistic</th><th>Model</th></tr></thead>
         <tbody><tr><td><b>PR-AUC <span class='tag base'>primary</span></b></td><td>Quality at the top of the list</td><td class='num'>0.342</td><td class='num'>0.504</td><td class='num'>0.568</td></tr><tr><td><b>ROC-AUC</b></td><td>Ranking across all members</td><td class='num'>0.803</td><td class='num'>0.800</td><td class='num'>0.891</td></tr><tr><td><b>Gini</b></td><td>ROC-AUC rescaled (2·AUC − 1); common in credit risk</td><td class='num'>0.607</td><td class='num'>0.600</td><td class='num'>0.781</td></tr><tr><td><b>Top-decile lift</b></td><td>Churners in the top 10% vs a random 10%</td><td class='num'>5.41×</td><td class='num'>5.59×</td><td class='num'>6.55×</td></tr><tr><td><b>H-measure</b></td><td>AUC with coherent cost weighting (Hand 2009)</td><td class='num'>0.432</td><td class='num'>0.411</td><td class='num'>0.535</td></tr><tr><td><b>MPC</b></td><td>Max profit per member at the best cut-off, 30% accept rate</td><td class='num'>1.79 <span class='muted'>@ 12%</span></td><td class='num'>1.72 <span class='muted'>@ 8%</span></td><td class='num'>2.09 <span class='muted'>@ 10%</span></td></tr><tr><td><b>EMPC</b></td><td>Expected max profit, uncertain accept rate (Verbraken 2013)</td><td class='num'>1.80 <span class='muted'>@ 12%</span></td><td class='num'>1.74 <span class='muted'>@ 7%</span></td><td class='num'>2.13 <span class='muted'>@ 10%</span></td></tr><tr><td><b>Brier</b></td><td>Probability error, lower is better</td><td class='num'>—</td><td class='num'>0.050</td><td class='num'>0.045</td></tr><tr><td><b>ECE</b></td><td>Calibration gap, lower is better</td><td class='num'>—</td><td class='num'>0.033</td><td class='num'>0.016</td></tr></tbody></table></div>
-      <p class="muted" style="font-size:13px">Metrics disagree on the realistic model: PR-AUC and top-5% capture favour it; Gini, H-measure and EMPC favour the rule. It helps only at small call budgets. Profit assumptions: CLV 200, incentive 10, contact 1, accept rate ~ Beta(6, 14).</p>
+      <p class="muted" style="font-size:13px">Metrics disagree on the realistic model: PR-AUC and top-5% capture favour it; Gini, H-measure and EMPC favour the rule.</p><p class="muted" style="font-size:13px">It helps only at small call budgets. Profit assumptions: CLV 200, incentive 10, contact 1, accept rate ~ Beta(6, 14).</p>
     </div>
     <div class="results-grid even">
       <div class="explain" id="p4-scenarios">
@@ -899,14 +907,14 @@ footer details.sources > ol { margin-top: 8px; }
         <div class="table-wrap"><table class="compact">
           <thead><tr><th>Save rate</th><th>Cost per call</th><th>Probability</th><th>Probability × value (vs probability)</th><th>LambdaMART (vs probability)</th></tr></thead>
           <tbody><tr><td class='num'>10%</td><td class='num'>0</td><td class='num'>7.1M</td><td class='num'>7.1M <span style='color:var(--stay)'>(+0.16%)</span></td><td class='num'>5.7M <span style='color:var(--churn)'>(-19%)</span></td></tr><tr><td class='num'>10%</td><td class='num'>20</td><td class='num'>5.3M</td><td class='num'>5.4M <span style='color:var(--stay)'>(+0.22%)</span></td><td class='num'>4.0M <span style='color:var(--churn)'>(-25%)</span></td></tr><tr><td class='num'>10%</td><td class='num'>50</td><td class='num'>2.8M</td><td class='num'>2.8M <span style='color:var(--stay)'>(+0.42%)</span></td><td class='num'>1.4M <span style='color:var(--churn)'>(-49%)</span></td></tr><tr><td class='num'>20%</td><td class='num'>0</td><td class='num'>14.1M</td><td class='num'>14.2M <span style='color:var(--stay)'>(+0.16%)</span></td><td class='num'>11.4M <span style='color:var(--churn)'>(-19%)</span></td></tr><tr><td class='num'><b>20%</b></td><td class='num'><b>20</b></td><td class='num'>12.4M</td><td class='num'>12.4M <span style='color:var(--stay)'>(+0.19%)</span></td><td class='num'>9.7M <span style='color:var(--churn)'>(-22%)</span></td></tr><tr><td class='num'>20%</td><td class='num'>50</td><td class='num'>9.8M</td><td class='num'>9.8M <span style='color:var(--stay)'>(+0.23%)</span></td><td class='num'>7.1M <span style='color:var(--churn)'>(-28%)</span></td></tr><tr><td class='num'>30%</td><td class='num'>0</td><td class='num'>21.2M</td><td class='num'>21.2M <span style='color:var(--stay)'>(+0.16%)</span></td><td class='num'>17.1M <span style='color:var(--churn)'>(-19%)</span></td></tr><tr><td class='num'>30%</td><td class='num'>20</td><td class='num'>19.5M</td><td class='num'>19.5M <span style='color:var(--stay)'>(+0.18%)</span></td><td class='num'>15.4M <span style='color:var(--churn)'>(-21%)</span></td></tr><tr><td class='num'>30%</td><td class='num'>50</td><td class='num'>16.9M</td><td class='num'>16.9M <span style='color:var(--stay)'>(+0.20%)</span></td><td class='num'>12.8M <span style='color:var(--churn)'>(-24%)</span></td></tr></tbody></table></div>
-        <p class="muted" style="font-size:13px">Probability × value wins all 9, by more when calls cost more (+0.42% at 10% saved, 50 per call). LambdaMART loses all 9, worst when calls are expensive (−49%), because it skips many ordinary churners.</p>
+        <p class="muted" style="font-size:13px">Probability × value wins all 9, by more when calls cost more (+0.42% at 10% saved, 50 per call).</p><p class="muted" style="font-size:13px">LambdaMART loses all 9, worst when calls are expensive (−49%): it skips many ordinary churners.</p>
       </div>
       <div class="explain">
         <span class="eyebrow">P4 · Calibration · March 2017 actual churn 7.3%</span>
         <div class="table-wrap"><table class="compact">
           <thead><tr><th>Step</th><th>ECE</th><th>Mean predicted</th><th>Top 10% predicted</th><th>Top 10% observed</th></tr></thead>
           <tbody><tr><td>Raw LightGBM</td><td class='num'>0.0156</td><td class='num'>5.7%</td><td class='num'>38.2%</td><td class='num'>47.4%</td></tr><tr><td>+ isotonic (Feb hold-out)</td><td class='num'>0.0156</td><td class='num'>5.7%</td><td class='num'>37.7%</td><td class='num'>47.2%</td></tr><tr><td>+ prior-shift EM (no March labels)</td><td class='num'>0.0120</td><td class='num'>6.1%</td><td class='num'>39.6%</td><td class='num'>47.2%</td></tr></tbody></table></div>
-        <p class="muted" style="font-size:13px">Gate G2 (ECE ≤ 0.010) not met. EM estimated March churn at 6.1%: the shift is partly in who the members are, not only in the churn rate.</p>
+        <p class="muted" style="font-size:13px">Gate G2 (ECE ≤ 0.010) not met. EM estimated March churn at 6.1%.</p><p class="muted" style="font-size:13px">The shift is partly in who the members are, not only in the churn rate.</p>
       </div>
     </div>
     <div class="explain">
@@ -914,14 +922,14 @@ footer details.sources > ol { margin-top: 8px; }
       <div class="table-wrap"><table class="compact">
         <thead><tr><th>Setup</th><th>PR-AUC · all 862k members</th><th>PR-AUC · 100k sample</th><th>Auto-renew churners reached</th></tr></thead>
         <tbody><tr><td><b>P2 model (no listening shape)</b><div class='muted' style='font-size:12.5px'>Payment, renewal and 30-day listening totals</div></td><td class='num'>0.5614</td><td class='num'>0.5495</td><td class='num'>22.8%</td></tr><tr><td><b>+ A · shape statistics</b><div class='muted' style='font-size:12.5px'>Trend, last week vs before, longest gap, weekend share, skip trend</div></td><td class='num'>0.5652 <span class='muted'>(+0.0038)</span></td><td class='num'>0.5508 <span class='muted'>(+0.0013)</span></td><td class='num'>22.5%</td></tr><tr><td><b>+ B · self-taught encoder</b><div class='muted' style='font-size:12.5px'>Small network that learns patterns by filling in hidden days</div></td><td class='num'>0.5633 <span class='muted'>(+0.0019)</span></td><td class='num'>0.5498 <span class='muted'>(+0.0002)</span></td><td class='num'>22.9%</td></tr><tr><td><b>+ A and B</b><div class='muted' style='font-size:12.5px'>Both together</div></td><td class='num'>0.5646 <span class='muted'>(+0.0033)</span></td><td class='num'>—</td><td class='num'>22.7%</td></tr><tr><td><b>+ C · Mantis foundation model</b><div class='muted' style='font-size:12.5px'>2025 pre-trained time-series model, used as-is</div></td><td class='num'>—</td><td class='num'>0.5527 <span class='muted'>(+0.0031)</span></td><td class='num'>23.7%</td></tr></tbody></table></div>
-      <p class="muted" style="font-size:13px">No arm clears +0.02; the largest gain (+0.004) is about the size of run-to-run noise (0.003). Mantis ran on a 100k sample per month for compute reasons, with every arm re-scored on the same sample (ADR-003 Amendment 1).</p>
+      <p class="muted" style="font-size:13px">No arm clears +0.02; the largest gain (+0.004) is about the size of run-to-run noise (0.003).</p><p class="muted" style="font-size:13px">Mantis ran on a 100k sample per month; every arm was re-scored on that sample (ADR-003 Amendment 1).</p>
     </div>
     <div class="explain">
       <span class="eyebrow">P2 · PR-AUC by lead time × history window · train Feb 2017, test Mar 2017</span>
       <div class="table-wrap"><table class="compact">
         <thead><tr><th>Days before renewal</th><th>30 days history</th><th>60 days history</th><th>90 days history</th><th>120 days history</th><th>180 days history</th></tr></thead>
         <tbody><tr><td>0 days <span class='tag ref'>reference only</span></td><td class='num'>0.676</td><td class='num'>0.674</td><td class='num'>0.675</td><td class='num'>0.676</td><td class='num'>0.675</td></tr><tr><td>7 days</td><td class='num'>0.602</td><td class='num'>0.599</td><td class='num'>0.599</td><td class='num'>0.603</td><td class='num'>0.604</td></tr><tr><td>14 days</td><td class='num'>0.561</td><td class='num'>0.564</td><td class='num'>0.562</td><td class='num'>0.565</td><td class='num'>0.561</td></tr><tr><td>30 days</td><td class='num'>0.476</td><td class='num'>0.474</td><td class='num'>0.476</td><td class='num'>0.476</td><td class='num'>0.475</td></tr></tbody></table></div>
-      <p class="muted" style="font-size:13px">Across windows, scores differ by at most 0.003. Training the same features with a different column order moved PR-AUC by 0.003, so these differences are noise. Decision: 30 days of history (ADR-001 Amendment 3).</p>
+      <p class="muted" style="font-size:13px">Across windows, scores differ by at most 0.003, the same as reordering columns: noise.</p><p class="muted" style="font-size:13px">Decision: 30 days of history (ADR-001 Amendment 3).</p>
     </div>
     <div class="sim">
       <span class="simtag">Calibration · model, March 2017 · ten equal-size groups</span>
@@ -957,7 +965,7 @@ footer details.sources > ol { margin-top: 8px; }
     <li>Ascarza (2018). Retention futility: targeting high-risk customers might be ineffective. Journal of Marketing Research 55(1). <a href="https://doi.org/10.1509/jmr.16.0163">doi:10.1509/jmr.16.0163</a></li>
   </ol>
   </details>
-  <p>Simulations use synthetic data generated in the browser. Sabrina Pribadi · last updated 13 Oct 2026 · code and change log: <a href="https://github.com/sabrinapribadi/subscription-churn-at-scale">github.com/sabrinapribadi/subscription-churn-at-scale</a> · <a href="build.html">technical walkthrough</a></p>
+  <p>Simulations use synthetic data generated in the browser.</p><p>Sabrina Pribadi · last updated 11 Nov 2026 · <a href="https://github.com/sabrinapribadi/subscription-churn-at-scale">code and change log</a> · <a href="build.html">technical walkthrough</a> · <a href="https://subscription-churn-at-scale.vercel.app/docs">live API</a></p>
 </footer>
 </div>
 

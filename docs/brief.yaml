@@ -1,0 +1,46 @@
+# Hiring-team brief (rule R22). Edit here only; `python scripts/brief.py` writes it into README.md, docs/index.html and docs/build.html.
+repo_url: https://github.com/sabrinapribadi/subscription-churn-at-scale
+brief:
+  - w: What
+    lines:
+      - "A churn early warning for a music-subscription retention team: risk, reasons, who to call first, and a planning agent."
+  - w: Why
+    lines:
+      - Churn shows only after renewal fails; a warning 14 days earlier lets the team act. Today's rule calls only manual renewers.
+  - w: Who
+    lines:
+      - "Users: retention managers and call agents."
+      - "Data: public KKBox (WSDM Cup 2018), 410M listening records, 6.8M members. Churner: no renewal within 30 days of expiry."
+  - w: Where
+    lines:
+      - "[Results page](https://sabrinapribadi.github.io/subscription-churn-at-scale/) and [technical walkthrough](https://sabrinapribadi.github.io/subscription-churn-at-scale/build.html) on GitHub Pages; monthly job, registry and dashboard on Databricks; [demo API and MCP](https://subscription-churn-at-scale.vercel.app/docs) on Vercel."
+  - w: When it fails
+    lines:
+      - 8 phases with pass bars set before training; 3 failed and are reported (label rebuild, listening embeddings, learned ranker).
+      - "No live A/B test: historical data only. Tests are out-of-time (train February, score March); a live call test is the next step."
+  - w: How
+    lines:
+      - LightGBM on point-in-time features, calibrated, ranked by churn chance × member value; 5 alternatives tried and rejected.
+      - "Result: calling the top 10% reaches 65% of churners, vs 54% for today's rule; worth ≈12.4M a month after call costs."
+skills:
+  - group: Big data engineering
+    what: PySpark ETL over 410M rows, point-in-time features, no future data
+    proof: [["src/features/build.py", "src/features/build.py"], ["ADR-001", "docs/adr/ADR-001-task-framing.md"]]
+  - group: Machine learning
+    what: LightGBM, LambdaMART ranking, self-supervised sequence encoders
+    proof: [["ADR-003", "docs/adr/ADR-003-behaviour-encoder.md"], ["ADR-004", "docs/adr/ADR-004-ranking-and-calibration.md"]]
+  - group: Statistics and evaluation
+    what: out-of-time split, PR-AUC, calibration error, profit curves, label-shift correction
+    proof: [["ADR-002", "docs/adr/ADR-002-validation-strategy.md"], ["ADR-004", "docs/adr/ADR-004-ranking-and-calibration.md"]]
+  - group: MLOps and CI/CD
+    what: MLflow and Unity Catalog registry, PSI drift, dashboard as code, gated CI/CD with provenance
+    proof: [["ADR-009", "docs/adr/ADR-009-monitoring-and-operations.md"], ["ci.yml", ".github/workflows/ci.yml"]]
+  - group: Cloud and services
+    what: Databricks bundle job, four FastAPI services in Docker, demo API on Vercel
+    proof: [["ADR-005", "docs/adr/ADR-005-service-boundaries.md"], ["ADR-008", "docs/adr/ADR-008-databricks-port.md"], ["ADR-010", "docs/adr/ADR-010-public-demo-api.md"]]
+  - group: GenAI and agents
+    what: grounded notes with a grader, a planning agent (42 of 45 unseen questions), MCP tools
+    proof: [["ADR-006", "docs/adr/ADR-006-genai-module.md"], ["ADR-007", "docs/adr/ADR-007-retention-planner-agent.md"]]
+  - group: Domain
+    what: subscription retention (churner definition, call lists, member value)
+    proof: [["ADR-001", "docs/adr/ADR-001-task-framing.md"]]
