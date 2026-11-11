@@ -16,6 +16,7 @@ This directory documents the key design decisions for the subscription churn pro
 | [ADR-008](ADR-008-databricks-port.md) | Databricks port: Asset Bundle, Unity Catalog, serverless job, MLflow registry | Accepted (gate passed) | Same code locally and on serverless; champion inputs in Unity Catalog volumes; MLflow UC registry with a `champion` alias gated on parity. Run 1 failed; three determinism fixes; run 3 identical to local. |
 | [ADR-009](ADR-009-monitoring-and-operations.md) | Operating monthly: dashboard, drift check, held-out agent questions | Accepted (gates passed) | Dashboard as code in the bundle; PSI per feature and for the score (0.10 / 0.25 bands); lagged realised-vs-expected check; 15 held-out agent questions written before any run (42/45). |
 | [ADR-010](ADR-010-public-demo-api.md) | Public demo API and remote MCP; technology assessment | Accepted (checks passed) | Real cohort aggregates plus 100 synthetic members on Vercel Hobby; no member rows, no key; stateless MCP; CD with build provenance; injection tests. |
+| [ADR-011](ADR-011-industry-alignment.md) | Industry alignment (R16) | Accepted (backfill) | Nine retention-team expectations with primary sources; eight met, one open (who responds to a call needs a randomised test). |
 
 ## How to Read an ADR
 
@@ -40,4 +41,5 @@ ADR-004 + ADR-005
   └── ADR-008 (Databricks port — reproduces the ADR-004 champion; registry feeds serving)
         └── ADR-009 (operations — dashboard and drift on the ADR-008 tables)
             └── ADR-010 (public demo API and MCP on a free host)
+ADR-011 (industry alignment, R16) ── maps practice to ADR-001, -004, -006, -009, -010
 ```

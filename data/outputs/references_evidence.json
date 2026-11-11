@@ -257,6 +257,111 @@
    ],
    "openalex_id": "https://openalex.org/W359283280",
    "kind": "book"
+  },
+  {
+   "key": "neslin_2006",
+   "title": "Defection Detection: Measuring and Understanding the Predictive Accuracy of Customer Churn Models",
+   "venue": "Journal of Marketing Research",
+   "peer_reviewed": true,
+   "year": 2006,
+   "citations": 623,
+   "citations_per_year": 29.7,
+   "role": "churn-model accuracy changes campaign profit",
+   "used_in": [
+    "ADR-011"
+   ],
+   "openalex_id": "https://openalex.org/W1998320186",
+   "kind": "paper"
+  },
+  {
+   "key": "gupta_2006",
+   "title": "Modeling Customer Lifetime Value",
+   "venue": "Journal of Service Research",
+   "peer_reviewed": true,
+   "year": 2006,
+   "citations": 809,
+   "citations_per_year": 38.5,
+   "role": "customer lifetime value as the unit of worth",
+   "used_in": [
+    "ADR-011"
+   ],
+   "openalex_id": "https://openalex.org/W2162244340",
+   "kind": "paper"
+  },
+  {
+   "key": "venkatesan_kumar_2004",
+   "title": "A Customer Lifetime Value Framework for Customer Selection and Resource Allocation Strategy",
+   "venue": "Journal of Marketing",
+   "peer_reviewed": true,
+   "year": 2004,
+   "citations": 978,
+   "citations_per_year": 42.5,
+   "role": "selecting customers by value, not risk alone",
+   "used_in": [
+    "ADR-011"
+   ],
+   "openalex_id": "https://openalex.org/W2081547566",
+   "kind": "paper"
+  },
+  {
+   "key": "verbeke_2012_alignment",
+   "title": "New insights into churn prediction in the telecommunication sector: A profit driven data mining approach",
+   "venue": "European Journal of Operational Research",
+   "peer_reviewed": true,
+   "year": 2011,
+   "citations": 508,
+   "citations_per_year": 31.8,
+   "role": "profit-based evaluation of churn models",
+   "used_in": [
+    "ADR-011"
+   ],
+   "openalex_id": "https://openalex.org/W2048755952",
+   "kind": "paper"
+  },
+  {
+   "key": "ascarza_2018_alignment",
+   "title": "Retention Futility: Targeting High-Risk Customers Might be Ineffective",
+   "venue": "Journal of Marketing Research",
+   "peer_reviewed": true,
+   "year": 2017,
+   "citations": 321,
+   "citations_per_year": 32.1,
+   "role": "high-risk customers may not respond (uplift)",
+   "used_in": [
+    "ADR-011"
+   ],
+   "openalex_id": "https://openalex.org/W3122149192",
+   "kind": "paper"
+  },
+  {
+   "key": "reichheld_sasser_1990",
+   "title": "Zero defections: quality comes to services.",
+   "venue": "Harvard Business Review 68(5)",
+   "peer_reviewed": false,
+   "year": 1990,
+   "citations": 5435,
+   "citations_per_year": 146.9,
+   "role": "retention economics",
+   "used_in": [
+    "ADR-011"
+   ],
+   "openalex_id": "https://openalex.org/W1594945480",
+   "kind": "magazine"
+  },
+  {
+   "key": "gdpr_2016",
+   "title": "Regulation (EU) 2016/679 (General Data Protection Regulation), Articles 5(1)(c) and 22",
+   "venue": "Official Journal of the European Union (EUR-Lex)",
+   "peer_reviewed": false,
+   "year": null,
+   "citations": null,
+   "citations_per_year": null,
+   "role": "data minimisation; profiling with human decision",
+   "used_in": [
+    "ADR-011"
+   ],
+   "openalex_id": null,
+   "kind": "regulation"
   }
  ]
 }

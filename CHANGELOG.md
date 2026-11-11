@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.19.0] — 2026-11-11 — Evidence tables, industry alignment (R16), Databricks CD
+**Files:** docs/references.yaml (new), scripts/evidence.py (new), docs/adr/ADR-001 … ADR-011, docs/adr/README.md, docs/brief.yaml, .github/workflows/ci.yml, data/outputs/references_evidence.json
+- **Situation:** The audit found no citation counts in any ADR, method tables without a tested-vs-cited mark, no industry-alignment record, and no Databricks deploy from CI.
+- **Task:** Close R2, R16 and R19 for CHN-1 with primary sources only.
+- **Action:** OpenAlex evidence tables generated for 25 references; "Tested here" column in ADR-003 and ADR-004; ADR-011 maps nine retention-team expectations to sources and files; CI job deploys the bundle once secrets exist.
+- **Result:** Every ADR's papers carry venue, peer review, year and citations; eight of nine expectations met, one open (who responds to a call).
+- **Talking point:** "Every method choice now shows what we tested, what we only cited, and why."
+
 ## [0.18.0] — 2026-11-11 — Hiring-team brief (R22), rules audit fixes, member ids removed
 **Files:** docs/brief.yaml, scripts/brief.py, README.md, docs/index.html, docs/build.html, docs/PRD.md, data/outputs/p7_agent_holdout.json, tests/test_no_member_ids.py, tests/test_features.py, .github/workflows/ci.yml, tests/browser/*.js
 - **Situation:** The audit found three real member ids in a committed result and truncated ids on the page, against the competition terms; also long paragraphs, stale 0.1% figures and no browser tests in CI.

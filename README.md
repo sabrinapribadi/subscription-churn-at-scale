@@ -22,7 +22,7 @@
 - **MLOps and CI/CD:** MLflow and Unity Catalog registry, PSI drift, dashboard as code, gated CI/CD with provenance — [ADR-009](docs/adr/ADR-009-monitoring-and-operations.md), [ci.yml](.github/workflows/ci.yml)
 - **Cloud and services:** Databricks bundle job, four FastAPI services in Docker, demo API on Vercel — [ADR-005](docs/adr/ADR-005-service-boundaries.md), [ADR-008](docs/adr/ADR-008-databricks-port.md), [ADR-010](docs/adr/ADR-010-public-demo-api.md)
 - **GenAI and agents:** grounded notes with a grader, a planning agent (42 of 45 unseen questions), MCP tools — [ADR-006](docs/adr/ADR-006-genai-module.md), [ADR-007](docs/adr/ADR-007-retention-planner-agent.md)
-- **Domain:** subscription retention (churner definition, call lists, member value) — [ADR-001](docs/adr/ADR-001-task-framing.md)
+- **Domain:** subscription retention (churner definition, value-based call lists, retention economics, privacy) — [ADR-011](docs/adr/ADR-011-industry-alignment.md), [ADR-001](docs/adr/ADR-001-task-framing.md)
 
 <!-- brief:end -->
 

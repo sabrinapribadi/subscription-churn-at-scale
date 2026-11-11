@@ -42,5 +42,5 @@ skills:
     what: grounded notes with a grader, a planning agent (42 of 45 unseen questions), MCP tools
     proof: [["ADR-006", "docs/adr/ADR-006-genai-module.md"], ["ADR-007", "docs/adr/ADR-007-retention-planner-agent.md"]]
   - group: Domain
-    what: subscription retention (churner definition, call lists, member value)
-    proof: [["ADR-001", "docs/adr/ADR-001-task-framing.md"]]
+    what: subscription retention (churner definition, value-based call lists, retention economics, privacy)
+    proof: [["ADR-011", "docs/adr/ADR-011-industry-alignment.md"], ["ADR-001", "docs/adr/ADR-001-task-framing.md"]]

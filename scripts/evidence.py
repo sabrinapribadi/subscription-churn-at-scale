@@ -22,9 +22,9 @@ API = "https://api.openalex.org/works"
 
 
 def fetch(ref: dict) -> dict:
-    if ref.get("kind") == "dataset":                      # datasets: no citation search (a title match could be any paper)
+    if ref.get("kind") in ("dataset", "regulation"):    # no citation search (a title match could be any paper)
         return {"key": ref["key"], "title": ref["title"], "venue": ref["venue"], "peer_reviewed": False, "year": None, "citations": None,
-                "citations_per_year": None, "role": ref.get("role"), "used_in": ref.get("used_in", []), "openalex_id": None, "kind": "dataset"}
+                "citations_per_year": None, "role": ref.get("role"), "used_in": ref.get("used_in", []), "openalex_id": None, "kind": ref["kind"]}
     if ref.get("doi"):
         url = f"{API}/doi:{ref['doi']}"
     else:
@@ -46,7 +46,9 @@ def fetch(ref: dict) -> dict:
 
 
 def review_label(r: dict) -> str:
-    if r["kind"] in ("dataset", "book", "report"):
+    if r["kind"] == "magazine":
+        return "no (practitioner journal)"
+    if r["kind"] in ("dataset", "book", "report", "regulation"):
         return f"n/a ({r['kind']})" if r["kind"] != "report" else "no (technical report)"
     return "yes" if r["peer_reviewed"] else "no (preprint)"
 

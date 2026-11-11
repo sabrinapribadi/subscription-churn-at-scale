@@ -83,3 +83,35 @@
   kind: book
   used_in: [ADR-009]
   role: population stability index and its 0.10 / 0.25 bands
+- key: neslin_2006
+  doi: 10.1509/jmkr.43.2.204
+  used_in: [ADR-011]
+  role: churn-model accuracy changes campaign profit
+- key: gupta_2006
+  doi: 10.1177/1094670506293810
+  used_in: [ADR-011]
+  role: customer lifetime value as the unit of worth
+- key: venkatesan_kumar_2004
+  doi: 10.1509/jmkg.68.4.106.42728
+  used_in: [ADR-011]
+  role: selecting customers by value, not risk alone
+- key: verbeke_2012_alignment
+  doi: 10.1016/j.ejor.2011.09.031
+  used_in: [ADR-011]
+  role: profit-based evaluation of churn models
+- key: ascarza_2018_alignment
+  doi: 10.1509/jmr.16.0163
+  used_in: [ADR-011]
+  role: high-risk customers may not respond (uplift)
+- key: reichheld_sasser_1990
+  title: "Zero defections: quality comes to services"
+  venue: "Harvard Business Review 68(5)"
+  kind: magazine
+  used_in: [ADR-011]
+  role: retention economics
+- key: gdpr_2016
+  title: "Regulation (EU) 2016/679 (General Data Protection Regulation), Articles 5(1)(c) and 22"
+  venue: "Official Journal of the European Union (EUR-Lex)"
+  kind: regulation
+  used_in: [ADR-011]
+  role: data minimisation; profiling with human decision
