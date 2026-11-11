@@ -3,7 +3,7 @@
 // Run: make controls-test   (Node + Google Chrome)
 const puppeteer = require("puppeteer-core"); const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {
-  const b = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: "new" });
+  const b = await puppeteer.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", args: (process.env.CHROME_ARGS || "").split(" ").filter(Boolean), headless: "new" });
   const page = await b.newPage(); await page.setViewport({ width: 1280, height: 900 });
   const errs = []; page.on("pageerror", (e) => errs.push(e.message)); page.on("console", (m) => { if (m.type() === "error") errs.push(m.text()); });
   await page.goto("file://" + process.argv[2], { waitUntil: "networkidle0" });
@@ -78,4 +78,5 @@ const puppeteer = require("puppeteer-core"); const wait = (ms) => new Promise((r
   console.log(`\n${results.filter((r) => r[0]).length}/${results.length} control checks pass · JS errors: ${errs.length ? errs : "none"}`);
   require("fs").writeFileSync(process.argv[3], ext.join("\n"));
   await b.close();
+  process.exit(results.some((r) => !r[0]) || errs.length ? 1 : 0);
 })();

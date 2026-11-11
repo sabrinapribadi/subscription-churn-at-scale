@@ -6,7 +6,7 @@ const puppeteer = require("puppeteer-core");
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {
   const [file, outDir] = process.argv.slice(2);
-  const b = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: "new" });
+  const b = await puppeteer.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", args: (process.env.CHROME_ARGS || "").split(" ").filter(Boolean), headless: "new" });
   const modes = [["desktop-light", 1280, 900, "light"], ["desktop-dark", 1280, 900, "dark"], ["phone-400", 400, 860, "light"]];
   let fails = 0, checks = 0;
   const ok = (cond, msg) => { checks++; if (!cond) { fails++; console.log("FAIL", msg); } };

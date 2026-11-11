@@ -3,7 +3,7 @@
 const puppeteer = require("puppeteer-core");
 (async () => {
   const [file, out] = process.argv.slice(2);
-  const b = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: "new" });
+  const b = await puppeteer.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", args: (process.env.CHROME_ARGS || "").split(" ").filter(Boolean), headless: "new" });
   const page = await b.newPage();
   await page.setViewport({ width: 1200, height: 627, deviceScaleFactor: 1 });
   await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: "light" }]);

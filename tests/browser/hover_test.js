@@ -6,7 +6,7 @@ const puppeteer = require("puppeteer-core");
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {
   const [file, outDir] = process.argv.slice(2);
-  const b = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: "new" });
+  const b = await puppeteer.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", args: (process.env.CHROME_ARGS || "").split(" ").filter(Boolean), headless: "new" });
   const modes = [["desktop-light", 1280, 900, "light"], ["desktop-dark", 1280, 900, "dark"], ["phone-400", 400, 860, "light"]];
   const summary = [];
   for (const [mode, W, H, scheme] of modes) {
@@ -55,4 +55,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   }
   console.log("\nSUMMARY", JSON.stringify(summary));
   await b.close();
+  const fails = summary.reduce((n, s) => n + (s.total - s.pass) + (s.onLoad > 0) + s.hScroll + (s.errs > 0), 0);
+  console.log(fails ? `${fails} hover failures` : "all hover checks pass");
+  process.exit(fails ? 1 : 0);
 })();
