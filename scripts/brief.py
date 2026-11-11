@@ -66,7 +66,8 @@ def page_html(b: dict, repo_url: str, compact: bool = False) -> str:
 CSS = CSS_START + """
 .brief { display: grid; gap: 12px; padding-block: 18px 4px; }
 .brief-list { list-style: none; margin: 0; padding: 0 !important; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
-.brief-list li { display: grid; align-content: start; gap: 4px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
+.brief-list li { display: grid; align-content: start; gap: 4px; padding: 12px 14px; min-width: 0;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
 .brief-w { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
 .brief-main { font-size: 14.5px; line-height: 1.45; color: var(--fg); }
 .brief-sub { font-size: 13px; line-height: 1.45; color: var(--muted); }

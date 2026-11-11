@@ -252,7 +252,8 @@ footer details.sources > ol { margin-top: 8px; }
 /* brief:css:start (rule R22, written by scripts/brief.py) */
 .brief { display: grid; gap: 12px; padding-block: 18px 4px; }
 .brief-list { list-style: none; margin: 0; padding: 0 !important; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
-.brief-list li { display: grid; align-content: start; gap: 4px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
+.brief-list li { display: grid; align-content: start; gap: 4px; padding: 12px 14px; min-width: 0;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
 .brief-w { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
 .brief-main { font-size: 14.5px; line-height: 1.45; color: var(--fg); }
 .brief-sub { font-size: 13px; line-height: 1.45; color: var(--muted); }
@@ -504,7 +505,7 @@ footer details.sources > ol { margin-top: 8px; }
   <h2>Working view, revised as results come in</h2>
   <div class="take">
     <div><span class="eyebrow">So far</span><ul class="points"><li><b>Framing matters most:</b> lead time and a value-ordered list.</li><li><b>Warning time is the real trade-off;</b> history length is not. 30 days of logs is enough.</li><li><b>Simple beats clever three times:</b> shape statistics vs encoders (P3), probability × value vs LambdaMART (P4), one AI agent vs several (P5).</li><li><b>Reproduce before you trust:</b> Databricks exposed three hidden sources of randomness; results are now identical on both platforms (P6).</li><li><b>Drift is real:</b> +2.6 points of churn in one month, so random-split scores would overstate next month.</li><li><b>Benchmark scores overstate:</b> a realistic setup loses 0.06 PR-AUC versus training on labels that arrive too late.</li><li><b>The open gap is auto-renew cancellers:</b> listening signals (P3) did not close it.</li><li><b>Benchmark labels can't be fully rebuilt</b> from the shipped data (P0 failed at 98.8%). Official labels stay the test truth.</li></ul></div>
-    <div><span class="eyebrow">What would change our mind</span><ul class="points"><li><b>Answered by P2:</b> lead time is not free (−5 points of reach from 14 to 30 days). We keep 14 days; 7 if campaigns can move faster.</li><li><b>Answered by P3:</b> embeddings missed their gate (+0.004 vs +0.02); personas only. Auto-renew cancellers need another signal, e.g. payment failures (CHN-2).</li></ul></div>
+    <div><span class="eyebrow">What would change our mind</span><ul class="points"><li><b>Answered by P2:</b> lead time is not free (−5 points of reach from 14 to 30 days). We keep 14 days; 7 if campaigns can move faster.</li><li><b>Answered by P3:</b> embeddings missed their gate (+0.004 vs +0.02); personas only. Auto-renew cancellers need another signal, e.g. payment failures (a future project).</li></ul></div>
   </div>
 </section>
 

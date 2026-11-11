@@ -77,7 +77,7 @@ In-Scope:
 - MLflow tracking + registry; GitHub Actions CI
 - Showcase page and Streamlit dashboard reading pre-computed outputs
 
-Out-of-Scope (this project; see CHN-2):
+Out-of-Scope (this project):
 - Causal uplift and offer optimisation (which customers are persuadable, what to offer)
 - Real-time streaming features
 - Any non-public data

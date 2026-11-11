@@ -1,0 +1,85 @@
+# Every paper, book or dataset cited in an ADR (rule R2). `python scripts/evidence.py` fetches venue, type and citations
+# from OpenAlex and writes data/outputs/references_evidence.json plus a table per ADR. Vendor docs are listed in the ADRs only.
+- key: wsdm_kkbox_2018
+  title: "WSDM - KKBox's Churn Prediction Challenge"
+  venue: "Kaggle competition dataset (WSDM Cup 2018)"
+  kind: dataset
+  used_in: [ADR-001]
+  role: data and official churn label
+- key: han_2026
+  doi: 10.48550/arXiv.2607.00473
+  arxiv: "2607.00473"
+  used_in: [ADR-001]
+  role: lead time and history window on this dataset
+- key: mufti_2026
+  doi: 10.48550/arXiv.2606.06776
+  arxiv: "2606.06776"
+  used_in: [ADR-001, ADR-003]
+  role: rolling windows and behavioural drivers (arm A)
+- key: ti_mae_2023
+  doi: 10.48550/arXiv.2301.08871
+  arxiv: "2301.08871"
+  used_in: [ADR-003]
+  role: masked autoencoders for time series (arm B)
+- key: timemae_2026
+  doi: 10.1145/3773966.3778007
+  used_in: [ADR-003]
+  role: masked autoencoders for time series (arm B)
+- key: mantis_2025
+  doi: 10.48550/arXiv.2502.15637
+  arxiv: "2502.15637"
+  used_in: [ADR-003]
+  role: frozen foundation-model embeddings (arm C)
+- key: rfm_deep_2023
+  doi: 10.1007/s10479-023-05259-9
+  used_in: [ADR-003]
+  role: end-to-end sequence models on RFM (arm D, deferred)
+- key: saerens_2002
+  doi: 10.1162/089976602753284446
+  used_in: [ADR-004]
+  role: prior-shift EM (chosen calibration)
+- key: alexandari_2020
+  doi: 10.48550/arXiv.1901.06852
+  venue: "ICML 2020 (OpenAlex primary copy is arXiv)"
+  peer_reviewed: true
+  used_in: [ADR-004]
+  role: bias-corrected calibration with EM is hard to beat
+- key: burges_2010
+  title: "From RankNet to LambdaRank to LambdaMART: An Overview"
+  venue: "Microsoft Research technical report MSR-TR-2010-82"
+  kind: report
+  used_in: [ADR-004]
+  role: LambdaMART (tested, lost 22%)
+- key: verbeke_2012
+  doi: 10.1016/j.ejor.2011.09.031
+  used_in: [ADR-004]
+  role: profit-driven churn targeting (expected-value sort)
+- key: ascarza_2018
+  doi: 10.1509/jmr.16.0163
+  used_in: [ADR-004]
+  role: retention futility; uplift targeting (deferred)
+- key: devriendt_2021
+  doi: 10.1016/j.ins.2019.12.075
+  used_in: [ADR-004]
+  role: uplift models for churn (deferred)
+- key: zytek_2024_explingo
+  doi: 10.1109/bigdata62323.2024.10825114
+  used_in: [ADR-006]
+  role: LLM narratives of model explanations
+- key: xai_narratives_2026
+  doi: 10.48550/arXiv.2605.26770
+  arxiv: "2605.26770"
+  used_in: [ADR-006]
+  role: narratives can mislead; why notes are graded
+- key: cemri_2025
+  doi: 10.52202/085713-4082
+  venue: "NeurIPS 2025"
+  peer_reviewed: true
+  used_in: [ADR-007]
+  role: multi-agent failure modes (why one agent)
+- key: siddiqi_2006
+  title: "Credit Risk Scorecards: Developing and Implementing Intelligent Credit Scoring"
+  venue: "Wiley (book)"
+  kind: book
+  used_in: [ADR-009]
+  role: population stability index and its 0.10 / 0.25 bands

@@ -1,0 +1,262 @@
+{
+ "retrieved": "2026-11-11",
+ "source": "OpenAlex",
+ "references": [
+  {
+   "key": "wsdm_kkbox_2018",
+   "title": "WSDM - KKBox's Churn Prediction Challenge",
+   "venue": "Kaggle competition dataset (WSDM Cup 2018)",
+   "peer_reviewed": false,
+   "year": null,
+   "citations": null,
+   "citations_per_year": null,
+   "role": "data and official churn label",
+   "used_in": [
+    "ADR-001"
+   ],
+   "openalex_id": null,
+   "kind": "dataset"
+  },
+  {
+   "key": "han_2026",
+   "title": "How Early Is Early Enough? Design-Dependent Observation-Window Sufficiency in Subscription Churn Prediction",
+   "venue": "arXiv 2607.00473",
+   "peer_reviewed": false,
+   "year": 2026,
+   "citations": 10,
+   "citations_per_year": 10.0,
+   "role": "lead time and history window on this dataset",
+   "used_in": [
+    "ADR-001"
+   ],
+   "openalex_id": "https://openalex.org/W7167023608",
+   "kind": "paper"
+  },
+  {
+   "key": "mufti_2026",
+   "title": "A Rolling-Window Framework for Churn Prediction and Behavioral Driver Identification",
+   "venue": "arXiv 2606.06776",
+   "peer_reviewed": false,
+   "year": 2026,
+   "citations": 0,
+   "citations_per_year": 0.0,
+   "role": "rolling windows and behavioural drivers (arm A)",
+   "used_in": [
+    "ADR-001",
+    "ADR-003"
+   ],
+   "openalex_id": "https://openalex.org/W7163899773",
+   "kind": "paper"
+  },
+  {
+   "key": "ti_mae_2023",
+   "title": "Ti-MAE: Self-Supervised Masked Time Series Autoencoders",
+   "venue": "arXiv 2301.08871",
+   "peer_reviewed": false,
+   "year": 2023,
+   "citations": 117,
+   "citations_per_year": 29.2,
+   "role": "masked autoencoders for time series (arm B)",
+   "used_in": [
+    "ADR-003"
+   ],
+   "openalex_id": "https://openalex.org/W4317940035",
+   "kind": "paper"
+  },
+  {
+   "key": "timemae_2026",
+   "title": "TimeMAE: Self-Supervised Representations of Time Series with Decoupled Masked Autoencoders",
+   "venue": "ACM International Conference on Web Search and Data Mining (WSDM)",
+   "peer_reviewed": true,
+   "year": 2026,
+   "citations": 113,
+   "citations_per_year": 113.0,
+   "role": "masked autoencoders for time series (arm B)",
+   "used_in": [
+    "ADR-003"
+   ],
+   "openalex_id": "https://openalex.org/W4322832366",
+   "kind": "paper"
+  },
+  {
+   "key": "mantis_2025",
+   "title": "Mantis: Lightweight Foundation Model for Time Series Classification",
+   "venue": "arXiv 2502.15637",
+   "peer_reviewed": false,
+   "year": 2025,
+   "citations": 46,
+   "citations_per_year": 23.0,
+   "role": "frozen foundation-model embeddings (arm C)",
+   "used_in": [
+    "ADR-003"
+   ],
+   "openalex_id": "https://openalex.org/W6948129972",
+   "kind": "paper"
+  },
+  {
+   "key": "rfm_deep_2023",
+   "title": "Exploiting time-varying RFM measures for customer churn prediction with deep neural networks",
+   "venue": "Annals of Operations Research",
+   "peer_reviewed": true,
+   "year": 2023,
+   "citations": 73,
+   "citations_per_year": 18.2,
+   "role": "end-to-end sequence models on RFM (arm D, deferred)",
+   "used_in": [
+    "ADR-003"
+   ],
+   "openalex_id": "https://openalex.org/W4324104316",
+   "kind": "paper"
+  },
+  {
+   "key": "saerens_2002",
+   "title": "Adjusting the Outputs of a Classifier to New a Priori Probabilities: A Simple Procedure",
+   "venue": "Neural Computation",
+   "peer_reviewed": true,
+   "year": 2002,
+   "citations": 441,
+   "citations_per_year": 17.6,
+   "role": "prior-shift EM (chosen calibration)",
+   "used_in": [
+    "ADR-004"
+   ],
+   "openalex_id": "https://openalex.org/W2141253686",
+   "kind": "paper"
+  },
+  {
+   "key": "alexandari_2020",
+   "title": "Maximum Likelihood with Bias-Corrected Calibration is Hard-To-Beat at Label Shift Adaptation",
+   "venue": "ICML 2020 (OpenAlex primary copy is arXiv)",
+   "peer_reviewed": true,
+   "year": 2019,
+   "citations": 57,
+   "citations_per_year": 7.1,
+   "role": "bias-corrected calibration with EM is hard to beat",
+   "used_in": [
+    "ADR-004"
+   ],
+   "openalex_id": "https://openalex.org/W3117521168",
+   "kind": "paper"
+  },
+  {
+   "key": "burges_2010",
+   "title": "From RankNet to LambdaRank to LambdaMART: An Overview",
+   "venue": "Microsoft Research technical report MSR-TR-2010-82",
+   "peer_reviewed": true,
+   "year": 2010,
+   "citations": 1011,
+   "citations_per_year": 59.5,
+   "role": "LambdaMART (tested, lost 22%)",
+   "used_in": [
+    "ADR-004"
+   ],
+   "openalex_id": "https://openalex.org/W2115584760",
+   "kind": "report"
+  },
+  {
+   "key": "verbeke_2012",
+   "title": "New insights into churn prediction in the telecommunication sector: A profit driven data mining approach",
+   "venue": "European Journal of Operational Research",
+   "peer_reviewed": true,
+   "year": 2011,
+   "citations": 508,
+   "citations_per_year": 31.8,
+   "role": "profit-driven churn targeting (expected-value sort)",
+   "used_in": [
+    "ADR-004"
+   ],
+   "openalex_id": "https://openalex.org/W2048755952",
+   "kind": "paper"
+  },
+  {
+   "key": "ascarza_2018",
+   "title": "Retention Futility: Targeting High-Risk Customers Might be Ineffective",
+   "venue": "Journal of Marketing Research",
+   "peer_reviewed": true,
+   "year": 2017,
+   "citations": 321,
+   "citations_per_year": 32.1,
+   "role": "retention futility; uplift targeting (deferred)",
+   "used_in": [
+    "ADR-004"
+   ],
+   "openalex_id": "https://openalex.org/W3122149192",
+   "kind": "paper"
+  },
+  {
+   "key": "devriendt_2021",
+   "title": "Why you should stop predicting customer churn and start using uplift models",
+   "venue": "Information Sciences",
+   "peer_reviewed": true,
+   "year": 2019,
+   "citations": 107,
+   "citations_per_year": 13.4,
+   "role": "uplift models for churn (deferred)",
+   "used_in": [
+    "ADR-004"
+   ],
+   "openalex_id": "https://openalex.org/W2998589708",
+   "kind": "paper"
+  },
+  {
+   "key": "zytek_2024_explingo",
+   "title": "Explingo: Explaining AI Predictions using Large Language Models",
+   "venue": "IEEE International Conference on Big Data (BigData)",
+   "peer_reviewed": true,
+   "year": 2024,
+   "citations": 25,
+   "citations_per_year": 8.3,
+   "role": "LLM narratives of model explanations",
+   "used_in": [
+    "ADR-006"
+   ],
+   "openalex_id": "https://openalex.org/W4405174114",
+   "kind": "paper"
+  },
+  {
+   "key": "xai_narratives_2026",
+   "title": "Quality Without Usefulness: LLM-Generated XAI Narratives as Trust Heuristics Rather Than Decision Aids",
+   "venue": "arXiv 2605.26770",
+   "peer_reviewed": false,
+   "year": 2026,
+   "citations": 2,
+   "citations_per_year": 2.0,
+   "role": "narratives can mislead; why notes are graded",
+   "used_in": [
+    "ADR-006"
+   ],
+   "openalex_id": "https://openalex.org/W7162524378",
+   "kind": "paper"
+  },
+  {
+   "key": "cemri_2025",
+   "title": "Why Do Multi-Agent LLM Systems Fail?",
+   "venue": "NeurIPS 2025",
+   "peer_reviewed": true,
+   "year": 2025,
+   "citations": 117,
+   "citations_per_year": 58.5,
+   "role": "multi-agent failure modes (why one agent)",
+   "used_in": [
+    "ADR-007"
+   ],
+   "openalex_id": "https://openalex.org/W7196981818",
+   "kind": "paper"
+  },
+  {
+   "key": "siddiqi_2006",
+   "title": "Credit Risk Scorecards: Developing and Implementing Intelligent Credit Scoring",
+   "venue": "Wiley (book)",
+   "peer_reviewed": true,
+   "year": 2005,
+   "citations": 385,
+   "citations_per_year": 17.5,
+   "role": "population stability index and its 0.10 / 0.25 bands",
+   "used_in": [
+    "ADR-009"
+   ],
+   "openalex_id": "https://openalex.org/W359283280",
+   "kind": "book"
+  }
+ ]
+}
