@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.17.0] — 2026-11-11 — Public demo API and remote MCP, free host, CD with provenance
+**Files:** docs/adr/ADR-010-public-demo-api.md (new), src/services/public.py (new), src/services/public_snapshot.py (new), src/services/scenarios.py (new), src/data/synthetic.py (new), src/services/store.py, scripts/build_public_snapshot.py (new), scripts/build_deploy.py (new), scripts/smoke_test.py (new), deploy/public_snapshot.* (new), tests/test_public.py (new), tests/conftest.py, .github/workflows/ci.yml, .gitignore
+- **Situation:** The services ran only on a laptop, and the competition's data terms forbid publishing member rows.
+- **Task:** Let anyone try the four tools for $0 without exposing member data (ADR-010).
+- **Action:** Built a 0.23 MB snapshot: real call-list totals at every 0.1%, the P4 what-if curves, and 100 synthetic members scored and explained by the real model. Served it with FastAPI plus stateless MCP, no model libraries and no key. Added injection tests, a host allow-list, error-level lint and a CD job that signs provenance, deploys and smoke-tests.
+- **Result:** 0 real member ids in the snapshot; totals equal the real service (10%: 86,215 members, 60,918,657 at risk); 100 of 100 demo notes grounded at $0.047 per 1,000; their offline p95 3.2 s is over the 2 s live budget (served precomputed).
+- **Talking point:** "The public API answers with the real model's numbers but publishes no member: totals are real, members are synthetic, and a test fails the build if a real id slips in."
+
 ## [0.16.0] — 2026-10-13 — P7: dashboard, drift check, held-out agent test
 **Files:** docs/adr/ADR-009-monitoring-and-operations.md (new), src/monitoring/drift.py (new), scripts/monitor_drift.py (new), dashboards/churn_monthly.lvdash.json (new), tests/test_monitoring.py (new), tests/llm_eval/planner_questions_holdout.json (new), databricks.yml, scripts/databricks_train_register.py, scripts/databricks_publish_tables.py, scripts/agent_eval.py, src/genai/agent.py, tests/test_agent.py, configs/default_config.yaml, configs/databricks.yaml, data/outputs/p7_drift.json (new), data/outputs/p7_agent_holdout.json (new), data/outputs/p6_parity.json, Makefile, docs/index.html, docs/build.html, docs/adr/README.md, docs/PRD.md, README.md
 - **Situation:** The champion ran on Databricks, but nobody could see the monthly list without code, nothing warned when the data shifted, and the agent's 45/45 came from the questions that had found its fixes.

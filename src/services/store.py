@@ -18,7 +18,17 @@ import pandas as pd
 
 from src.features.schema import CATEGORICAL
 from src.genai.dictionary import describe, is_sensitive
-from src.services.contracts import CallList, CallListRequest, CallListSummary, MemberFeatures, Reason, Reasons, Score, WhatIf
+from src.services.contracts import (
+    CallList,
+    CallListRequest,
+    CallListSummary,
+    MemberFeatures,
+    Reason,
+    Reasons,
+    Score,
+    WhatIf,
+)
+from src.services.scenarios import what_if_from
 
 HIGH, MEDIUM = 0.30, 0.10
 
@@ -78,7 +88,10 @@ class ServingStore:
 
     def reasons(self, member_id: str, k: int = 5) -> Reasons:
         self._row(member_id)
-        x = self.df.loc[[member_id], self.features]
+        return self.reasons_for(member_id, self.df.loc[[member_id], self.features], k)
+
+    def reasons_for(self, member_id: str, x: pd.DataFrame, k: int = 5) -> Reasons:
+        """TreeSHAP reasons for one prepared feature row (also used for the public demo's synthetic members)."""
         contrib = self.booster.predict(x, pred_contrib=True)[0][:-1]  # last column is the bias term
         top = np.argsort(-np.abs(contrib))[:k]
         out = []
@@ -100,9 +113,4 @@ class ServingStore:
     def what_if(self, save_rate: float, cost_per_call: float) -> WhatIf:
         if not self.scenarios:
             raise KeyError("scenarios")
-        n, curves = self.scenarios["members"], self.scenarios["value_curves"]
-        prof = {k: [(f, save_rate * v - cost_per_call * n * f) for f, v in c] for k, c in curves.items()}
-        best = max(prof["expected_value"], key=lambda q: q[1])
-        at10 = {k: round(next(p for f, p in c if abs(f - 0.10) < 1e-9), 0) for k, c in prof.items()}
-        return WhatIf(save_rate=save_rate, cost_per_call=cost_per_call, best_share=best[0], best_members_called=int(n * best[0]),
-                      best_monthly_profit=round(best[1], 0), profit_at_10pct=at10)
+        return what_if_from(self.scenarios, save_rate, cost_per_call)

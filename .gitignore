@@ -32,3 +32,6 @@ tests/browser/node_modules/
 
 # Databricks bundle state
 .databricks/
+
+# Public demo bundle (scripts/build_deploy.py)
+build/

@@ -1,5 +1,7 @@
 name: ci
 on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -14,7 +16,9 @@ jobs:
             requirements-serving.txt
       - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: "17" }
-      - run: pip install -r requirements-ci.txt
+      - run: pip install -r requirements-ci.txt ruff
+      - name: Lint (errors only)
+        run: ruff check --select E9,F63,F7,F82 src scripts tests
       - name: Unit, Spark, contract, GenAI and MCP tests (P5 gate)
         env: { CHURN_JAVA_HOME: "${{ env.JAVA_HOME }}" }
         run: pytest tests/ -q
@@ -28,3 +32,40 @@ jobs:
         run: docker build -t churn-serving .
       - name: Image imports every service
         run: docker run --rm churn-serving python -c "import src.services.apps, src.gateway.mcp_server, src.genai.explain; print('ok')"
+
+  # CD (R19, ADR-010): build the public demo bundle, sign its provenance, deploy to Vercel Hobby, smoke-test the live URL.
+  # Skips the deploy (job stays green) until the VERCEL_TOKEN secret exists.
+  deploy:
+    needs: [tests, image]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write       # signs the build provenance
+      attestations: write
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.12"}
+      - name: Build the bundle (light serving code, checksummed snapshot)
+        run: |
+          python scripts/build_deploy.py --out build/subscription-churn-at-scale
+          tar -czf build/subscription-churn-at-scale.tar.gz -C build subscription-churn-at-scale
+      - name: Sign build provenance
+        uses: actions/attest-build-provenance@v4
+        with: {subject-path: build/subscription-churn-at-scale.tar.gz}
+      - uses: actions/upload-artifact@v4
+        with: {name: deploy-bundle, path: build/subscription-churn-at-scale.tar.gz}
+      - name: Deploy to Vercel (production)
+        if: env.VERCEL_TOKEN != ''
+        id: vercel
+        working-directory: build/subscription-churn-at-scale
+        run: echo "url=$(npx -y vercel@65.4.0 deploy --prod --yes --token "$VERCEL_TOKEN")" >> "$GITHUB_OUTPUT"
+      - name: Smoke test the live URL
+        if: env.VERCEL_TOKEN != ''
+        run: python scripts/smoke_test.py "${{ vars.PUBLIC_URL || steps.vercel.outputs.url }}"
+      - name: No token yet
+        if: env.VERCEL_TOKEN == ''
+        run: echo "::notice::VERCEL_TOKEN not set; bundle built and attested, deploy skipped."
