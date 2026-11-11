@@ -1,4 +1,4 @@
-# Hiring-team brief (rule R22). Edit here only; `python scripts/brief.py` writes it into README.md, docs/index.html and docs/build.html.
+# At-a-glance brief (rule R22). Edit here only; `python scripts/brief.py` writes it into README.md, docs/index.html and docs/build.html.
 repo_url: https://github.com/sabrinapribadi/subscription-churn-at-scale
 brief:
   - w: What

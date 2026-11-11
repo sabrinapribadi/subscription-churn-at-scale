@@ -1,4 +1,4 @@
-"""Hiring-team brief (portfolio rule R22): one source, docs/brief.yaml, written right after the title of the README,
+"""At-a-glance brief (portfolio rule R22): one source, docs/brief.yaml, written right after the title of the README,
 the results page and the technical walkthrough, between <!-- brief:start --> and <!-- brief:end --> markers.
 
     python scripts/brief.py            # write
@@ -36,7 +36,7 @@ def html_inline(text: str, repo_url: str) -> str:
 
 
 def markdown(b: dict) -> str:
-    lines = ["## For hiring teams: the project in 5W1H", ""]
+    lines = ["## At a glance", ""]
     for i, item in enumerate(b["brief"], 1):
         lines.append(f"{i}. **{item['w']}:** {item['lines'][0]}")
         lines += [f"   - {x}" for x in item["lines"][1:]]
@@ -57,8 +57,8 @@ def page_html(b: dict, repo_url: str, compact: bool = False) -> str:
         + " ".join(f'<a class="brief-proof" href="{html.escape(p if p.startswith("http") else f"{repo_url}/blob/main/{p}")}">{html.escape(label)}</a>'
                    for label, p in s["proof"])
         + "</li>" for s in b["skills"])
-    return (f'<section class="brief" id="brief" aria-label="Project brief for hiring teams">'
-            f'<span class="eyebrow">For hiring teams · the project in 5W1H</span>'
+    return (f'<section class="brief" id="brief" aria-label="Project at a glance">'
+            f'<span class="eyebrow">At a glance</span>'
             f'<ol class="brief-list">{"".join(items)}</ol>'
             f'<details class="brief-skills"{"" if compact else " open"}><summary>Skills applied, with proof</summary><ul>{skills}</ul></details></section>')
 

@@ -2,7 +2,7 @@
 
 <!-- brief:start -->
 
-## For hiring teams: the project in 5W1H
+## At a glance
 
 1. **What:** A churn early warning for a music-subscription retention team: risk, reasons, who to call first, and a planning agent.
 2. **Why:** Churn shows only after renewal fails; a warning 14 days earlier lets the team act. Today's rule calls only manual renewers.
