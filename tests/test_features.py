@@ -65,7 +65,8 @@ def test_multi_window_matches_single_window(spark, window):
     mapped = {target: multi[src] for src, target in select_window(list(multi), window).items()}
     assert set(mapped) == set(single)
     for k, v in single.items():
-        assert mapped[k] == pytest.approx(v, rel=1e-9, abs=1e-12), k
+        want = v if isinstance(v, str) or v is None else pytest.approx(v, rel=1e-9, abs=1e-12)   # pytest 9.2: approx() rejects str
+        assert mapped[k] == want, k
 
 
 def test_last_transaction_is_one_row_even_on_ties(spark):
