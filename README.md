@@ -21,7 +21,7 @@
 - **Statistics and evaluation:** out-of-time split, PR-AUC, calibration error, profit curves, label-shift correction — [ADR-002](docs/adr/ADR-002-validation-strategy.md), [ADR-004](docs/adr/ADR-004-ranking-and-calibration.md)
 - **MLOps and CI/CD:** MLflow and Unity Catalog registry, PSI drift, dashboard as code, gated CI/CD with provenance — [ADR-009](docs/adr/ADR-009-monitoring-and-operations.md), [ci.yml](.github/workflows/ci.yml)
 - **Cloud and services:** Databricks bundle job, four FastAPI services in Docker, demo API on Vercel — [ADR-005](docs/adr/ADR-005-service-boundaries.md), [ADR-008](docs/adr/ADR-008-databricks-port.md), [ADR-010](docs/adr/ADR-010-public-demo-api.md)
-- **GenAI and agents:** grounded notes with a grader, a planning agent (42 of 45 unseen questions), MCP tools, an evaluated agent skill (23 of 23) — [ADR-006](docs/adr/ADR-006-genai-module.md), [ADR-007](docs/adr/ADR-007-retention-planner-agent.md), [ADR-012](docs/adr/ADR-012-agent-skill.md)
+- **GenAI and agents:** grounded notes with a grader, a planning agent (42 of 45 unseen questions), MCP tools, an evaluated agent skill (27 of 27) — [ADR-006](docs/adr/ADR-006-genai-module.md), [ADR-007](docs/adr/ADR-007-retention-planner-agent.md), [ADR-012](docs/adr/ADR-012-agent-skill.md)
 - **Domain:** subscription retention (churner definition, value-based call lists, retention economics, privacy) — [ADR-011](docs/adr/ADR-011-industry-alignment.md), [ADR-001](docs/adr/ADR-001-task-framing.md)
 
 <!-- brief:end -->
@@ -130,13 +130,13 @@ The call planner ships as an Agent Skill in [`skills/churn-call-planner/`](skill
    git clone https://github.com/sabrinapribadi/subscription-churn-at-scale
    cp -r subscription-churn-at-scale/skills/churn-call-planner ~/.claude/skills/   # all projects; or .claude/skills/ in one project
    ```
-2. **Charts:** `python scripts/churn.py chart profit` (expected profit by share called, best share marked), `chart reasons demo-001` (what raises and lowers risk), `chart rankers` (backtest profit by ranking method).
+2. **How sure, and why:** `python scripts/churn.py confidence --share 0.058` gives a confidence level, the floor to commit to and a pilot size; `drivers` explains in business terms why the model beats today's rule. Charts: `chart profit`, `chart drivers`, `chart rankers`.
 3. **Optional MCP connection** (same four tools): `claude mcp add --transport http churn https://subscription-churn-at-scale.vercel.app/mcp`.
 4. **Ask in plain words**, for example: "We can make 50,000 calls; who should we call and what is it worth?" or "Why is demo-001 flagged and what should the agent say?"
 
 | What is tested | How | Result (2026-11-17) |
 |---|---|---|
-| 4 task cases (call budget, explain a member, ranking vs today's rule, real member declined) | [`evals/`](skills/churn-call-planner/evals) in the `claude plugin eval` layout; graders checked by script against the live API | 23 of 23 checks pass (iteration 1) |
+| 4 task cases (call budget, explain a member, ranking vs today's rule, real member declined) | [`evals/`](skills/churn-call-planner/evals) in the `claude plugin eval` layout; graders checked by script against the live API | 27 of 27 checks pass (iteration 2, after a review of iteration 1) |
 | When the skill should and should not be used | [`trigger-evals.json`](skills/churn-call-planner/trigger-evals.json): 10 should-trigger, 10 near-miss prompts | Ready for `claude plugin eval` |
 | The client, the charts and the facts the graders use | `tests/test_skill_client.py` and the member-id scan in CI; `scripts/skill_live_check.py` after every deploy | Pass |
 

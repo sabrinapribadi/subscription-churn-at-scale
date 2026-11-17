@@ -52,6 +52,20 @@
   4. An invented reason ("genres you like") was removed from the call-script idea; scripts use only the API's reasons.
 - A bug found by the new offline test: `urllib.parse.quote` keeps `/` by default, so an id like `a/b` changed the path; now quoted with `safe=""`.
 
+### Iteration 2 (2026-11-17, review of iteration 1)
+
+- **Review:**
+  1. "Calling more would still pay, up to about 26%": what backs this? State numbers plainly when confidence is high; when it is low, turn the uncertainty into a number and an action.
+  2. The member chart's x-axis (log-odds) is not a measure a reader uses.
+  3. Use explainability to say why the model beats today's rule, in numbered plain language for sales and commercial teams.
+- **Evidence found (R23):** in March 2017 the calibrated forecast expected 6.1% to churn and 7.3% did (top decile 39.6% vs 47.2%), so forecast profits read low; that is why the forecast best share (26%) sits below the backtest's (34%).
+- **Changes:**
+  1. `confidence` command: three views of the best share (forecast, half the save rate, backtest); a level (high, medium, low) by fixed rules; the floor to commit to, the range in members, the break-even save rate and a pilot sized to measure the save rate within ±5 points (95%). `references/confidence.md`.
+  2. Member answers: no chart; each reason gets a strength word (strong, moderate, slight) from the client; contribution numbers are never quoted.
+  3. `scripts/global_drivers.py` writes `data/outputs/p8_global_drivers.json` (aggregates only): TreeSHAP shares by theme and feature on 200,000 members, and the rule-gap split from the P1 results. `drivers` command and `chart drivers` (stacked bars). `references/explainability.md` with writing rules: business words, no claims of direction from shares.
+- **Findings while building (R23):** at 10% calls the rule's list holds only manual renewers (104,817 > 86,215), so it never reaches auto-renew leavers (36% of leavers); the model's extra 11.4 points split into 8.2 from auto-renew leavers and 3.2 from a better order among manual renewers (remainder, because the stored segment rates are rounded). A per-feature "direction" averaged over the call list was misleading (days since last listened came out as lowering risk) and was dropped.
+- **Result:** 4 new graders; **27 of 27** pass against the live API (iteration 1: 23 of 23 on the old graders).
+
 ## Consequences
 
 - **Positive:** any agent that reads skills can plan a call list with the right caveats; the evals and live check fail when the snapshot changes, so the graders are not left stale.

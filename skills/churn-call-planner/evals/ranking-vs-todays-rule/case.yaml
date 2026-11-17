@@ -1,4 +1,4 @@
 schema_version: "1.1"
 name: ranking-vs-todays-rule
 expected_outcome: |
-  States the baseline (today's rule: manual renewers first, then longest idle) and that it reaches about 54% of churners at 10% calls vs about 65% for the model; backtest profit at 10%: value ranking NT$12.43M vs churn chance only NT$12.41M vs LambdaMART NT$9.70M; says value ranking is marginally better on profit and why it is still preferred; provides the rankers chart.
+  States the baseline (today's rule: manual renewers first, then longest idle) and that it reaches about 54% of churners at 10% calls vs about 65% for the model; explains why in business words from the global drivers: the rule never calls auto-renew members (36% of leavers; +8.2 points), better order among manual renewers (+3.2 points), and what the model relies on (payment and plan 68%, listening 19%, membership history 10%, profile 3%); backtest profit at 10%: value ranking NT$12.43M vs churn chance only NT$12.41M vs LambdaMART NT$9.70M, value ranking marginally better and why still preferred; provides the stacked-bar drivers chart.

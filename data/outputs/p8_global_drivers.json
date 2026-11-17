@@ -1,0 +1,234 @@
+{
+ "method": "LightGBM TreeSHAP (pred_contrib); share = mean |contribution| of a feature / sum over features",
+ "model_version": "lgbm-k14w30-ef067b38",
+ "cohort": "members expiring March 2017",
+ "sample_members": 200000,
+ "seed": 2026,
+ "call_list_share": 0.1,
+ "call_list_members": 86215,
+ "features": [
+  {
+   "feature": "last_auto_renew",
+   "label": "auto-renew",
+   "share_all": 0.1768620818135045,
+   "share_call_list": 0.29931224096307196
+  },
+  {
+   "feature": "last_payment_method",
+   "label": "payment method",
+   "share_all": 0.17582237453786553,
+   "share_call_list": 0.20529300923998955
+  },
+  {
+   "feature": "days_since_last_tx",
+   "label": "days since last payment",
+   "share_all": 0.09573995587091662,
+   "share_call_list": 0.0674705870588552
+  },
+  {
+   "feature": "last_list_price",
+   "label": "plan list price",
+   "share_all": 0.06667528050944029,
+   "share_call_list": 0.03415684588876321
+  },
+  {
+   "feature": "tenure_days",
+   "label": "days as a paying member",
+   "share_all": 0.057732907250469714,
+   "share_call_list": 0.021417210168178494
+  },
+  {
+   "feature": "tx_count",
+   "label": "payments to date",
+   "share_all": 0.05158363871682938,
+   "share_call_list": 0.04888893745405549
+  },
+  {
+   "feature": "days_since_last_play",
+   "label": "days since last listened",
+   "share_all": 0.04686361863117128,
+   "share_call_list": 0.024967734379656666
+  },
+  {
+   "feature": "use_active_days",
+   "label": "listening days in the last 30",
+   "share_all": 0.04093631469187661,
+   "share_call_list": 0.045227844701133564
+  },
+  {
+   "feature": "last_amount_paid",
+   "label": "last amount paid",
+   "share_all": 0.04008547028038358,
+   "share_call_list": 0.02819729001264689
+  },
+  {
+   "feature": "registration_days",
+   "label": "days since sign-up",
+   "share_all": 0.038951045333753105,
+   "share_call_list": 0.012771345721756203
+  },
+  {
+   "feature": "use_secs_per_day_recent",
+   "label": "minutes per day, last 14 days",
+   "share_all": 0.029564088356781097,
+   "share_call_list": 0.011483773439838129
+  },
+  {
+   "feature": "tx_auto_renew_share",
+   "label": "share of payments on auto-renew",
+   "share_all": 0.024313146148909802,
+   "share_call_list": 0.051367672774541094
+  },
+  {
+   "feature": "last_is_cancel",
+   "label": "last transaction was a cancellation",
+   "share_all": 0.020871439405568293,
+   "share_call_list": 0.05652523922751464
+  },
+  {
+   "feature": "use_decline_ratio",
+   "label": "recent vs usual listening",
+   "share_all": 0.01979738710807807,
+   "share_call_list": 0.011512449847937506
+  },
+  {
+   "feature": "use_secs",
+   "label": "minutes listened in the last 30 days",
+   "share_all": 0.017564651507292223,
+   "share_call_list": 0.010237922098102375
+  },
+  {
+   "feature": "age",
+   "label": "age",
+   "share_all": 0.014084620148737539,
+   "share_call_list": 0.008872335610857469
+  },
+  {
+   "feature": "tx_mean_discount",
+   "label": "average discount per payment",
+   "share_all": 0.011563226403399858,
+   "share_call_list": 0.0060549575773870806
+  },
+  {
+   "feature": "city",
+   "label": "city",
+   "share_all": 0.01085609296413191,
+   "share_call_list": 0.008274084513923875
+  },
+  {
+   "feature": "use_active_days_recent",
+   "label": "listening days in the last 14",
+   "share_all": 0.010468165953651042,
+   "share_call_list": 0.005910275164607005
+  },
+  {
+   "feature": "use_unique_songs_mean",
+   "label": "unique songs per listening day",
+   "share_all": 0.01041758932316483,
+   "share_call_list": 0.005274515488945392
+  },
+  {
+   "feature": "use_skip_share",
+   "label": "songs skipped early",
+   "share_all": 0.008896235358477354,
+   "share_call_list": 0.0058138015504520055
+  },
+  {
+   "feature": "use_full_listen_share",
+   "label": "songs played to the end",
+   "share_all": 0.008146621260859157,
+   "share_call_list": 0.0071573927706834045
+  },
+  {
+   "feature": "tx_cancels",
+   "label": "cancellations to date",
+   "share_all": 0.004720893070908394,
+   "share_call_list": 0.0025215296316584614
+  },
+  {
+   "feature": "tx_count_window",
+   "label": "payments in the last 30 days",
+   "share_all": 0.0041195881375638245,
+   "share_call_list": 0.004348864267119516
+  },
+  {
+   "feature": "last_plan_days",
+   "label": "plan length in days",
+   "share_all": 0.003339747023531032,
+   "share_call_list": 0.009639607306214259
+  },
+  {
+   "feature": "registered_via",
+   "label": "sign-up channel",
+   "share_all": 0.0030838214815148875,
+   "share_call_list": 0.0025573428950633023
+  },
+  {
+   "feature": "tx_cancels_window",
+   "label": "cancellations in the last 30 days",
+   "share_all": 0.002112590031921959,
+   "share_call_list": 0.0011492878035241798
+  },
+  {
+   "feature": "use_secs_per_day",
+   "label": "minutes per day, last 30 days",
+   "share_all": 0.0018937550728049706,
+   "share_call_list": 0.0010351339292674182
+  },
+  {
+   "feature": "gender",
+   "label": "gender",
+   "share_all": 0.0018484881410284297,
+   "share_call_list": 0.00147223711980646
+  },
+  {
+   "feature": "tx_distinct_methods",
+   "label": "payment methods used",
+   "share_all": 0.0010851654654648417,
+   "share_call_list": 0.0010885313944492257
+  }
+ ],
+ "themes": {
+  "Payment and plan": {
+   "share_all": 0.678894597416208,
+   "share_call_list": 0.8160146005997908
+  },
+  "Listening": {
+   "share_all": 0.19454842726415664,
+   "share_call_list": 0.12862084337062346
+  },
+  "Membership history": {
+   "share_all": 0.09976777406573771,
+   "share_call_list": 0.036745898784998
+  },
+  "Profile (city, age, gender)": {
+   "share_all": 0.026789201253897877,
+   "share_call_list": 0.018618657244587805
+  }
+ },
+ "rule_gap": {
+  "share_called": 0.1,
+  "calls": 86215,
+  "leavers": 62616,
+  "manual_renewers": 104817,
+  "manual_leavers": 40208,
+  "auto_renew_leavers": 22338,
+  "auto_renew_share_of_leavers": 0.35674477769260254,
+  "rule_reach": 0.5406,
+  "model_reach": 0.6547,
+  "rule_reaches_auto_renew_leavers": 0.0,
+  "model_reaches_auto_renew_leavers": 0.2296,
+  "model_list_share_auto_renew": 0.1322,
+  "points_from_auto_renew": 0.08190860095822154,
+  "points_from_better_order_in_manual": 0.03219139904177844,
+  "points_from_better_order_unrounded_check": 0.03057732156956699
+ },
+ "calibration": {
+  "expected_churn_rate": 0.06064346823037965,
+  "actual_churn_rate": 0.07262705907733849,
+  "top_decile_expected": 0.39554496994224136,
+  "top_decile_actual": 0.4724877052983205,
+  "ece": 0.01198359084695885,
+  "forecast_reads": "low"
+ }
+}

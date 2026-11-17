@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.22.0] — 2026-11-17 — Agent skill iteration 2: confidence levels and business explanations
+**Files:** skills/churn-call-planner/ (SKILL.md, scripts/churn.py, scripts/charts.py, references/confidence.md, references/explainability.md, references/global_drivers.json, references/charts.md, evals/), scripts/global_drivers.py (new), data/outputs/p8_global_drivers.json (new), tests/test_skill_client.py, scripts/skill_live_check.py, docs/adr/ADR-012-agent-skill.md, docs/adr/README.md, docs/brief.yaml, README.md, docs/index.html, docs/build.html
+- **Situation:** Review of iteration 1: "calling more pays up to 26%" had no stated confidence; the member chart used log-odds; the ranking answer did not explain why the model wins.
+- **Task:** Turn uncertainty into numbers and actions, and explain the model to sales and commercial readers, with every number checked (R23).
+- **Action:** A `confidence` command (three views of the best share, fixed rules for high, medium, low; floor, range, break-even save rate, pilot size); strength words instead of a member chart; global TreeSHAP shares by theme and the rule-gap split as committed aggregates, a `drivers` command and a stacked chart.
+- **Result:** 27 of 27 checks pass against the live API. Found: the forecast read low in March 2017 (6.1% expected vs 7.3% actual), which is why the backtest's best share is later; the rule never calls auto-renew members (36% of leavers), worth 8.2 of the model's 11.4 extra points.
+- **Talking point:** "When the best share is uncertain, the skill says so, commits to the floor that pays in every view, and sizes the 600-call pilot that settles the rest."
+
 ## [0.21.1] — 2026-11-17 — Streamlit app redesign and live link
 **Files:** .streamlit/config.toml (new), app/streamlit_app.py, app/plan.py, tests/test_streamlit_app.py, docs/brief.yaml, README.md, docs/index.html, docs/build.html
 - **Situation:** The first deploy worked but looked like a default Streamlit page: red controls, system font, one long column.

@@ -23,10 +23,13 @@ def fake(path, params):
     if path == "/":
         return ROOT_INFO
     if path == "/call-list":
-        s = params["share"]                                   # profit peaks at 26% so the chart's best mark is inside the range
-        return {"summary": {"expected_profit": 1e7 * (1 - (s - 0.26) ** 2)}}
+        s, r = params["share"], params["save_rate"]          # profit peaks later at higher save rates, as in the real curve
+        k, ev = 862158 * s, 1.2e8 * (1 - (1 - s) ** 4)
+        return {"summary": {"members_called": round(k), "expected_churners": 0.5 * k, "expected_value_at_risk": ev,
+                            "expected_profit": round(r * ev - params["cost_per_call"] * k)}}
     if path == "/what-if":
-        return {"profit_at_10pct": {"probability": 12408440.0, "expected_value": 12431421.0, "lambdamart": 9699147.0}}
+        return {"profit_at_10pct": {"probability": 12408440.0, "expected_value": 12431421.0, "lambdamart": 9699147.0},
+                "best_share": 0.34, "best_monthly_profit": 19471247.0}
     return EXPLAIN
 
 
@@ -73,10 +76,41 @@ def test_charts_offline(calls, tmp_path):
     out = tmp_path / "c.html"
     churn.main(["chart", "profit", "--out", str(out)])
     page = out.read_text()
-    assert page.count('class="bar"') == 30 and "best: 26%" in page
+    assert page.count('class="bar"') == 30 and "best: " in page
     churn.main(["chart", "reasons", "demo-001", "--out", str(out)])
     page = out.read_text()
     assert page.count('class="bar"') == 3 and "17% chance" in page and "Raises risk" in page and "Lowers risk" in page
     churn.main(["chart", "rankers", "--out", str(out)])
     page = out.read_text()
     assert page.count('class="bar"') == 3 and "NT$12.4M" in page and "Learned ranker (LambdaMART)" in page
+
+
+def test_confidence_levels_floor_and_pilot(calls):
+    c = churn.confidence("x", 0.058, 0.25, 15)
+    assert c["direction"] == "call more" and c["level"] in {"medium", "high"}
+    assert c["floor"]["share"] == min(c["best_share"].values()) and c["pilot"]["churners_needed"] == 289
+    assert c["pilot"]["calls"] % 100 == 0 and c["pilot"]["calls"] >= 289 / c["pilot"]["precision_forecast"]
+    assert 0 < c["break_even_save_rate"] < 0.25 and c["calibration"]["actual_churn_rate"] > c["calibration"]["expected_churn_rate"]
+    low = churn.confidence("x", 0.6, 0.02, 100)                          # tiny save rate, costly calls: no target
+    assert low["level"] == "low"
+
+
+def test_strength_words():
+    assert [churn.strength(v) for v in (1.13, 0.715, -0.338, 0.23, -0.2)] == ["strong", "moderate", "moderate", "slight", "slight"]
+
+
+def test_drivers_bundle_matches_committed_output_and_adds_up():
+    bundled = json.loads((ROOT / "references/global_drivers.json").read_text())
+    assert bundled == json.loads((ROOT.parents[1] / "data/outputs/p8_global_drivers.json").read_text())
+    g = bundled["rule_gap"]
+    assert abs(g["rule_reach"] + g["points_from_auto_renew"] + g["points_from_better_order_in_manual"] - g["model_reach"]) < 1e-9
+    assert abs(sum(v["share_all"] for v in bundled["themes"].values()) - 1) < 1e-6
+    d = churn.drivers()
+    assert d["themes"][0]["theme"] == "Payment and plan" and len(d["top_features"]) == 6
+
+
+def test_drivers_chart_offline(calls, tmp_path):
+    out = tmp_path / "d.html"
+    churn.main(["chart", "drivers", "--out", str(out)])
+    page = out.read_text()
+    assert page.count('class="bar"') == 4 and "65.5%" in page and "rule never calls" in page

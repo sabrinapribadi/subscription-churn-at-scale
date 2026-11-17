@@ -5,6 +5,7 @@ Forms follow the reader's job (references/charts.md):
 - ranked_bars: compare magnitudes, largest first; colour = category with a legend and direct labels.
 - line_chart: one value over an ordered range (expected profit by share of members called), best point marked.
 - diverging_bars: signed contributions around zero (reasons that raise risk in red, lower it in blue).
+- stacked_bars: parts of a whole per row (where the model's extra reach over today's rule comes from).
 Palette: validated reference palette (blue, orange, aqua for categories; grey for context), light and dark themes.
 Every bar has a hover/focus tooltip, values are printed (aqua is under 3:1 on light, so labels are required),
 and a table view sits under the chart.
@@ -161,3 +162,31 @@ def diverging_bars(rows: list[dict], title: str, sub: str, foot: str, pos_label:
     table = ("<table><tr><th>Reason</th><th>Value</th><th class=n>Contribution</th></tr>"
              + "".join(f"<tr><td>{html.escape(r['label'])}</td><td>{html.escape(r.get('note', ''))}</td><td class=n>{r['v']:+.2f}</td></tr>" for r in rows) + "</table>")
     return _page(title, sub, [(pos_label, "--pos"), (neg_label, "--neg")], svg, table, foot)
+
+
+def stacked_bars(rows: list[dict], title: str, sub: str, foot: str, segments: list[tuple[str, str]], unit=lambda v: f"{v:.1f}") -> str:
+    """rows: {label, parts: [values in the order of `segments`]}; segments: (name, css var). Total printed at the end of each bar."""
+    vmax = max(sum(r["parts"]) for r in rows) or 1
+    lw, w, bh, rh = 190, 820, 22, 40
+    plot = w - lw - 110
+    out = []
+    for i, r in enumerate(rows):
+        y, x = 8 + i * rh, lw
+        out.append(f'<text class="lab" x="{lw - 10}" y="{y + bh - 6}" text-anchor="end">{html.escape(r["label"])}</text>')
+        for (name, var), v in zip(segments, r["parts"]):
+            if v <= 0:
+                continue
+            bw = plot * v / vmax
+            tipt = html.escape(f"<b>{r['label']}</b><br>{name}: {unit(v)}", quote=True)
+            out.append(f'<rect class="bar" tabindex="0" x="{x:.1f}" y="{y}" width="{max(bw - 2, 1):.1f}" height="{bh}" rx="3" fill="var({var})" data-tip="{tipt}"/>')
+            if bw > 46:
+                out.append(f'<text x="{x + bw / 2:.1f}" y="{y + bh - 7}" text-anchor="middle" style="fill:{'var(--ink)' if var == '--ctx' else '#fff'};font-weight:600">{html.escape(unit(v))}</text>')
+            x += bw
+        out.append(f'<text class="val" x="{x + 8:.1f}" y="{y + bh - 6}">{html.escape(unit(sum(r["parts"])))}</text>')
+    h = 8 + len(rows) * rh
+    svg = (f'<svg viewBox="0 0 {w} {h}" role="img" aria-label="{html.escape(title)}">'
+           f'<line x1="{lw}" y1="0" x2="{lw}" y2="{h}" stroke="var(--axis)"/>{"".join(out)}</svg>')
+    table = ("<table><tr><th>Row</th>" + "".join(f"<th class=n>{html.escape(n)}</th>" for n, _ in segments) + "<th class=n>Total</th></tr>"
+             + "".join(f"<tr><td>{html.escape(r['label'])}</td>" + "".join(f"<td class=n>{html.escape(unit(v))}</td>" for v in r["parts"])
+                       + f"<td class=n>{html.escape(unit(sum(r['parts'])))}</td></tr>" for r in rows) + "</table>")
+    return _page(title, sub, segments, svg, table, foot)

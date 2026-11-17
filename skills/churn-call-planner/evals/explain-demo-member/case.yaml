@@ -1,4 +1,4 @@
 schema_version: "1.1"
 name: explain-demo-member
 expected_outcome: |
-  Explains demo-001's churn chance (17%, medium), value at stake (about NT$1,813 a year) and the reasons from the API (days since last payment, payment method, days since last listened, plan price raise risk; auto-renew on lowers it), the suggested action, and notes that demo members are synthetic; provides the diverging reasons chart.
+  Explains demo-001's churn chance (17%, medium), value at stake (about NT$1,813 a year) and the reasons from the API with strength words (days since last payment strong; payment method and days since last listened moderate; plan price slight raise risk; auto-renew on slightly lowers it), the suggested action, and notes that demo members are synthetic; no chart, no log-odds.

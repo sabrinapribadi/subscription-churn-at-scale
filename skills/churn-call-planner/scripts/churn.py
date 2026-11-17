@@ -8,6 +8,9 @@
     python churn.py chart profit [--save-rate 0.2] [--cost 20] [--out chart.html]   # expected profit by share called (line)
     python churn.py chart reasons MEMBER_ID [--out chart.html]        # what raises and lowers a member's risk (diverging bars)
     python churn.py chart rankers [--save-rate 0.2] [--cost 20] [--out chart.html]  # backtest profit at 10% by ranking method
+    python churn.py confidence --share 0.058 [--save-rate 0.2] [--cost 20]  # how sure: forecast, backtest, half save rate; floor and pilot
+    python churn.py drivers                                           # what the model looks at, and why it beats today's rule
+    python churn.py chart drivers [--out chart.html]                  # where the model's extra reach over today's rule comes from
 
 Real members are not served (competition data terms); demo members demo-001 to demo-100 are synthetic.
 Amounts are New Taiwan dollars (NT$), the dataset's documented currency. Exit 0 on success, 1 on a network error.
@@ -17,6 +20,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import math
 import sys
 import time
 import urllib.error
@@ -25,6 +29,8 @@ import urllib.request
 from pathlib import Path
 
 DEFAULT_BASE = "https://subscription-churn-at-scale.vercel.app"
+DRIVERS = Path(__file__).resolve().parents[1] / "references" / "global_drivers.json"   # committed aggregates (scripts/global_drivers.py)
+SHARES = [round(0.02 * i, 2) for i in range(1, 31)]                  # 2-60%: wide enough that the best share is inside, not at the edge
 RANKERS = {"expected_value": "Churn chance × member value (used)", "probability": "Churn chance only", "lambdamart": "Learned ranker (LambdaMART)"}
 
 
@@ -61,6 +67,64 @@ def about(base: str) -> dict:
             "model_version": root.get("model_version"), "data_terms": root.get("data_terms"), "results_page": root.get("results_page")}
 
 
+def sweep(base: str, save: float, cost: float) -> list[tuple[float, float]]:
+    """Forecast expected profit at each share in SHARES."""
+    return [(s, get(base, "/call-list", {"share": s, "save_rate": save, "cost_per_call": cost})["summary"]["expected_profit"]) for s in SHARES]
+
+
+def confidence(base: str, share: float, save: float, cost: float) -> dict:
+    """How sure the numbers are, as a level with its evidence, a number to commit to, and the action that raises confidence.
+
+    Three views of the best share: forecast at the user's save rate, forecast at half of it (stress test), backtest on March 2017.
+    high   = profit positive even at half the save rate, all three agree on the direction, and forecast and backtest bests within 5 points;
+    medium = positive at half the save rate and the direction agrees, but the bests differ by more than 5 points: commit to the floor;
+    low    = not positive at half the save rate, or the views disagree on the direction: commit to nothing beyond a pilot.
+    """
+    cal = json.loads(DRIVERS.read_text())["calibration"]
+    n = about(base)["test_cohort"]["members"]
+    here = get(base, "/call-list", {"share": share, "save_rate": save, "cost_per_call": cost})["summary"]
+    half = get(base, "/call-list", {"share": share, "save_rate": save / 2, "cost_per_call": cost})["summary"]
+    f_best = max(sweep(base, save, cost), key=lambda p: p[1])
+    p_best = max(sweep(base, save / 2, cost), key=lambda p: p[1])
+    wi = get(base, "/what-if", {"save_rate": save, "cost_per_call": cost})
+    bests = {"forecast": f_best[0], "half_save_rate": p_best[0], "backtest": wi["best_share"]}
+    lo, hi = min(bests.values()), max(bests.values())
+    direction = "call more" if share < lo else ("call fewer" if share > hi else "mixed")
+    safe = half["expected_profit"] > 0
+    agree = abs(bests["forecast"] - bests["backtest"]) <= 0.05
+    level = "high" if safe and direction != "mixed" and agree else ("medium" if safe and direction != "mixed" else "low")
+    precision = here["expected_churners"] / here["members_called"]
+    churners = math.ceil(1.96 ** 2 * save * (1 - save) / 0.05 ** 2)            # measure the save rate to within ±5 points (95%)
+    pilot = math.ceil(churners / precision / 100) * 100
+    floor = get(base, "/call-list", {"share": lo, "save_rate": save, "cost_per_call": cost})["summary"]
+    return {"level": level, "direction": direction, "share": share, "members_called": here["members_called"],
+            "profit_forecast": here["expected_profit"], "profit_at_half_save_rate": half["expected_profit"],
+            "best_share": bests, "best_profit": {"forecast": f_best[1], "half_save_rate": p_best[1], "backtest": wi["best_monthly_profit"]},
+            "floor": {"share": lo, "members_called": floor["members_called"], "profit_forecast": floor["expected_profit"]},
+            "range_share": [lo, hi], "range_members": [int(n * lo), int(n * hi)],
+            "break_even_save_rate": cost * here["members_called"] / here["expected_value_at_risk"],
+            "pilot": {"calls": pilot, "churners_needed": churners, "precision_forecast": precision, "margin": 0.05},
+            "calibration": {"expected_churn_rate": cal["expected_churn_rate"], "actual_churn_rate": cal["actual_churn_rate"],
+                            "top_decile_expected": cal["top_decile_expected"], "top_decile_actual": cal["top_decile_actual"],
+                            "meaning": "in March 2017 the forecast expected fewer churners than happened, so forecast profits read low (a floor)"},
+            "save_rate": save, "cost_per_call": cost}
+
+
+def drivers() -> dict:
+    """What the model looks at (TreeSHAP shares by theme and feature) and why it beats today's rule (committed aggregates)."""
+    d = json.loads(DRIVERS.read_text())
+    return {"method": d["method"], "model_version": d["model_version"], "sample_members": d["sample_members"],
+            "themes": sorted(({"theme": k, **v} for k, v in d["themes"].items()), key=lambda r: -r["share_all"]),
+            "top_features": [{"label": r["label"], "share_all": r["share_all"], "share_call_list": r["share_call_list"]} for r in d["features"][:6]],
+            "rule_gap": d["rule_gap"]}
+
+
+def strength(c: float) -> str:
+    """Plain words for a reason's size (TreeSHAP log-odds): readers compare words, not log-odds."""
+    a = abs(c)
+    return "strong" if a >= 1.0 else ("moderate" if a >= 0.3 else "slight")
+
+
 def data_line(ab: dict) -> str:
     return (f"Data: KKBox public competition data; members expiring March 2017 ({ab['test_cohort']['members']:,}), scored 14 days ahead, "
             f"trained on February 2017; model {ab['model_version']}; checked {ab['checked_at_utc']} UTC. Amounts in NT$.")
@@ -71,8 +135,7 @@ def make_chart(base: str, a: argparse.Namespace) -> Path:
     import charts  # sibling module, imported only when a chart is asked for
     ab = about(base)
     if a.what == "profit":
-        shares = [round(0.02 * i, 2) for i in range(1, 31)]          # 2-60%: wide enough that the best share is inside, not at the edge
-        pts = [(s, get(base, "/call-list", {"share": s, "save_rate": a.save_rate, "cost_per_call": a.cost})["summary"]["expected_profit"]) for s in shares]
+        pts = sweep(base, a.save_rate, a.cost)
         best = max(pts, key=lambda p: p[1])
         page = charts.line_chart(pts, "Expected monthly profit by share of members called",
                                  f"Save rate {a.save_rate:.0%}, NT${a.cost:,.0f} per call. Best: call the top {best[0]:.0%} "
@@ -90,6 +153,16 @@ def make_chart(base: str, a: argparse.Namespace) -> Path:
                                      f"Risk {s['risk_level']}; NT${s['member_value']:,.0f} a year at stake; suggested action: {e['suggested_action']}.",
                                      data_line(ab) + " Demo members are synthetic; reasons are the model's largest contributions.",
                                      "Raises risk", "Lowers risk")
+    elif a.what == "drivers":
+        g = drivers()["rule_gap"]
+        rule, auto, order = 100 * g["rule_reach"], 100 * g["points_from_auto_renew"], 100 * g["points_from_better_order_in_manual"]
+        rows = [{"label": "Today's rule", "parts": [rule, 0, 0]}, {"label": "Model (churn chance)", "parts": [rule, order, auto]}]
+        page = charts.stacked_bars(rows, f"Calling {g['share_called']:.0%}: the model reaches {100 * g['model_reach']:.1f}% of leavers, today's rule {rule:.1f}%",
+                                   f"{auto:.1f} points come from auto-renew members, {100 * g['auto_renew_share_of_leavers']:.0f}% of all leavers, whom the rule "
+                                   f"never calls; {order:.1f} points from a better order among manual renewers.",
+                                   data_line(ab) + " Backtest on members who actually churned (P1, model ranked by churn chance); aggregates only.",
+                                   [("Manual renewers, as many as the rule reaches", "--ctx"), ("More manual renewers (better order)", "--c1"),
+                                    ("Auto-renew leavers (rule never calls them)", "--c2")], unit=lambda v: f"{v:.1f}%")
     else:
         w = get(base, "/what-if", {"save_rate": a.save_rate, "cost_per_call": a.cost})
         rows = [{"label": RANKERS.get(k, k), "v": v, "cat": "Used" if k == "expected_value" else "Alternative",
@@ -119,6 +192,10 @@ def main(argv: list[str] | None = None) -> None:
         p = csub.add_parser(name); p.add_argument("--save-rate", type=float, default=0.20); p.add_argument("--cost", type=float, default=20.0)
         p.add_argument("--out", default="chart.html")
     r = csub.add_parser("reasons"); r.add_argument("member_id"); r.add_argument("--out", default="chart.html")
+    csub.add_parser("drivers").add_argument("--out", default="chart.html")
+    cf = sub.add_parser("confidence"); cf.add_argument("--share", type=float, required=True)
+    cf.add_argument("--save-rate", type=float, default=0.20); cf.add_argument("--cost", type=float, default=20.0)
+    sub.add_parser("drivers")
     a = ap.parse_args(argv)
 
     if a.cmd == "chart":
@@ -130,12 +207,20 @@ def main(argv: list[str] | None = None) -> None:
         if not 0 < a.share <= 1:
             raise SystemExit("share must be between 0 and 1, e.g. 0.1 for the top 10%")
         out = get(a.base, "/call-list", {"share": a.share, "save_rate": a.save_rate, "cost_per_call": a.cost})
+    elif a.cmd == "confidence":
+        if not 0 < a.share <= 1:
+            raise SystemExit("share must be between 0 and 1, e.g. 0.058 for 50,000 of 862,158 members")
+        out = confidence(a.base, a.share, a.save_rate, a.cost)
+    elif a.cmd == "drivers":
+        out = drivers()
     elif a.cmd == "what-if":
         out = get(a.base, "/what-if", {"save_rate": a.save_rate, "cost_per_call": a.cost})
     elif a.cmd == "score":
         out = get(a.base, f"/members/{urllib.parse.quote(a.member_id, safe="")}/score")
     else:
         out = get(a.base, f"/members/{urllib.parse.quote(a.member_id, safe="")}/explanation")
+        for r in out.get("reasons", []):
+            r["strength"] = strength(r["contribution"])
     json.dump(out, sys.stdout, indent=1, ensure_ascii=False)
     print()
 
