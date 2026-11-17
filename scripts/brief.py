@@ -64,12 +64,13 @@ def page_html(b: dict, repo_url: str, compact: bool = False) -> str:
 
 
 CSS = CSS_START + """
-.brief { display: grid; gap: 12px; padding-block: 18px 4px; }
+.brief { display: grid; gap: 12px; padding-block: 18px 4px; text-align: left; }
+.brief a { color: var(--accent); }
 .brief-list { list-style: none; margin: 0; padding: 0 !important; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
 .brief-list li { display: grid; align-content: start; gap: 4px; padding: 12px 14px; min-width: 0;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+  background: var(--surface); border: 1px solid var(--line, var(--border)); border-radius: 8px; }
 .brief-w { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
-.brief-main { font-size: 14.5px; line-height: 1.45; color: var(--fg); }
+.brief-main { font-size: 14.5px; line-height: 1.45; color: var(--fg, var(--text)); }
 .brief-sub { font-size: 13px; line-height: 1.45; color: var(--muted); }
 .brief-skills summary { cursor: pointer; font-weight: 600; font-size: 14px; }
 .brief-skills ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: 13.5px; line-height: 1.45; }
@@ -91,6 +92,8 @@ def targets(b: dict) -> dict[Path, str]:
     out = {ROOT / "README.md": place(readme, "\n" + markdown(b) + "\n", title)}
     for page, compact in (("index.html", False), ("build.html", True)):
         p = ROOT / "docs" / page
+        if not p.exists():                                  # pages come later (R3, R14); the README is written now
+            continue
         t = p.read_text()
         t = re.sub(re.escape(CSS_START) + r".*?" + re.escape(CSS_END) + r"\n?", "", t, flags=re.S)
         t = t.replace("</style>", CSS + "\n</style>", 1)

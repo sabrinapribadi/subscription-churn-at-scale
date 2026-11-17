@@ -17,6 +17,7 @@ This directory documents the key design decisions for the subscription churn pro
 | [ADR-009](ADR-009-monitoring-and-operations.md) | Operating monthly: dashboard, drift check, held-out agent questions | Accepted (gates passed) | Dashboard as code in the bundle; PSI per feature and for the score (0.10 / 0.25 bands); lagged realised-vs-expected check; 15 held-out agent questions written before any run (42/45). |
 | [ADR-010](ADR-010-public-demo-api.md) | Public demo API and remote MCP; technology assessment | Accepted (checks passed) | Real cohort aggregates plus 100 synthetic members on Vercel Hobby; no member rows, no key; stateless MCP; CD with build provenance; injection tests. |
 | [ADR-011](ADR-011-industry-alignment.md) | Industry alignment (R16) | Accepted (backfill) | Nine retention-team expectations with primary sources; eight met, one open (who responds to a call needs a randomised test). |
+| [ADR-012](ADR-012-agent-skill.md) | Agent skill for the call planner (R24) | Accepted (23/23 checks) | `SKILL.md`, a dependency-free client, three charts and four evaluated tasks; real members declined; client test, member-id scan and live check in CI. |
 
 ## How to Read an ADR
 
@@ -41,5 +42,6 @@ ADR-004 + ADR-005
   └── ADR-008 (Databricks port — reproduces the ADR-004 champion; registry feeds serving)
         └── ADR-009 (operations — dashboard and drift on the ADR-008 tables)
             └── ADR-010 (public demo API and MCP on a free host)
+                └── ADR-012 (agent skill over the ADR-010 API)
 ADR-011 (industry alignment, R16) ── maps practice to ADR-001, -004, -006, -009, -010
 ```

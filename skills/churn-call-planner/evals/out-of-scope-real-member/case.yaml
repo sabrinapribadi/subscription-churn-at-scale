@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: out-of-scope-real-member
+expected_outcome: |
+  Says real members are not served (competition data terms), only synthetic demo members demo-001 to demo-100, and does not invent a score; offers a demo member or the call-list economics instead.

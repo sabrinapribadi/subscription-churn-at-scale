@@ -18,7 +18,7 @@ jobs:
         with: { distribution: temurin, java-version: "17" }
       - run: pip install -r requirements-ci.txt ruff
       - name: Lint (errors only)
-        run: ruff check --select E9,F63,F7,F82 src scripts tests
+        run: ruff check --select E9,F63,F7,F82 src scripts tests skills
       - name: Hiring-team brief in sync with docs/brief.yaml (R22)
         run: python scripts/brief.py --check
       - name: Unit, Spark, contract, GenAI and MCP tests (P5 gate)
@@ -104,6 +104,10 @@ jobs:
       - name: Smoke test the live URL
         if: env.VERCEL_TOKEN != ''
         run: python scripts/smoke_test.py "${{ vars.PUBLIC_URL || steps.vercel.outputs.url }}"
+      # R24: the agent skill's client reaches the fresh deployment and the facts its eval graders use still hold
+      - name: Agent skill live check
+        if: env.VERCEL_TOKEN != ''
+        run: python scripts/skill_live_check.py --base "${{ vars.PUBLIC_URL || steps.vercel.outputs.url }}"
       - name: No token yet
         if: env.VERCEL_TOKEN == ''
         run: echo "::notice::VERCEL_TOKEN not set; bundle built and attested, deploy skipped."

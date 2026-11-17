@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.20.0] — 2026-11-17 — Agent skill for the call planner (R24)
+**Files:** skills/churn-call-planner/ (new: SKILL.md, scripts/churn.py, scripts/charts.py, references/, evals/, trigger-evals.json), tests/test_skill_client.py (new), scripts/skill_live_check.py (new), tests/test_no_member_ids.py, .github/workflows/ci.yml, docs/adr/ADR-012-agent-skill.md (new), docs/adr/README.md, docs/brief.yaml, scripts/brief.py, README.md, docs/index.html, docs/build.html
+- **Situation:** The demo API and MCP were live, but an AI agent did not know when to use them or how to read forecast vs backtest, the save-rate assumption or NT$ member value.
+- **Task:** Ship an evaluated agent skill under R24, with the same answer structure as the other portfolio skills.
+- **Action:** Wrote the skill (reading rules, baseline table, three charts chosen by the reader's job), four task cases with 20 graders and 20 trigger prompts; added an offline client test, the member-id scan over `skills/`, and a live check after every deploy.
+- **Result:** 23 of 23 checks pass against the live API; four facts corrected while writing (R23); the new test caught an id-quoting bug (`/` was not escaped).
+- **Talking point:** "The skill tells an agent which number is a forecast and which is a backtest, and it refuses to score a real member."
+
 ## [0.19.0] — 2026-11-11 — Evidence tables, industry alignment (R16), Databricks CD
 **Files:** docs/references.yaml (new), scripts/evidence.py (new), docs/adr/ADR-001 … ADR-011, docs/adr/README.md, docs/brief.yaml, .github/workflows/ci.yml, data/outputs/references_evidence.json
 - **Situation:** The audit found no citation counts in any ADR, method tables without a tested-vs-cited mark, no industry-alignment record, and no Databricks deploy from CI.

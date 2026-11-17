@@ -8,7 +8,7 @@
 2. **Why:** Churn shows only after renewal fails; a warning 14 days earlier lets the team act. Today's rule calls only manual renewers.
 3. **Who:** Users: retention managers and call agents.
    - Data: public KKBox (WSDM Cup 2018), 410M listening records, 6.8M members. Churner: no renewal within 30 days of expiry.
-4. **Where:** [Results page](https://sabrinapribadi.github.io/subscription-churn-at-scale/) and [technical walkthrough](https://sabrinapribadi.github.io/subscription-churn-at-scale/build.html) on GitHub Pages; monthly job, registry and dashboard on Databricks; [demo API and MCP](https://subscription-churn-at-scale.vercel.app/docs) on Vercel.
+4. **Where:** [Results page](https://sabrinapribadi.github.io/subscription-churn-at-scale/) and [technical walkthrough](https://sabrinapribadi.github.io/subscription-churn-at-scale/build.html) on GitHub Pages; monthly job, registry and dashboard on Databricks; [demo API and MCP](https://subscription-churn-at-scale.vercel.app/docs) on Vercel; an [agent skill](skills/churn-call-planner/SKILL.md) for AI assistants.
 5. **When it fails:** 8 phases with pass bars set before training; 3 failed and are reported (label rebuild, listening embeddings, learned ranker).
    - No live A/B test: historical data only. Tests are out-of-time (train February, score March); a live call test is the next step.
 6. **How:** LightGBM on point-in-time features, calibrated, ranked by churn chance × member value; 5 alternatives tried and rejected.
@@ -21,7 +21,7 @@
 - **Statistics and evaluation:** out-of-time split, PR-AUC, calibration error, profit curves, label-shift correction — [ADR-002](docs/adr/ADR-002-validation-strategy.md), [ADR-004](docs/adr/ADR-004-ranking-and-calibration.md)
 - **MLOps and CI/CD:** MLflow and Unity Catalog registry, PSI drift, dashboard as code, gated CI/CD with provenance — [ADR-009](docs/adr/ADR-009-monitoring-and-operations.md), [ci.yml](.github/workflows/ci.yml)
 - **Cloud and services:** Databricks bundle job, four FastAPI services in Docker, demo API on Vercel — [ADR-005](docs/adr/ADR-005-service-boundaries.md), [ADR-008](docs/adr/ADR-008-databricks-port.md), [ADR-010](docs/adr/ADR-010-public-demo-api.md)
-- **GenAI and agents:** grounded notes with a grader, a planning agent (42 of 45 unseen questions), MCP tools — [ADR-006](docs/adr/ADR-006-genai-module.md), [ADR-007](docs/adr/ADR-007-retention-planner-agent.md)
+- **GenAI and agents:** grounded notes with a grader, a planning agent (42 of 45 unseen questions), MCP tools, an evaluated agent skill (23 of 23) — [ADR-006](docs/adr/ADR-006-genai-module.md), [ADR-007](docs/adr/ADR-007-retention-planner-agent.md), [ADR-012](docs/adr/ADR-012-agent-skill.md)
 - **Domain:** subscription retention (churner definition, value-based call lists, retention economics, privacy) — [ADR-011](docs/adr/ADR-011-industry-alignment.md), [ADR-001](docs/adr/ADR-001-task-framing.md)
 
 <!-- brief:end -->
@@ -106,6 +106,28 @@ pytest tests/ -q
 - A monthly allotment; Hobby has no billing, so Vercel pauses the project instead of charging.
 - After idle time the first call wakes the app: about 1–3 s (measured 2026-11-11).
 - **Fallback:** the [results page](https://sabrinapribadi.github.io/subscription-churn-at-scale/) is static and carries every number, even if the API is paused.
+
+## Use it from an AI agent (skill)
+
+The call planner ships as an Agent Skill in [`skills/churn-call-planner/`](skills/churn-call-planner/SKILL.md) (rule R24): when to use it, how to read every number, a dependency-free client for the live demo API, three charts and tested example tasks.
+
+1. **Install in Claude Code:** copy the folder into your skills directory.
+   ```bash
+   git clone https://github.com/sabrinapribadi/subscription-churn-at-scale
+   cp -r subscription-churn-at-scale/skills/churn-call-planner ~/.claude/skills/   # all projects; or .claude/skills/ in one project
+   ```
+2. **Charts:** `python scripts/churn.py chart profit` (expected profit by share called, best share marked), `chart reasons demo-001` (what raises and lowers risk), `chart rankers` (backtest profit by ranking method).
+3. **Optional MCP connection** (same four tools): `claude mcp add --transport http churn https://subscription-churn-at-scale.vercel.app/mcp`.
+4. **Ask in plain words**, for example: "We can make 50,000 calls; who should we call and what is it worth?" or "Why is demo-001 flagged and what should the agent say?"
+
+| What is tested | How | Result (2026-11-17) |
+|---|---|---|
+| 4 task cases (call budget, explain a member, ranking vs today's rule, real member declined) | [`evals/`](skills/churn-call-planner/evals) in the `claude plugin eval` layout; graders checked by script against the live API | 23 of 23 checks pass (iteration 1) |
+| When the skill should and should not be used | [`trigger-evals.json`](skills/churn-call-planner/trigger-evals.json): 10 should-trigger, 10 near-miss prompts | Ready for `claude plugin eval` |
+| The client, the charts and the facts the graders use | `tests/test_skill_client.py` and the member-id scan in CI; `scripts/skill_live_check.py` after every deploy | Pass |
+
+- **Data terms:** only cohort totals and synthetic demo members are served; the skill declines to score a real member.
+- **Independent run** (real, billed model calls): `claude plugin eval skills/churn-call-planner --allow-tools Bash`.
 
 ## Use it: services and AI assistants
 

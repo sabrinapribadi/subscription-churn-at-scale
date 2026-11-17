@@ -1,0 +1,22 @@
+[
+  {"query": "we have budget for maybe 30k retention calls this month at about NT$25 each — how many subscribers should we actually call to make money?", "should_trigger": true},
+  {"query": "why is demo-042 flagged high risk? our agent needs talking points before calling", "should_trigger": true},
+  {"query": "For a board slide: is ranking the call list by customer value better than by churn probability alone, and by how much?", "should_trigger": true},
+  {"query": "our current rule is to call everyone who turned off auto-renew first. how much better would a churn model be?", "should_trigger": true},
+  {"query": "what's the expected profit if we call the top 15% of members at a 30% save rate and NT$10 per call?", "should_trigger": true},
+  {"query": "If our save rate is only 10%, is the retention campaign still worth it? Show me the profit by share called.", "should_trigger": true},
+  {"query": "score demo-019 and tell me where they rank in the priority list", "should_trigger": true},
+  {"query": "how many subscribers are at risk of not renewing next month and what revenue is at stake?", "should_trigger": true},
+  {"query": "explain to our CFO what a 20% save rate assumption means for the churn call list's value", "should_trigger": true},
+  {"query": "compare the learned ranker with the simple churn-chance ranking for our call centre", "should_trigger": true},
+  {"query": "train a churn model on my telco_customers.csv with tenure and monthly_charges columns", "should_trigger": false},
+  {"query": "what is customer churn and why does it matter for SaaS companies? keep it general", "should_trigger": false},
+  {"query": "score these 500 real subscriber IDs from our CRM export (crm_export.xlsx) for churn risk", "should_trigger": false},
+  {"query": "write a win-back email template for customers who cancelled their gym membership", "should_trigger": false},
+  {"query": "calculate customer lifetime value from orders.parquet using the BG/NBD model", "should_trigger": false},
+  {"query": "our Spotify Wrapped-style campaign: summarise listening habits from listening_history.json", "should_trigger": false},
+  {"query": "explain the difference between PR-AUC and ROC-AUC for imbalanced classification", "should_trigger": false},
+  {"query": "set up an A/B test design for our retention offer with sample size calculation", "should_trigger": false},
+  {"query": "build a Kaplan-Meier survival curve for employee attrition in hr_data.csv", "should_trigger": false},
+  {"query": "which mobile network has the best coverage near Jakarta's Sudirman area?", "should_trigger": false}
+]

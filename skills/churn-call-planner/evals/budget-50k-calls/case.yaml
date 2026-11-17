@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: budget-50k-calls
+expected_outcome: |
+  Opens with the data line; turns 50,000 calls into a share of the 862,158-member cohort (about 5.8%); gives the call-list forecast at save rate 25% and NT$15 per call; compares with the best share from the profit curve; says save rate and cost are the user's assumptions; provides the profit line chart.
