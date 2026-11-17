@@ -1,8 +1,8 @@
 PRODUCT REQUIREMENT DOCUMENT (PRD)
 Project: Subscription Churn at Scale — Who Leaves, When, Why, and Who to Call First
-Version: 1.2 (public demo API and stateless MCP on Vercel Hobby: cohort aggregates plus synthetic members, no member rows; ADR-010)
+Version: 1.3 (agent skill with confidence and business explanations, ADR-012; Streamlit companion app, R26)
 Author: Sabrina Pribadi
-Date: November 11, 2026
+Date: November 17, 2026
 Status: Complete — P0–P7 done (P0, P3, P4 gates failed, documented; P6 passed on run 3; P7 passed)
 
 
@@ -111,6 +111,8 @@ Module D: Ranking and calibration — Phase 4 (ADR-004)
 Module E: Services, GenAI notes and planner agent — Phase 5 (ADR-005, ADR-006, ADR-007)
 Module F: Databricks port & MLflow registry — Phase 6 (ADR-008)
 Module G: Public demo API and MCP (aggregates + synthetic members; no key, no member rows) — ADR-010
+Module H: Agent skill `churn-call-planner` (reading rules, confidence in numbers with a pilot simulation, business explanations from global TreeSHAP shares; 4 evaluated tasks, 27/27) — ADR-012, rule R24
+Module I: Streamlit companion app (capacity planning, demo-member explorer, live API check; public snapshot and API only, no keys) — rule R26
 
 
 7. DATA STRATEGY

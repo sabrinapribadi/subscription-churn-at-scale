@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.22.1] — 2026-11-17 — Agent skill iteration 3: confidence in numbers, pilot simulation
+**Files:** skills/churn-call-planner/ (SKILL.md, scripts/churn.py, scripts/charts.py, references/confidence.md, references/charts.md, evals/budget-50k-calls/), tests/test_skill_client.py, scripts/skill_live_check.py, .github/workflows/ci.yml, docs/adr/ADR-012-agent-skill.md
+- **Situation:** Review of iteration 2: "medium confidence" hid the numbers; the three views needed a clearer picture; the pilot needed a simulation.
+- **Task:** Say how sure in numbers and let a manager test pilot sizes themselves.
+- **Action:** Answers print views agreeing, where each stops and the spread; `chart confidence` adds a dot plot of stopping points, a 100–1,000-call pilot slider and a decision flow; a Python 3.8 syntax check in CI.
+- **Result:** 27 of 27 checks pass; the client parses on Python 3.8+ again (three 3.12-only f-strings fixed).
+- **Talking point:** "Instead of 'medium confidence', the manager sees that all three views say call more, where each would stop, and what a NT$9,000 pilot buys."
+
 ## [0.22.0] — 2026-11-17 — Agent skill iteration 2: confidence levels and business explanations
 **Files:** skills/churn-call-planner/ (SKILL.md, scripts/churn.py, scripts/charts.py, references/confidence.md, references/explainability.md, references/global_drivers.json, references/charts.md, evals/), scripts/global_drivers.py (new), data/outputs/p8_global_drivers.json (new), tests/test_skill_client.py, scripts/skill_live_check.py, docs/adr/ADR-012-agent-skill.md, docs/adr/README.md, docs/brief.yaml, README.md, docs/index.html, docs/build.html
 - **Situation:** Review of iteration 1: "calling more pays up to 26%" had no stated confidence; the member chart used log-odds; the ranking answer did not explain why the model wins.

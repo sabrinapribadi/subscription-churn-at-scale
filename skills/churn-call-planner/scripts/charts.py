@@ -6,6 +6,7 @@ Forms follow the reader's job (references/charts.md):
 - line_chart: one value over an ordered range (expected profit by share of members called), best point marked.
 - diverging_bars: signed contributions around zero (reasons that raise risk in red, lower it in blue).
 - stacked_bars: parts of a whole per row (where the model's extra reach over today's rule comes from).
+- confidence_page: where each view says to stop (dot plot), a pilot-size simulation (slider) and the decision after the pilot (flow).
 Palette: validated reference palette (blue, orange, aqua for categories; grey for context), light and dark themes.
 Every bar has a hover/focus tooltip, values are printed (aqua is under 3:1 on light, so labels are required),
 and a table view sits under the chart.
@@ -180,7 +181,8 @@ def stacked_bars(rows: list[dict], title: str, sub: str, foot: str, segments: li
             tipt = html.escape(f"<b>{r['label']}</b><br>{name}: {unit(v)}", quote=True)
             out.append(f'<rect class="bar" tabindex="0" x="{x:.1f}" y="{y}" width="{max(bw - 2, 1):.1f}" height="{bh}" rx="3" fill="var({var})" data-tip="{tipt}"/>')
             if bw > 46:
-                out.append(f'<text x="{x + bw / 2:.1f}" y="{y + bh - 7}" text-anchor="middle" style="fill:{'var(--ink)' if var == '--ctx' else '#fff'};font-weight:600">{html.escape(unit(v))}</text>')
+                ink = "var(--ink)" if var == "--ctx" else "#fff"                     # dark text on the grey segment
+                out.append(f'<text x="{x + bw / 2:.1f}" y="{y + bh - 7}" text-anchor="middle" style="fill:{ink};font-weight:600">{html.escape(unit(v))}</text>')
             x += bw
         out.append(f'<text class="val" x="{x + 8:.1f}" y="{y + bh - 6}">{html.escape(unit(sum(r["parts"])))}</text>')
     h = 8 + len(rows) * rh
@@ -190,3 +192,92 @@ def stacked_bars(rows: list[dict], title: str, sub: str, foot: str, segments: li
              + "".join(f"<tr><td>{html.escape(r['label'])}</td>" + "".join(f"<td class=n>{html.escape(unit(v))}</td>" for v in r["parts"])
                        + f"<td class=n>{html.escape(unit(sum(r['parts'])))}</td></tr>" for r in rows) + "</table>")
     return _page(title, sub, segments, svg, table, foot)
+
+
+def _m(v: float) -> str:
+    return f"NT${v / 1e6:.1f}M" if abs(v) >= 1e6 else f"NT${v:,.0f}"
+
+
+def confidence_page(c: dict, foot: str) -> str:
+    """Three parts: dot plot of each view's best share against the user's capacity; pilot slider; decision flow."""
+    import json as _json
+    save, share, cost = c["save_rate"], c["share"], c["cost_per_call"]
+    views = [("half_save_rate", f"Half your save rate ({save / 2:.1%})"), ("forecast", f"Forecast ({save:.0%} save rate)"),
+             ("backtest", f"Backtest, March 2017 ({save:.0%})")]
+    lo, hi = c["range_share"]
+    stops = ", ".join("{:.0%}".format(c["best_share"][k]) for k, _ in views)          # no nested quotes: Python 3.8+
+    title = f"{c['views_say_call_more']} of {c['views']} views say calling more than {share:.1%} pays; they stop at {stops}"
+    sub = (f"Even at half your save rate your {c['members_called']:,} calls earn {_m(c['profit_at_half_save_rate'])}; "
+           f"the break-even save rate is {c['break_even_save_rate']:.1%}. The open question is where to stop: a {c['spread_points']}-point spread.")
+    # 1. dot plot
+    w, lw, rw, rh, top = 820, 220, 150, 44, 34
+    xmax = max(0.4, hi + 0.06)
+    X = lambda v: lw + (w - lw - rw) * v / xmax
+    h = top + rh * len(views) + 28
+    parts = [f'<rect x="{X(lo):.1f}" y="{top - 8}" width="{X(hi) - X(lo):.1f}" height="{rh * len(views)}" fill="var(--c1)" fill-opacity="0.10" rx="4"/>',
+             f'<text x="{(X(lo) + X(hi)) / 2:.1f}" y="{top - 14}" text-anchor="middle">where to stop is uncertain: {lo:.0%}–{hi:.0%}</text>']
+    for i, (k, name) in enumerate(views):
+        y = top + i * rh + rh / 2 - 4
+        b, prof = c["best_share"][k], c["best_profit"][k]
+        tipt = html.escape(f"<b>{name}</b><br>Best share {b:.0%} (about {c['best_members'][k]:,} calls)<br>Expected profit there {_m(prof)}", quote=True)
+        parts += [f'<text class="lab" x="{lw - 12}" y="{y + 4}" text-anchor="end">{html.escape(name)}</text>',
+                  f'<line x1="{lw}" y1="{y}" x2="{w - rw}" y2="{y}" stroke="var(--grid)"/>',
+                  f'<rect class="bar" tabindex="0" x="{X(b) - 7:.1f}" y="{y - 7}" width="14" height="14" rx="7" fill="var(--c1)" stroke="var(--surface)" stroke-width="2" data-tip="{tipt}"/>',
+                  f'<text class="val" x="{X(b) + 12:.1f}" y="{y + 4}">stop at {b:.0%} · {html.escape(_m(prof))}</text>']
+    yb = top + rh * len(views) - 6
+    parts += [f'<line x1="{X(share):.1f}" y1="{top - 8}" x2="{X(share):.1f}" y2="{yb}" stroke="var(--c2)" stroke-width="2" stroke-dasharray="5 4"/>',
+              f'<text x="{X(share) + 4:.1f}" y="{yb + 14}" style="fill:var(--c2);font-weight:600">you: {share:.1%}</text>',
+              f'<line x1="{lw}" y1="{yb}" x2="{w - rw}" y2="{yb}" stroke="var(--axis)"/>']
+    for v in [i / 10 for i in range(int(xmax * 10) + 1)]:
+        parts.append(f'<text x="{X(v):.1f}" y="{h - 2}" text-anchor="middle">{v:.0%}</text>')
+    dots = f'<svg viewBox="0 0 {w} {h}" role="img" aria-label="Best share by view">{"".join(parts)}</svg>'
+    # 2. pilot simulation (numbers computed in the page from these inputs)
+    f = c["floor"]
+    data = {"save": save, "cost": cost, "precision": c["pilot"]["precision_forecast"], "ev": f["expected_value_at_risk"], "k": f["members_called"],
+            "floor_share": f["share"]}
+    pilot = (f'<h2>Pilot simulation: how many test calls before scaling?</h2>'
+             f'<p class="sub">Move the slider. A bigger pilot measures the save rate more tightly, so the profit range at the floor '
+             f'({f["members_called"]:,} calls, {f["share"]:.0%}) narrows.</p>'
+             f'<label class="sl">Pilot calls <input id="pc" type="range" min="100" max="1000" step="100" value="{c["pilot"]["calls"]}" aria-label="Pilot calls">'
+             f'<b id="pv"></b></label><div class="kpis" id="out"></div>'
+             f'<svg id="mg" viewBox="0 0 820 170" role="img" aria-label="Save-rate margin by pilot size"></svg>')
+    # 3. decision flow
+    fl = c["best_members"]
+    flow = (f'<h2>After the pilot: the decision</h2><div class="flow">'
+            f'<div class="box"><b>Pilot</b><br>{c["pilot"]["calls"]} calls · about {_m(c["pilot"]["calls"] * cost)}</div><div class="arr">→</div>'
+            f'<div class="box"><b>Measure</b><br>share of called churners kept</div><div class="arr">→</div><div class="outs">'
+            f'<div class="out"><b>{save:.0%} or more</b>: scale toward {fl["forecast"]:,}–{fl["backtest"]:,} calls</div>'
+            f'<div class="out"><b>{save / 2:.1%}–{save:.0%}</b>: call up to the floor, {f["members_called"]:,}</div>'
+            f'<div class="out"><b>{c["break_even_save_rate"]:.1%}–{save / 2:.1%}</b>: keep your {c["members_called"]:,} calls; add no capacity</div>'
+            f'<div class="out"><b>below {c["break_even_save_rate"]:.1%}</b>: stop; calls cost more than they keep</div></div></div>')
+    table = ("<table><tr><th>View</th><th class=n>Best share</th><th class=n>Calls</th><th class=n>Expected profit</th></tr>"
+             + "".join(f"<tr><td>{html.escape(n)}</td><td class=n>{c['best_share'][k]:.0%}</td><td class=n>{c['best_members'][k]:,}</td>"
+                       f"<td class=n>{html.escape(_m(c['best_profit'][k]))}</td></tr>" for k, n in views) + "</table>")
+    extra_css = (".card h2{font-size:15px;margin:22px 0 4px}.sl{display:flex;gap:12px;align-items:center;margin:8px 0}.sl input{flex:1;max-width:420px}"
+                 ".kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:8px 0}"
+                 ".kpi{border:1px solid var(--ring);border-radius:8px;padding:8px 10px}.kpi b{display:block;font-size:18px;font-variant-numeric:tabular-nums}"
+                 ".kpi span{color:var(--ink2);font-size:12px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}"
+                 ".box,.out{border:1px solid var(--ring);border-radius:8px;padding:8px 10px;background:var(--page)}.box{min-width:150px}"
+                 ".outs{display:grid;gap:6px;flex:1;min-width:260px}.arr{color:var(--muted);font-size:18px}")
+    js = """<script>
+const D=__DATA__;const pc=document.getElementById('pc'),pv=document.getElementById('pv'),out=document.getElementById('out'),mg=document.getElementById('mg');
+const M=n=>1.96*Math.sqrt(D.save*(1-D.save)/(n*D.precision));const fm=v=>Math.abs(v)>=1e6?'NT$'+(v/1e6).toFixed(1)+'M':'NT$'+Math.round(v).toLocaleString('en-US');
+const X=n=>80+(800-80-20)*(n-100)/900,Y=m=>14+(170-14-36)*(1-m/0.14);
+let g='';for(let m=0;m<=0.14;m+=0.02){g+=`<line x1="80" y1="${Y(m)}" x2="800" y2="${Y(m)}" stroke="var(--grid)"/><text x="72" y="${Y(m)+4}" text-anchor="end">±${Math.round(m*100)} pts</text>`;}
+for(let n=100;n<=1000;n+=100){g+=`<text x="${X(n)}" y="160" text-anchor="middle">${n}</text>`;}
+let path='';for(let n=100;n<=1000;n+=20){path+=(path?' L':'M')+X(n).toFixed(1)+','+Y(M(n)).toFixed(1);}
+g+=`<path d="${path}" fill="none" stroke="var(--c1)" stroke-width="2"/><circle id="dot" r="6" fill="var(--c2)" stroke="var(--surface)" stroke-width="2"/>`;
+mg.innerHTML=g;
+function upd(){const n=+pc.value,m=M(n),lo=Math.max(0,D.save-m),hi=D.save+m;pv.textContent=n+' calls';
+ const p=s=>s*D.ev-D.cost*D.k;
+ out.innerHTML=`<div class="kpi"><span>Churners reached in the pilot</span><b>about ${Math.round(n*D.precision)}</b></div>`+
+ `<div class="kpi"><span>Save rate measured within (95%)</span><b>±${(m*100).toFixed(1)} pts</b></div>`+
+ `<div class="kpi"><span>Save rate range</span><b>${(lo*100).toFixed(1)}–${(hi*100).toFixed(1)}%</b></div>`+
+ `<div class="kpi"><span>Profit at the floor</span><b>${fm(p(lo))} to ${fm(p(hi))}</b></div>`+
+ `<div class="kpi"><span>Pilot cost</span><b>${fm(n*D.cost)}</b></div>`;
+ const d=document.getElementById('dot');d.setAttribute('cx',X(n));d.setAttribute('cy',Y(m));}
+pc.addEventListener('input',upd);upd();
+</script>""".replace("__DATA__", _json.dumps(data))
+    page = _page(title, sub, [], dots + pilot + flow, table + "<p>Pilot math: churners reached = calls × the forecast share of called members who churn "
+                 f"({c['pilot']['precision_forecast']:.0%}, conservative); margin = 1.96 × √(r(1 − r) / churners).</p>", foot)
+    return page.replace("</style>", extra_css + "</style>", 1).replace("</body>", js + "</body>", 1)

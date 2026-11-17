@@ -19,6 +19,8 @@ jobs:
       - run: pip install -r requirements-ci.txt ruff
       - name: Lint (errors only)
         run: ruff check --select E9,F63,F7,F82 src scripts tests skills app
+      - name: Skill client runs on Python 3.8+ (syntax check)
+        run: ruff check --target-version py38 --select E9 skills
       - name: Hiring-team brief in sync with docs/brief.yaml (R22)
         run: python scripts/brief.py --check
       - name: Unit, Spark, contract, GenAI and MCP tests (P5 gate)

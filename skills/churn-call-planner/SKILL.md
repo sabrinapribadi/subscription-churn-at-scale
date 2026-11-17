@@ -19,6 +19,7 @@ python scripts/churn.py what-if --save-rate 0.2 --cost 20        # backtest: bes
 python scripts/churn.py drivers                                  # what the model looks at; why it beats today's rule
 python scripts/churn.py score demo-007                           # one demo member's churn chance, value, priority
 python scripts/churn.py explain demo-007                         # reasons (with strength words) and a suggested action
+python scripts/churn.py chart confidence --share 0.1 --save-rate 0.2 --cost 20 --out confidence.html   # where each view stops; pilot slider; decision
 python scripts/churn.py chart profit --save-rate 0.2 --cost 20 --out profit.html   # profit by share called (line)
 python scripts/churn.py chart drivers --out drivers.html                           # where the extra reach over today's rule comes from
 python scripts/churn.py chart rankers --out rankers.html                           # ranking methods, backtest profit
@@ -30,7 +31,7 @@ The same tools exist over MCP at `https://subscription-churn-at-scale.vercel.app
 
 1. **Run `about` first** so the answer opens with the data and its period.
 2. **Pick the call from the question.**
-   - "How many to call", a budget or capacity → `call-list` at that share, **`confidence`** at the same share, and `chart profit`.
+   - "How many to call", a budget or capacity → `call-list` at that share, **`confidence`** at the same share, and **`chart confidence`** (where each view stops, a pilot simulation, the decision after the pilot).
    - "Why is the model better than what we do" or "is value ranking worth it" → **`drivers`** and `chart drivers`, plus `what-if` for the money.
    - One member → `explain`; **no chart** (see below).
 3. **Turn a budget into a share:** members called ÷ 862,158 (the March 2017 cohort). Say the share you used.
@@ -39,13 +40,13 @@ The same tools exist over MCP at `https://subscription-churn-at-scale.vercel.app
 
 ## How sure is a number, and what to do about it
 
-Every budget answer states a **confidence level** from `confidence`, its evidence in one line, and the action it implies (`references/confidence.md`):
+Every budget answer says how sure it is **in numbers, not a label**, then turns that into a number to commit to and an action (`references/confidence.md`). Use `confidence` and `chart confidence`:
 
-- **High:** the decision holds at half the user's save rate, and the forecast and the March 2017 backtest put the best share within 5 points of each other. State the number and act on it.
-- **Medium:** the direction holds (e.g. "more calls pay") even at half the save rate, but the best share is uncertain. Commit to the **floor** (the smallest of the three best shares), give the range, and propose the **pilot** that settles it.
-- **Low:** profit is not positive at half the save rate, or the views disagree on the direction. Do not state a target; give the **break-even save rate** and the pilot.
-- **Evidence to cite:** in March 2017 the forecast expected 6.1% of members to churn and 7.3% did (top 10%: 39.6% expected, 47.2% actual), so forecast profits read low and work as a floor; the backtest is the check on what actually happened.
-- **Pilot size:** the calls needed to measure the save rate within ±5 points (95%), from `pilot.calls`. Turn it into an action: who, how many calls, what decision follows.
+- **How sure, in numbers:** how many of the three views (forecast, half the save rate, March 2017 backtest) say calling more pays (e.g. "3 of 3"), where each says to stop (e.g. 18%, 26%, 34%) and the spread in points; the profit at half the save rate and the break-even save rate.
+- **Why the forecast is a floor:** in March 2017 the forecast expected 6.1% of members to churn and 7.3% did (top 10%: 39.6% expected, 47.2% actual), so forecast profits read low.
+- **Commit to the floor** (the smallest best share, in members) when all views agree on the direction; give the range above it.
+- **Pilot:** `pilot.calls` measures the save rate within ±5 points (95%); say its cost and the decision it settles (the four outcomes on the chart).
+- The `level` field (high, medium, low) is for routing only; do not print it.
 
 ## Explaining the model to a business audience
 
@@ -74,8 +75,8 @@ Retention managers decide in about five seconds whether an answer is useful, so 
 
 1. **Data line** (one line): KKBox public data, members expiring March 2017 (862,158), scored 14 days ahead, model version, "checked <date> UTC".
 2. **Headline** in bold: the answer in one sentence with its key number.
-3. **2–4 numbered points**, one line each: the **baseline** for any comparison (today's rule: manual renewers first, then the longest idle; 54% of churners at 10% calls vs the model's 65%); the **assumptions**; for budgets, the **confidence level, its evidence and the action**.
-4. **One visual only when it helps the decision**: a line chart for "how many to call", stacked bars for "why the model beats the rule", ranked bars for ranking methods. For one member, no chart: five reasons read faster as a list.
+3. **2–4 numbered points**, one line each: the **baseline** for any comparison (today's rule: manual renewers first, then the longest idle; 54% of churners at 10% calls vs the model's 65%); the **assumptions**; for budgets, **how sure in numbers and the action**.
+4. **One visual only when it helps the decision**: the confidence page for "how many to call" (`chart profit` when only the curve is asked for), stacked bars for "why the model beats the rule", ranked bars for ranking methods. For one member, no chart: five reasons read faster as a list.
 5. **To sharpen this** (one line): the team's real save rate from the pilot, offer cost and capacity per agent.
 
 ## Limits

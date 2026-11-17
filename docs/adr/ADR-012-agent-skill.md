@@ -66,6 +66,13 @@
 - **Findings while building (R23):** at 10% calls the rule's list holds only manual renewers (104,817 > 86,215), so it never reaches auto-renew leavers (36% of leavers); the model's extra 11.4 points split into 8.2 from auto-renew leavers and 3.2 from a better order among manual renewers (remainder, because the stored segment rates are rounded). A per-feature "direction" averaged over the call list was misleading (days since last listened came out as lowering risk) and was dropped.
 - **Result:** 4 new graders; **27 of 27** pass against the live API (iteration 1: 23 of 23 on the old graders).
 
+### Iteration 3 (2026-11-17, review of iteration 2)
+
+- **Review:** say how sure in exact numbers, not "medium"; suggest a better visual for the three views; simulate pilot sizes from 100 to 600 calls and their impact.
+- **Changes:** the answer prints how many views agree (3 of 3), where each stops (18%, 26%, 34%) and the spread (16 points); the level is routing only. `chart confidence`: a dot plot of where each view stops (a dot plot, not bars: the question is *where*), a pilot slider from 100 to 1,000 calls (margin, save-rate range, profit range at the floor, pilot cost) and a four-outcome decision flow (a flow only for the part that is a process).
+- **Found:** three f-strings reused their outer quotes, valid only on Python 3.12+, so the client failed to parse on 3.8–3.11; fixed, and CI now checks the skill folders with `ruff --target-version py38 --select E9`.
+- **Result:** graders updated (the confidence page replaces the line chart; numbers replace the label); **27 of 27** pass against the live API.
+
 ## Consequences
 
 - **Positive:** any agent that reads skills can plan a call list with the right caveats; the evals and live check fail when the snapshot changes, so the graders are not left stale.

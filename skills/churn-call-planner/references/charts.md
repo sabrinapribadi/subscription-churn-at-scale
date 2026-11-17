@@ -4,7 +4,8 @@ The reader should get the answer in about five seconds from the headline. Add a 
 
 | The reader must... | Use | Command |
 |---|---|---|
-| Decide how many members to call | **Line chart** of expected profit by share called, best share marked | `chart profit --save-rate S --cost C` |
+| Decide how many members to call, and how sure | **Confidence page**: dot plot of where each view stops, a pilot slider, the decision flow | `chart confidence --share X --save-rate S --cost C` |
+| See only the profit curve | **Line chart** of expected profit by share called, best share marked | `chart profit --save-rate S --cost C` |
 | See why the model beats today's rule | **Stacked bars**: leavers reached by the rule vs the model, split by where the extra comes from | `chart drivers` |
 | Compare ranking methods | **Ranked bars** of backtest profit at the same share | `chart rankers` |
 | Understand why one member is flagged | **No chart**: a numbered list of reasons with strength words (strong, moderate, slight) | `explain MEMBER_ID` |

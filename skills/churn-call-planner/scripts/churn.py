@@ -11,6 +11,7 @@
     python churn.py confidence --share 0.058 [--save-rate 0.2] [--cost 20]  # how sure: forecast, backtest, half save rate; floor and pilot
     python churn.py drivers                                           # what the model looks at, and why it beats today's rule
     python churn.py chart drivers [--out chart.html]                  # where the model's extra reach over today's rule comes from
+    python churn.py chart confidence --share 0.058 [...] [--out chart.html]   # where each view stops; pilot simulation; decision flow
 
 Real members are not served (competition data terms); demo members demo-001 to demo-100 are synthetic.
 Amounts are New Taiwan dollars (NT$), the dataset's documented currency. Exit 0 on success, 1 on a network error.
@@ -55,6 +56,11 @@ def get(base: str, path: str, params: dict | None = None, timeout: float = 60) -
     sys.exit(1)
 
 
+def quote_id(member_id: str) -> str:
+    """Escape every reserved character, '/' included, so an id can never change the API path."""
+    return urllib.parse.quote(member_id, safe="")
+
+
 def about(base: str) -> dict:
     root = get(base, "/")
     return {"checked_at_utc": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M"),  # noqa: UP017 - Python 3.8+
@@ -97,11 +103,15 @@ def confidence(base: str, share: float, save: float, cost: float) -> dict:
     churners = math.ceil(1.96 ** 2 * save * (1 - save) / 0.05 ** 2)            # measure the save rate to within ±5 points (95%)
     pilot = math.ceil(churners / precision / 100) * 100
     floor = get(base, "/call-list", {"share": lo, "save_rate": save, "cost_per_call": cost})["summary"]
+    views_more = sum(b > share for b in bests.values())
     return {"level": level, "direction": direction, "share": share, "members_called": here["members_called"],
             "profit_forecast": here["expected_profit"], "profit_at_half_save_rate": half["expected_profit"],
             "best_share": bests, "best_profit": {"forecast": f_best[1], "half_save_rate": p_best[1], "backtest": wi["best_monthly_profit"]},
-            "floor": {"share": lo, "members_called": floor["members_called"], "profit_forecast": floor["expected_profit"]},
-            "range_share": [lo, hi], "range_members": [int(n * lo), int(n * hi)],
+            "views_say_call_more": views_more, "views": len(bests), "spread_points": round(100 * (hi - lo)),
+            "floor": {"share": lo, "members_called": floor["members_called"], "profit_forecast": floor["expected_profit"],
+                      "expected_churners": floor["expected_churners"], "expected_value_at_risk": floor["expected_value_at_risk"],
+                      "break_even_save_rate": cost * floor["members_called"] / floor["expected_value_at_risk"]},
+            "range_share": [lo, hi], "range_members": [int(n * lo), int(n * hi)], "best_members": {k: int(n * v) for k, v in bests.items()},
             "break_even_save_rate": cost * here["members_called"] / here["expected_value_at_risk"],
             "pilot": {"calls": pilot, "churners_needed": churners, "precision_forecast": precision, "margin": 0.05},
             "calibration": {"expected_churn_rate": cal["expected_churn_rate"], "actual_churn_rate": cal["actual_churn_rate"],
@@ -144,7 +154,7 @@ def make_chart(base: str, a: argparse.Namespace) -> Path:
                                  "Share of members called", "Expected profit (NT$)", y_fmt=lambda y: f"NT${y / 1e6:.1f}M",
                                  mark=best, mark_label=f"best: {best[0]:.0%}, NT${best[1] / 1e6:.1f}M")
     elif a.what == "reasons":
-        e = get(base, f"/members/{urllib.parse.quote(a.member_id, safe="")}/explanation")
+        e = get(base, f"/members/{quote_id(a.member_id)}/explanation")
         if e.get("not_found"):
             raise SystemExit(e.get("detail", "member not found"))
         rows = [{"label": r["label"], "v": r["contribution"], "note": str(r["value"])} for r in e["reasons"]]
@@ -153,6 +163,8 @@ def make_chart(base: str, a: argparse.Namespace) -> Path:
                                      f"Risk {s['risk_level']}; NT${s['member_value']:,.0f} a year at stake; suggested action: {e['suggested_action']}.",
                                      data_line(ab) + " Demo members are synthetic; reasons are the model's largest contributions.",
                                      "Raises risk", "Lowers risk")
+    elif a.what == "confidence":
+        page = charts.confidence_page(confidence(base, a.share, a.save_rate, a.cost), data_line(ab))
     elif a.what == "drivers":
         g = drivers()["rule_gap"]
         rule, auto, order = 100 * g["rule_reach"], 100 * g["points_from_auto_renew"], 100 * g["points_from_better_order_in_manual"]
@@ -193,6 +205,8 @@ def main(argv: list[str] | None = None) -> None:
         p.add_argument("--out", default="chart.html")
     r = csub.add_parser("reasons"); r.add_argument("member_id"); r.add_argument("--out", default="chart.html")
     csub.add_parser("drivers").add_argument("--out", default="chart.html")
+    cc = csub.add_parser("confidence"); cc.add_argument("--share", type=float, required=True); cc.add_argument("--out", default="chart.html")
+    cc.add_argument("--save-rate", type=float, default=0.20); cc.add_argument("--cost", type=float, default=20.0)
     cf = sub.add_parser("confidence"); cf.add_argument("--share", type=float, required=True)
     cf.add_argument("--save-rate", type=float, default=0.20); cf.add_argument("--cost", type=float, default=20.0)
     sub.add_parser("drivers")
@@ -216,9 +230,9 @@ def main(argv: list[str] | None = None) -> None:
     elif a.cmd == "what-if":
         out = get(a.base, "/what-if", {"save_rate": a.save_rate, "cost_per_call": a.cost})
     elif a.cmd == "score":
-        out = get(a.base, f"/members/{urllib.parse.quote(a.member_id, safe="")}/score")
+        out = get(a.base, f"/members/{quote_id(a.member_id)}/score")
     else:
-        out = get(a.base, f"/members/{urllib.parse.quote(a.member_id, safe="")}/explanation")
+        out = get(a.base, f"/members/{quote_id(a.member_id)}/explanation")
         for r in out.get("reasons", []):
             r["strength"] = strength(r["contribution"])
     json.dump(out, sys.stdout, indent=1, ensure_ascii=False)

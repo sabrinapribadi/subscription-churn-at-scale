@@ -28,7 +28,7 @@ e = call("explain", "demo-001")
 assert round(e["score"]["churn_probability"], 2) == 0.17 and e["score"]["risk_level"] == "medium" and round(e["score"]["member_value"]) == 1813, e["score"]
 assert [r["label"] for r in e["reasons"]][:2] == ["days since last payment", "payment method"], e["reasons"]
 c = call("confidence", "--share", "0.058", "--save-rate", "0.25", "--cost", "15")
-assert c["level"] == "medium" and c["direction"] == "call more" and c["pilot"]["calls"] == 600, {k: c[k] for k in ("level", "direction", "pilot")}
+assert c["views_say_call_more"] == 3 and c["spread_points"] == 16 and c["direction"] == "call more" and c["pilot"]["calls"] == 600, {k: c[k] for k in ("level", "direction", "pilot")}
 assert c["best_share"] == {"forecast": 0.26, "half_save_rate": 0.18, "backtest": 0.34} and c["floor"]["members_called"] == 155188, c["best_share"]
 d = call("drivers")
 assert d["themes"][0]["theme"] == "Payment and plan" and round(d["rule_gap"]["auto_renew_share_of_leavers"], 2) == 0.36, d["themes"][0]
