@@ -29,10 +29,18 @@ def _leaves(x, out: list) -> None:
     if isinstance(x, (int, float)):
         out.append(float(x))
     elif isinstance(x, str):
+        s = x.strip()
+        if s[:1] in "{[":                                   # a tool that returns JSON as text: read its values, not its escapes
+            try:
+                _leaves(json.loads(s), out)
+                return
+            except ValueError:
+                pass
         out += [_value(m) for m in _NUM.finditer(x)]
     elif isinstance(x, dict):
         for k, v in x.items():
             out += [float(n) for n in re.findall(r"(?<=_)\d+(?=_|$)", str(k))]   # chance_below_25_mbps -> 25
+            out += [_value(m) for m in _NUM.finditer(str(k))]                   # "4.0–4.4 (good)" -> 4.0, 4.4
             _leaves(v, out)
     elif isinstance(x, (list, tuple)):
         for v in x:
@@ -109,11 +117,12 @@ def run(question: str, client, tools: dict, system: str, model: str, prices: dic
             break
         items += list(r.output)
         for fc in fcalls:
+            args: dict = {}
             try:
                 args = json.loads(fc.arguments or "{}")
                 res = tools[fc.name]["fn"](**args) if fc.name in tools else {"error": f"unknown tool {fc.name}"}
             except Exception as e:  # noqa: BLE001 - bad arguments or an API error go back to the model as data
-                args, res = {}, {"error": f"{type(e).__name__}: {str(e)[:200]}"}
+                res = {"error": f"{type(e).__name__}: {str(e)[:200]}"}           # keep the arguments: the trace shows what was asked
             calls.append({"name": fc.name, "arguments": args, "ok": not (isinstance(res, dict) and "error" in res)})
             results.append(res)
             items.append({"type": "function_call_output", "call_id": fc.call_id, "output": json.dumps(res, default=str)})
