@@ -13,7 +13,7 @@ brief:
       - "Data: public KKBox (WSDM Cup 2018), 410M listening records, 6.8M members. Churner: no renewal within 30 days of expiry."
   - w: Where
     lines:
-      - "[Results page](https://sabrinapribadi.github.io/subscription-churn-at-scale/) and [technical walkthrough](https://sabrinapribadi.github.io/subscription-churn-at-scale/build.html) on GitHub Pages; monthly job, registry and dashboard on Databricks; [demo API and MCP](https://subscription-churn-at-scale.vercel.app/docs) on Vercel; an [agent skill](skills/churn-call-planner/SKILL.md) for AI assistants."
+      - "[Results page](https://sabrinapribadi.github.io/subscription-churn-at-scale/) and [technical walkthrough](https://sabrinapribadi.github.io/subscription-churn-at-scale/build.html) on GitHub Pages; [interactive app](https://subscription-churn-at-scale.streamlit.app/) on Streamlit; monthly job, registry and dashboard on Databricks; [demo API and MCP](https://subscription-churn-at-scale.vercel.app/docs) on Vercel; an [agent skill](skills/churn-call-planner/SKILL.md) for AI assistants."
   - w: When it fails
     lines:
       - 8 phases with pass bars set before training; 3 failed and are reported (label rebuild, listening embeddings, learned ranker).

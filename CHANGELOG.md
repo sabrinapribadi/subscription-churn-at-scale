@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.21.1] — 2026-11-17 — Streamlit app redesign and live link
+**Files:** .streamlit/config.toml (new), app/streamlit_app.py, app/plan.py, tests/test_streamlit_app.py, docs/brief.yaml, README.md, docs/index.html, docs/build.html
+- **Situation:** The first deploy worked but looked like a default Streamlit page: red controls, system font, one long column.
+- **Task:** Make it look like a product while keeping R26 (brief first, interactive-only, no keys).
+- **Action:** Custom light and dark theme; campaign inputs in a sidebar shared by all tabs; brief as a card grid; KPI cards; profit curve with your capacity and the best share marked; a where-the-money-goes waterfall; a clickable scatter of the demo members (chance × value, size = value at risk, shape = in your list); live link added to the brief.
+- **Result:** 6 app tests pass (new: the waterfall sums to the profit); checked in Chrome at desktop light and dark and at 400 px with no horizontal scroll.
+- **Talking point:** "Same numbers as the API, but a retention manager can now see where the money goes at their own capacity."
+
 ## [0.21.0] — 2026-11-17 — Streamlit companion app (R26)
 **Files:** app/streamlit_app.py (new), app/plan.py (new), app/requirements.txt (new), tests/test_streamlit_app.py (new), requirements-ci.txt, .github/workflows/ci.yml, README.md
 - **Situation:** LinkedIn previews a Streamlit app well, but the results page already has share, save-rate and cost sliders; a second copy would add nothing.

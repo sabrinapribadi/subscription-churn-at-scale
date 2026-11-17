@@ -8,7 +8,7 @@
 2. **Why:** Churn shows only after renewal fails; a warning 14 days earlier lets the team act. Today's rule calls only manual renewers.
 3. **Who:** Users: retention managers and call agents.
    - Data: public KKBox (WSDM Cup 2018), 410M listening records, 6.8M members. Churner: no renewal within 30 days of expiry.
-4. **Where:** [Results page](https://sabrinapribadi.github.io/subscription-churn-at-scale/) and [technical walkthrough](https://sabrinapribadi.github.io/subscription-churn-at-scale/build.html) on GitHub Pages; monthly job, registry and dashboard on Databricks; [demo API and MCP](https://subscription-churn-at-scale.vercel.app/docs) on Vercel; an [agent skill](skills/churn-call-planner/SKILL.md) for AI assistants.
+4. **Where:** [Results page](https://sabrinapribadi.github.io/subscription-churn-at-scale/) and [technical walkthrough](https://sabrinapribadi.github.io/subscription-churn-at-scale/build.html) on GitHub Pages; [interactive app](https://subscription-churn-at-scale.streamlit.app/) on Streamlit; monthly job, registry and dashboard on Databricks; [demo API and MCP](https://subscription-churn-at-scale.vercel.app/docs) on Vercel; an [agent skill](skills/churn-call-planner/SKILL.md) for AI assistants.
 5. **When it fails:** 8 phases with pass bars set before training; 3 failed and are reported (label rebuild, listening embeddings, learned ranker).
    - No live A/B test: historical data only. Tests are out-of-time (train February, score March); a live call test is the next step.
 6. **How:** LightGBM on point-in-time features, calibrated, ranked by churn chance × member value; 5 alternatives tried and rejected.
@@ -109,7 +109,7 @@ pytest tests/ -q
 
 ## Try it interactively (Streamlit app)
 
-A companion app in [`app/`](app/streamlit_app.py) (rule R26) holds only what the static results page cannot:
+**Live:** [subscription-churn-at-scale.streamlit.app](https://subscription-churn-at-scale.streamlit.app/). A companion app in [`app/`](app/streamlit_app.py) (rule R26) holds only what the static results page cannot:
 
 1. **Plan a campaign from your capacity:** agents × calls per day × working days, your save rate, cost per call and a retention offer per saved member; shows expected profit, the best share and a backtest check.
 2. **Explore the 100 demo members:** filter by risk or by "inside your call list", then see one member's reasons (chart) and the note written once offline.
@@ -117,6 +117,7 @@ A companion app in [`app/`](app/streamlit_app.py) (rule R26) holds only what the
 
 - **Data:** the committed public snapshot (`deploy/public_snapshot.json`) and the public API only; no keys, no model, no member rows.
 - **Free-tier limits:** Streamlit Community Cloud sleeps after 12 hours without visits and the first visit wakes it; the [results page](https://sabrinapribadi.github.io/subscription-churn-at-scale/) is the always-on fallback. No keep-awake pings.
+- **Look:** theme in `.streamlit/config.toml` (light and dark, Inter and Space Grotesk); campaign inputs in the sidebar; KPI cards, a profit curve, a where-the-money-goes waterfall and a clickable member scatter.
 - **Tests:** `tests/test_streamlit_app.py` (logic against the API's figures, and Streamlit AppTest smoke tests) runs in CI.
 - **Run locally:** `pip install -r app/requirements.txt && streamlit run app/streamlit_app.py`.
 

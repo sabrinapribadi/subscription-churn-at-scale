@@ -1,0 +1,43 @@
+# Theme for the Streamlit companion app (R26). Streamlit Cloud reads .streamlit/ from the repository root.
+[theme]
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "'Space Grotesk':https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap"
+baseRadius = "0.75rem"
+buttonRadius = "full"
+showWidgetBorder = true
+showSidebarBorder = true
+metricValueFontSize = "1.9rem"
+metricValueFontWeight = 600
+chartCategoricalColors = ["#2a78d6", "#eb6834", "#1baf7a"]
+
+[theme.light]
+primaryColor = "#2a78d6"
+backgroundColor = "#f7f8fb"
+secondaryBackgroundColor = "#eceff5"
+textColor = "#1a1f2b"
+linkColor = "#1f63b8"
+borderColor = "#dde2ec"
+codeBackgroundColor = "#eceff5"
+
+[theme.light.sidebar]
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f1f3f8"
+
+[theme.dark]
+primaryColor = "#4d94e8"
+backgroundColor = "#0f141c"
+secondaryBackgroundColor = "#1a212c"
+textColor = "#e7eaf0"
+linkColor = "#7fb2f0"
+borderColor = "#2a3240"
+codeBackgroundColor = "#1a212c"
+
+[theme.dark.sidebar]
+backgroundColor = "#141a24"
+secondaryBackgroundColor = "#1f2733"
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false

@@ -23,6 +23,13 @@ def test_plan_matches_public_api_formula():
     assert P.backtest_best(snap["scenarios"], 0.20, 20)["share"] == 0.195  # equals the API's what-if best_share
 
 
+def test_money_breakdown_sums_to_profit():
+    g = P.load()["call_grid"]
+    p = P.plan(g, 40000, 0.20, 20, offer=50)
+    m = P.money(p, 0.20, 20, 50)
+    assert abs(sum(x["amount"] for x in m[:3]) - m[3]["amount"]) < 1
+
+
 def test_brief_links_are_absolute():
     items = dict(P.brief())
     assert {"What", "Why", "Who", "Where", "How"} <= set(items)
@@ -42,16 +49,17 @@ def run(**state):
 def test_page_opens_with_brief_limits_and_plan():
     at = run()
     text = " ".join(m.value for m in at.markdown)
-    assert "**What:**" in text and "Results page" in text and "Technical walkthrough" in text
+    assert "A churn early warning" in text and "Results page" in text and "Technical walkthrough" in text
     assert "12 hours" in at.info[0].value                                 # free-tier limits stated (R26)
     assert at.subheader[0].value.startswith("Calling the top 4.6%")      # 50 agents × 80 calls × 10 days = 40,000 calls
     assert any("= 40,000 calls" in c.value for c in at.caption)
-    assert [m.label for m in at.metric] == ["Members called", "Likely churners reached", "Value at risk among them", "Expected profit"]
+    assert [m.label for m in at.metric][:4] == ["Members called", "Likely churners", "Value at risk", "Expected profit"]
 
 
 def test_capacity_and_loss_messages():
     at = run(agents=500)                                                  # 400,000 calls: beyond the best share
-    assert any("more capacity than pays" in m.value for m in at.markdown)
+    assert any("more capacity than pays" in m.value for m in at.info)
+    assert any("Capacity is the limit" in m.value for m in run().success)
     at = run(cost=100, save=0.05)
     assert at.warning and "loses money" in at.warning[0].value
 

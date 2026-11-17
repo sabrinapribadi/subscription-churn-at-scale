@@ -30,6 +30,13 @@ def _row(grid: dict, i: int, save_rate: float, cost: float, offer: float) -> dic
             "expected_saved": saved, "expected_profit": round(save_rate * ev - cost * k - offer * saved, 0)}
 
 
+def money(p: dict, save_rate: float, cost: float, offer: float = 0.0) -> list[dict]:
+    """Where the expected profit comes from: value kept, minus call cost, minus offer cost (sums to p["expected_profit"])."""
+    kept = save_rate * p["expected_value_at_risk"]
+    return [{"step": "Value kept", "amount": kept}, {"step": "Call cost", "amount": -cost * p["members_called"]},
+            {"step": "Offer cost", "amount": -offer * p["expected_saved"]}, {"step": "Expected profit", "amount": p["expected_profit"]}]
+
+
 def plan(grid: dict, calls: int, save_rate: float, cost: float, offer: float = 0.0) -> dict:
     """Totals for calling the top `calls` members, at the nearest 0.1% of the cohort (the snapshot's grid, as the API does)."""
     n = len(grid["k"])
