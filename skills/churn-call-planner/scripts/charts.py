@@ -59,11 +59,11 @@ def _page(title: str, sub: str, legend: list[tuple[str, str]], svg: str, table: 
             f'<div class="tip" role="tooltip"></div>{JS}</body></html>')
 
 
-def paired_bars(rows: list[dict], title: str, sub: str, foot: str, a_label: str, b_label: str, note_key: str | None = None) -> str:
+def paired_bars(rows: list[dict], title: str, sub: str, foot: str, a_label: str, b_label: str, note_key: str | None = None, label_width: int = 170) -> str:
     """rows: {label, a, b, note?}; a = context (grey), b = focus (blue). Sorted by b, largest first."""
     rows = sorted(rows, key=lambda r: -r["b"])
     vmax = max(max(r["a"], r["b"]) for r in rows) or 1
-    lw, w, bh, gap, rh = 170, 820, 11, 2, 40
+    lw, w, bh, gap, rh = label_width, 820, 11, 2, 40
     plot = w - lw - 130
     y0 = 6
     parts = []
@@ -206,8 +206,11 @@ def confidence_page(c: dict, foot: str) -> str:
              ("backtest", f"Backtest, March 2017 ({save:.0%})")]
     lo, hi = c["range_share"]
     stops = ", ".join("{:.0%}".format(c["best_share"][k]) for k, _ in views)          # no nested quotes: Python 3.8+
-    title = f"{c['views_say_call_more']} of {c['views']} views say calling more than {share:.1%} pays; they stop at {stops}"
-    sub = (f"Even at half your save rate your {c['members_called']:,} calls earn {_m(c['profit_at_half_save_rate'])}; "
+    n_more = c["views_say_call_more"]
+    agree = "All three checks" if n_more == c["views"] else f"{n_more} of our {c['views']} checks"
+    title = f"{agree} say calling more than {share:.1%} pays; they stop at {stops}"
+    sub = (f"The three checks: our forecast, the same forecast at half your save rate, and what actually happened to March 2017 members. "
+           f"Even at half your save rate your {c['members_called']:,} calls earn {_m(c['profit_at_half_save_rate'])}; "
            f"the break-even save rate is {c['break_even_save_rate']:.1%}. The open question is where to stop: a {c['spread_points']}-point spread.")
     # 1. dot plot
     w, lw, rw, rh, top = 820, 220, 150, 44, 34

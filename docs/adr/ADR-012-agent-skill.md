@@ -73,6 +73,12 @@
 - **Found:** three f-strings reused their outer quotes, valid only on Python 3.12+, so the client failed to parse on 3.8–3.11; fixed, and CI now checks the skill folders with `ruff --target-version py38 --select E9`.
 - **Result:** graders updated (the confidence page replaces the line chart; numbers replace the label); **27 of 27** pass against the live API.
 
+### Iteration 4 (2026-11-17, review of iteration 3)
+
+- **Review:** "3 of 3 views" is unclear to a general reader; the stacked chart of where the extra reach comes from was hard to read; use leveled bullets (numbered lead lines, detail bullets underneath).
+- **Changes:** answers and the confidence page name the three checks in plain words (our forecast, the same forecast at half your save rate, what actually happened in March 2017) and say "all three agree"; `chart drivers` now shows, out of every 100 members who left, how many the rule and the model reach, overall and for manual renewers (64 per 100) and auto-renew members (36 per 100); the answer structure uses numbered lead lines with indented detail bullets.
+- **Result:** **27 of 27** pass against the live API.
+
 ## Consequences
 
 - **Positive:** any agent that reads skills can plan a call list with the right caveats; the evals and live check fail when the snapshot changes, so the graders are not left stale.

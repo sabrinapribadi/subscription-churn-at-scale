@@ -6,7 +6,7 @@ The reader should get the answer in about five seconds from the headline. Add a 
 |---|---|---|
 | Decide how many members to call, and how sure | **Confidence page**: dot plot of where each view stops, a pilot slider, the decision flow | `chart confidence --share X --save-rate S --cost C` |
 | See only the profit curve | **Line chart** of expected profit by share called, best share marked | `chart profit --save-rate S --cost C` |
-| See why the model beats today's rule | **Stacked bars**: leavers reached by the rule vs the model, split by where the extra comes from | `chart drivers` |
+| See why the model beats today's rule | **Paired bars per 100 members who left**: rule (grey) vs model (blue), all leavers, manual renewers, auto-renew members | `chart drivers` |
 | Compare ranking methods | **Ranked bars** of backtest profit at the same share | `chart rankers` |
 | Understand why one member is flagged | **No chart**: a numbered list of reasons with strength words (strong, moderate, slight) | `explain MEMBER_ID` |
 | Read exact values | **Table** (each chart has a table view) | — |
@@ -18,6 +18,6 @@ The reader should get the answer in about five seconds from the headline. Add a 
 
 1. **Data line** (one line): data, cohort and period, check date.
 2. **Headline** in bold: the answer in one sentence with the key number.
-3. **2–4 numbered points**: baseline, assumptions, confidence and action (budgets), the caveat that changes the decision.
+3. **2–4 numbered points**, each with one or two indented bullets for details: baseline, assumptions, how sure and the action (budgets), the caveat that changes the decision.
 4. **One visual** with its file path, when it helps.
 5. **To sharpen this** (one line).

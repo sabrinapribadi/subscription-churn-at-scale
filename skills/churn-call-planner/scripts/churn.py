@@ -167,14 +167,18 @@ def make_chart(base: str, a: argparse.Namespace) -> Path:
         page = charts.confidence_page(confidence(base, a.share, a.save_rate, a.cost), data_line(ab))
     elif a.what == "drivers":
         g = drivers()["rule_gap"]
-        rule, auto, order = 100 * g["rule_reach"], 100 * g["points_from_auto_renew"], 100 * g["points_from_better_order_in_manual"]
-        rows = [{"label": "Today's rule", "parts": [rule, 0, 0]}, {"label": "Model (churn chance)", "parts": [rule, order, auto]}]
-        page = charts.stacked_bars(rows, f"Calling {g['share_called']:.0%}: the model reaches {100 * g['model_reach']:.1f}% of leavers, today's rule {rule:.1f}%",
-                                   f"{auto:.1f} points come from auto-renew members, {100 * g['auto_renew_share_of_leavers']:.0f}% of all leavers, whom the rule "
-                                   f"never calls; {order:.1f} points from a better order among manual renewers.",
-                                   data_line(ab) + " Backtest on members who actually churned (P1, model ranked by churn chance); aggregates only.",
-                                   [("Manual renewers, as many as the rule reaches", "--ctx"), ("More manual renewers (better order)", "--c1"),
-                                    ("Auto-renew leavers (rule never calls them)", "--c2")], unit=lambda v: f"{v:.1f}%")
+        man_all = 100 * (1 - g["auto_renew_share_of_leavers"])                   # manual-renewal leavers per 100 leavers
+        auto_all = 100 * g["auto_renew_share_of_leavers"]
+        rule, auto = 100 * g["rule_reach"], 100 * g["points_from_auto_renew"]
+        man_model = rule + 100 * g["points_from_better_order_in_manual"]
+        rows = [{"label": "All members who left", "a": rule, "b": man_model + auto, "note": "of 100"},
+                {"label": f"Manual renewers ({man_all:.0f} of every 100)", "a": rule, "b": man_model, "note": f"of {man_all:.0f}"},
+                {"label": f"Auto-renew members ({auto_all:.0f} of every 100)", "a": 0.0, "b": auto, "note": f"of {auto_all:.0f}"}]
+        page = charts.paired_bars(rows, f"Out of every 100 members who left, today's rule reaches {rule:.0f} and the model {100 * g['model_reach']:.0f}",
+                                  f"Calling the same {g['calls']:,} members (10%). The rule never calls auto-renew members, so it reaches none of the "
+                                  f"{auto_all:.0f} in every 100 who leave from that group; the model reaches {auto:.0f} of them.",
+                                  data_line(ab) + " Backtest on members who actually churned in March 2017 (model ranked by churn chance); aggregates only.",
+                                  "Today's rule", "Model", label_width=250)
     else:
         w = get(base, "/what-if", {"save_rate": a.save_rate, "cost_per_call": a.cost})
         rows = [{"label": RANKERS.get(k, k), "v": v, "cat": "Used" if k == "expected_value" else "Alternative",

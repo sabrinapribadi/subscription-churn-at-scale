@@ -10,6 +10,10 @@ A budget answer is only useful if the reader knows how far to trust it. `python 
 | Half the save rate | The same forecast with the save rate halved | Stress test: the save rate is the least known input |
 | Backtest | Members who actually churned in March 2017 (`what-if`) | What really happened with this ranking |
 
+## Saying it
+
+Name the three checks in plain words ("our forecast, the forecast with half your save rate, and what actually happened in March 2017"), then say how many agree. Do not write "views" or "3 of 3" on their own.
+
 ## Levels (routing only; say the numbers, not the label)
 
 | Level | Rule | Say | Do |

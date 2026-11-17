@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.22.2] — 2026-11-17 — Agent skill iteration 4: plain wording, a per-100 chart, leveled bullets
+**Files:** skills/churn-call-planner/ (SKILL.md, scripts/churn.py, scripts/charts.py, references/, evals/), tests/test_skill_client.py, docs/adr/ADR-012-agent-skill.md
+- **Situation:** Review of iteration 3: "3 of 3 views" confused general readers; the stacked chart needed explaining.
+- **Task:** Make the confidence statement and the model-vs-rule chart readable without a statistics background.
+- **Action:** Name the three checks in plain words; replace the stacked chart with paired bars "out of every 100 members who left"; numbered lead lines with detail bullets.
+- **Result:** 27 of 27 checks pass.
+- **Talking point:** "Out of every 100 members who left, today's rule reaches 54 and the model 65; the 8 extra auto-renew leavers are the ones the rule never calls."
+
 ## [0.22.1] — 2026-11-17 — Agent skill iteration 3: confidence in numbers, pilot simulation
 **Files:** skills/churn-call-planner/ (SKILL.md, scripts/churn.py, scripts/charts.py, references/confidence.md, references/charts.md, evals/budget-50k-calls/), tests/test_skill_client.py, scripts/skill_live_check.py, .github/workflows/ci.yml, docs/adr/ADR-012-agent-skill.md
 - **Situation:** Review of iteration 2: "medium confidence" hid the numbers; the three views needed a clearer picture; the pilot needed a simulation.

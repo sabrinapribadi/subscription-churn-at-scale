@@ -113,7 +113,7 @@ def test_drivers_chart_offline(calls, tmp_path):
     out = tmp_path / "d.html"
     churn.main(["chart", "drivers", "--out", str(out)])
     page = out.read_text()
-    assert page.count('class="bar"') == 4 and "65.5%" in page and "rule never calls" in page
+    assert page.count('class="bar"') == 6 and "Out of every 100 members who left" in page and "rule never calls" in page
 
 
 def test_confidence_page_offline(calls, tmp_path):
@@ -122,4 +122,4 @@ def test_confidence_page_offline(calls, tmp_path):
     churn.main(["chart", "confidence", "--share", "0.058", "--save-rate", "0.25", "--cost", "15", "--out", str(out)])
     page = out.read_text()
     assert page.count('class="bar"') == 3 and 'id="pc"' in page and page.count('class="out"') == 4
-    assert "views say calling more" in page and "medium" not in page.lower()
+    assert "checks say calling more" in page and "views" not in page and "medium" not in page.lower()

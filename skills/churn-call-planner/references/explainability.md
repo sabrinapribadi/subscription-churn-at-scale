@@ -29,6 +29,10 @@
 
 Top single signals: auto-renew (18%), payment method (18%), days since last payment (10%), plan list price (7%), days as a paying member (6%).
 
+## Say it per 100 members who left
+
+Out of every 100 members who left: 64 were manual renewers and 36 on auto-renew. The rule reaches 54 (all manual renewers) and none of the 36; the model reaches 57 manual renewers and 8 auto-renew members, 65 in all.
+
 ## Writing rules
 
 1. Numbered points, business words; no "SHAP", "log-odds", "feature" or column names in the answer.
