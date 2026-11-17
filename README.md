@@ -107,6 +107,19 @@ pytest tests/ -q
 - After idle time the first call wakes the app: about 1–3 s (measured 2026-11-11).
 - **Fallback:** the [results page](https://sabrinapribadi.github.io/subscription-churn-at-scale/) is static and carries every number, even if the API is paused.
 
+## Try it interactively (Streamlit app)
+
+A companion app in [`app/`](app/streamlit_app.py) (rule R26) holds only what the static results page cannot:
+
+1. **Plan a campaign from your capacity:** agents × calls per day × working days, your save rate, cost per call and a retention offer per saved member; shows expected profit, the best share and a backtest check.
+2. **Explore the 100 demo members:** filter by risk or by "inside your call list", then see one member's reasons (chart) and the note written once offline.
+3. **Ask the live API:** runs your plan against the public API and shows whether the numbers match; the MCP command for AI assistants.
+
+- **Data:** the committed public snapshot (`deploy/public_snapshot.json`) and the public API only; no keys, no model, no member rows.
+- **Free-tier limits:** Streamlit Community Cloud sleeps after 12 hours without visits and the first visit wakes it; the [results page](https://sabrinapribadi.github.io/subscription-churn-at-scale/) is the always-on fallback. No keep-awake pings.
+- **Tests:** `tests/test_streamlit_app.py` (logic against the API's figures, and Streamlit AppTest smoke tests) runs in CI.
+- **Run locally:** `pip install -r app/requirements.txt && streamlit run app/streamlit_app.py`.
+
 ## Use it from an AI agent (skill)
 
 The call planner ships as an Agent Skill in [`skills/churn-call-planner/`](skills/churn-call-planner/SKILL.md) (rule R24): when to use it, how to read every number, a dependency-free client for the live demo API, three charts and tested example tasks.

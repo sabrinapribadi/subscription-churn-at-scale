@@ -1,3 +1,4 @@
 -r requirements-serving.txt
 pyspark==4.0.*
 pytest>=8
+-r app/requirements.txt

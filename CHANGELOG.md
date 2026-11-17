@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.21.0] — 2026-11-17 — Streamlit companion app (R26)
+**Files:** app/streamlit_app.py (new), app/plan.py (new), app/requirements.txt (new), tests/test_streamlit_app.py (new), requirements-ci.txt, .github/workflows/ci.yml, README.md
+- **Situation:** LinkedIn previews a Streamlit app well, but the results page already has share, save-rate and cost sliders; a second copy would add nothing.
+- **Task:** Build an interactive-only companion app under R26: brief first, no keys, limits stated, tested in CI.
+- **Action:** Three tabs the static page cannot offer: capacity-based planning with a retention-offer cost, a filterable explorer of the 100 demo members with reasons charts and stored notes, and a live call to the public API with a match check. Logic in a pure module tested against the API's figures; AppTest smoke tests cover the brief, the messages, the explorer and an unreachable API.
+- **Result:** App numbers equal the API's (10%: NT$10,459,431; forecast best 26%; backtest best 19.5%); 5 tests pass; no horizontal scroll at 400 px, light and dark checked in Chrome.
+- **Talking point:** "The app answers 'what if my team has 50 agents for 10 days?', which a static page cannot, from the same numbers as the API."
+
 ## [0.20.0] — 2026-11-17 — Agent skill for the call planner (R24)
 **Files:** skills/churn-call-planner/ (new: SKILL.md, scripts/churn.py, scripts/charts.py, references/, evals/, trigger-evals.json), tests/test_skill_client.py (new), scripts/skill_live_check.py (new), tests/test_no_member_ids.py, .github/workflows/ci.yml, docs/adr/ADR-012-agent-skill.md (new), docs/adr/README.md, docs/brief.yaml, scripts/brief.py, README.md, docs/index.html, docs/build.html
 - **Situation:** The demo API and MCP were live, but an AI agent did not know when to use them or how to read forecast vs backtest, the save-rate assumption or NT$ member value.
