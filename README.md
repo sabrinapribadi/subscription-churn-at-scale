@@ -115,6 +115,7 @@ pytest tests/ -q
 2. **Explore the 100 demo members:** filter by risk or by "inside your call list", then see one member's reasons (chart) and the note written once offline.
 3. **Ask the live API:** runs your plan against the public API and shows whether the numbers match; the MCP command for AI assistants.
 
+- **Ask the agent:** the retention planner agent (ADR-007). **Replay by default:** 9 real answers recorded on the public API (`app/replays.json`, made by `scripts/record_agent_replays.py`), each with its tool calls, a number check (9 of 9 pass), cost and time; a typed question shows the closest recorded one. **Live with your own key:** a viewer can paste their own OpenAI key; it stays in their session only, is never stored or logged, and is capped at 10 questions. The app never holds a key of ours.
 - **Data:** the committed public snapshot (`deploy/public_snapshot.json`) and the public API only; no keys, no model, no member rows.
 - **Free-tier limits:** Streamlit Community Cloud sleeps after 12 hours without visits and the first visit wakes it; the [results page](https://sabrinapribadi.github.io/subscription-churn-at-scale/) is the always-on fallback. No keep-awake pings.
 - **Look:** theme in `.streamlit/config.toml` (light and dark, Inter and Space Grotesk); campaign inputs in the sidebar; KPI cards, a profit curve, a where-the-money-goes waterfall and a clickable member scatter.

@@ -1,4 +1,5 @@
 """Streamlit companion app (R26): logic against the snapshot, and AppTest smoke tests of the page (offline)."""
+import json
 import sys
 from pathlib import Path
 
@@ -75,3 +76,79 @@ def test_member_explorer_and_api_failure_is_handled(monkeypatch):
     assert any(s.value.startswith("demo-001: 17% chance") for s in at.subheader)
     at.button(key="run_api").click().run()
     assert not at.exception and any("did not answer" in w.value for w in at.warning)
+
+
+# ---------------------------------------------------------------- chat tab (replay by default, live with the viewer's key)
+import agent as A
+import agent_tools as AT
+
+REPLAYS = json.loads((ROOT / "app" / "replays.json").read_text())
+
+
+def test_replays_recorded_grounded_and_keyless():
+    runs = REPLAYS["runs"]
+    assert [r["question"] for r in runs] == AT.QUESTIONS
+    assert all(r["grounded"] for r in runs) and REPLAYS["summary"]["cost_per_1000_usd"] < 1.0
+    raw = (ROOT / "app" / "replays.json").read_text()
+    assert "sk-" not in raw and "OPENAI" not in raw
+    for r in runs:                                                     # the stored flag agrees with today's checker
+        assert A.ungrounded_numbers(r["answer"], [r["question"], r["tool_results"]]) == r["ungrounded_numbers"]
+
+
+def test_grader_and_matching():
+    assert A.ungrounded_numbers("elevation 2 m, 185% more, below 25 Mbps, 16.8M", [{"chance_below_25_mbps": 0, "g": 1.853, "e": 2, "p": 16.84e6}]) == []
+    assert A.ungrounded_numbers("profit 999,999", [{"p": 5}]) == ["999,999"]
+    best, score = A.closest(AT.QUESTIONS[0].lower().replace("?", ""), REPLAYS["runs"])
+    assert best["question"] == AT.QUESTIONS[0] and score > 0.8
+    assert A.closest("zzzz qqqq", REPLAYS["runs"])[1] < 0.35
+    fake = "sk" + "-" + "abcdefghijk123"                                   # built at runtime: no key-shaped string in the repo
+    assert A.redact(f"bad key {fake} rejected", fake) == "bad key [your key] rejected"
+
+
+def _chat_app(monkeypatch, fake_run=None):
+    if fake_run:
+        monkeypatch.setattr(A, "run", fake_run)
+    at = AppTest.from_file(APP, default_timeout=60)
+    at.session_state["view"] = "Ask the agent"                          # lazy tabs (site planner); ignored where tabs are eager
+    at.run()
+    assert not at.exception, at.exception
+    return at
+
+
+def test_chat_replay_default(monkeypatch):
+    at = _chat_app(monkeypatch)
+    assert at.radio(key="chat_mode").value.startswith("Replay")
+    at.selectbox(key="replay_pick").set_value(AT.QUESTIONS[0]).run()
+    assert not at.exception and any(REPLAYS["runs"][0]["answer"][:40] in m.value for m in at.markdown)
+
+
+def test_chat_live_uses_viewer_key_and_never_echoes_it(monkeypatch):
+    key = "sk" + "-" + "test-viewerkey-123456"                               # fake, built at runtime
+    seen = {}
+
+    def fake(q, client, tools, system, model, prices, **kw):
+        seen["key"] = client.api_key
+        return {"question": q, "answer": "Live answer.", "tool_calls": [], "tool_results": [], "steps": 1, "grounded": True,
+                "ungrounded_numbers": [], "model": model, "tokens": {"input": 10, "cached_input": 0, "output": 5}, "cost_usd": 1e-6, "latency_ms": 5.0}
+    at = _chat_app(monkeypatch, fake)
+    at.radio(key="chat_mode").set_value("Live: use your own OpenAI key").run()
+    at.text_input(key="byo_key").input(key).run()
+    at.chat_input(key="live_input").set_value("Anything").run()
+    assert seen["key"] == key and any("Live answer." in m.value for m in at.markdown)
+    assert key not in " ".join(m.value for m in at.markdown) + " ".join(c.value for c in at.caption)
+
+    def boom(*a, **k):
+        raise RuntimeError(f"Incorrect API key provided: {key}")
+    at = _chat_app(monkeypatch, boom)
+    at.radio(key="chat_mode").set_value("Live: use your own OpenAI key").run()
+    at.text_input(key="byo_key").input(key).run()
+    at.chat_input(key="live_input").set_value("Anything").run()
+    assert at.error and key not in at.error[0].value and "[your key]" in at.error[0].value
+
+
+def test_app_agent_matches_repo_agent():
+    """The app's agent is the repo's planner: same instructions, same tool schemas (src needs the serving packages)."""
+    agent_mod = pytest.importorskip("src.genai.agent")
+    tools_mod = pytest.importorskip("src.genai.tools")
+    assert AT.SYSTEM == agent_mod.SYSTEM
+    assert AT.SCHEMAS == json.loads(json.dumps(tools_mod.openai_tool_schemas(tools_mod.build_tools(None))))

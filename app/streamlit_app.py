@@ -96,7 +96,7 @@ with st.expander("Full brief"):
 st.caption(f"[Results page]({P.PAGES}) · [Technical walkthrough]({P.PAGES}build.html) · [Demo API]({P.API}/docs) · [Source]({P.REPO}) · "
            f"Free Streamlit app: it sleeps after 12 hours without visits; the [results page]({P.PAGES}) is always on and carries every result.")
 
-plan_tab, members_tab, api_tab = st.tabs(["Plan a campaign", "Explore demo members", "Ask the live API"])
+plan_tab, members_tab, agent_tab, api_tab = st.tabs(["Plan a campaign", "Explore demo members", "Ask the agent", "Ask the live API"])
 
 # 2. Plan with your own capacity and costs
 with plan_tab:
@@ -227,7 +227,15 @@ with members_tab:
         st.markdown(f"**Agent note** (written once offline by {who}; grader check: {'passed' if e.get('grounded') else 'failed'}; no model runs here):")
         st.html(f'<div class="note">{e["narrative"]}</div>')
 
-# 4. The live API: same plan, real HTTP
+# 4. The retention planner agent: recorded answers by default, live only with the viewer's own key
+with agent_tab:
+    import agent_tools as AT
+    import chat
+    st.markdown("Ask the retention planner agent (ADR-007) in plain words. It picks the tools (call list, what-if, a member's risk and "
+                "reasons), reads their results and answers; every number must come from a tool.")
+    chat.render(st, Path(__file__).resolve().parent / "replays.json", AT)
+
+# 5. The live API: same plan, real HTTP
 with api_tab:
     st.markdown(f"Run your plan against the public API ({API}). It answers from the same snapshot, so the numbers should match the plan tab "
                 "(except the offer cost, which the API does not take).")

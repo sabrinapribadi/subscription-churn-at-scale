@@ -1,0 +1,429 @@
+{
+ "recorded_utc": "2026-11-17 14:29",
+ "model": "gpt-6-luna",
+ "api": "https://subscription-churn-at-scale.vercel.app",
+ "runs": [
+  {
+   "question": "How many members should we call if we keep 1 in 4 churners we reach and a call costs 15?",
+   "answer": "Call 293,133 members, or 34% of members. This is the profit-maximizing call volume assuming you retain 1 in 4 churners reached and each call costs 15. The estimated monthly profit is 19,471,247.",
+   "tool_calls": [
+    {
+     "name": "what_if",
+     "arguments": {
+      "save_rate": 0.25,
+      "cost_per_call": 15
+     },
+     "ok": true
+    }
+   ],
+   "tool_results": [
+    {
+     "save_rate": 0.25,
+     "cost_per_call": 15.0,
+     "best_share": 0.34,
+     "best_members_called": 293133,
+     "best_monthly_profit": 19471247.0,
+     "profit_at_10pct": {
+      "probability": 16372708.0,
+      "expected_value": 16401434.0,
+      "lambdamart": 12986092.0
+     }
+    }
+   ],
+   "steps": 2,
+   "grounded": true,
+   "ungrounded_numbers": [],
+   "model": "gpt-6-luna",
+   "tokens": {
+    "input": 1550,
+    "cached_input": 0,
+    "output": 84
+   },
+   "cost_usd": 0.000197,
+   "latency_ms": 13144.6
+  },
+  {
+   "question": "What profit do we make if we call the top 5% of members at a 20% save rate and 20 per call?",
+   "answer": "Calling the top 5% is expected to make a profit of 7,357,651, using the 20% save rate and 20-per-call cost you specified.",
+   "tool_calls": [
+    {
+     "name": "call_list",
+     "arguments": {
+      "share": 0.05,
+      "limit": 5,
+      "save_rate": 0.2,
+      "cost_per_call": 20
+     },
+     "ok": true
+    }
+   ],
+   "tool_results": [
+    {
+     "request": {
+      "share": 0.05,
+      "limit": 20,
+      "save_rate": 0.2,
+      "cost_per_call": 20.0
+     },
+     "summary": {
+      "members_called": 43107,
+      "expected_churners": 22855.8,
+      "expected_value_at_risk": 41098956.0,
+      "expected_profit": 7357651.0
+     },
+     "members": [],
+     "members_note": "Real member rows are not published (competition data terms); see the demo members demo-001 to demo-100."
+    }
+   ],
+   "steps": 2,
+   "grounded": true,
+   "ungrounded_numbers": [],
+   "model": "gpt-6-luna",
+   "tokens": {
+    "input": 1591,
+    "cached_input": 0,
+    "output": 77
+   },
+   "cost_usd": 0.0001976,
+   "latency_ms": 7992.7
+  },
+  {
+   "question": "Compare calling 5% and 10% of members at the default assumptions.",
+   "answer": "At the default assumptions—a 20% save rate among called churners and a cost of 20 per call—calling 5% means 43,107 calls and expected profit of 7,357,651. Calling 10% means 86,215 calls and expected profit of 10,459,431. The 10% option has higher expected profit.",
+   "tool_calls": [
+    {
+     "name": "call_list",
+     "arguments": {
+      "share": 0.05,
+      "limit": 5,
+      "save_rate": 0.2,
+      "cost_per_call": 20
+     },
+     "ok": true
+    },
+    {
+     "name": "call_list",
+     "arguments": {
+      "share": 0.1,
+      "limit": 5,
+      "save_rate": 0.2,
+      "cost_per_call": 20
+     },
+     "ok": true
+    }
+   ],
+   "tool_results": [
+    {
+     "request": {
+      "share": 0.05,
+      "limit": 20,
+      "save_rate": 0.2,
+      "cost_per_call": 20.0
+     },
+     "summary": {
+      "members_called": 43107,
+      "expected_churners": 22855.8,
+      "expected_value_at_risk": 41098956.0,
+      "expected_profit": 7357651.0
+     },
+     "members": [],
+     "members_note": "Real member rows are not published (competition data terms); see the demo members demo-001 to demo-100."
+    },
+    {
+     "request": {
+      "share": 0.1,
+      "limit": 20,
+      "save_rate": 0.2,
+      "cost_per_call": 20.0
+     },
+     "summary": {
+      "members_called": 86215,
+      "expected_churners": 33807.7,
+      "expected_value_at_risk": 60918657.0,
+      "expected_profit": 10459431.0
+     },
+     "members": [],
+     "members_note": "Real member rows are not published (competition data terms); see the demo members demo-001 to demo-100."
+    }
+   ],
+   "steps": 3,
+   "grounded": true,
+   "ungrounded_numbers": [],
+   "model": "gpt-6-luna",
+   "tokens": {
+    "input": 2598,
+    "cached_input": 0,
+    "output": 153
+   },
+   "cost_usd": 0.0003363,
+   "latency_ms": 6570.1
+  },
+  {
+   "question": "If only 1 in 10 called churners stay and each call costs 30, is a campaign still worth it?",
+   "answer": "Yes. With a 10% save rate and a cost of 30 per call, the best campaign calls 11.5% of members and is projected to earn monthly profit of 4,514,797. These are the assumptions you specified.",
+   "tool_calls": [
+    {
+     "name": "what_if",
+     "arguments": {
+      "save_rate": 0.1,
+      "cost_per_call": 30
+     },
+     "ok": true
+    }
+   ],
+   "tool_results": [
+    {
+     "save_rate": 0.1,
+     "cost_per_call": 30.0,
+     "best_share": 0.115,
+     "best_members_called": 99148,
+     "best_monthly_profit": 4514797.0,
+     "profit_at_10pct": {
+      "probability": 4479904.0,
+      "expected_value": 4491394.0,
+      "lambdamart": 3125258.0
+     }
+    }
+   ],
+   "steps": 2,
+   "grounded": true,
+   "ungrounded_numbers": [],
+   "model": "gpt-6-luna",
+   "tokens": {
+    "input": 1550,
+    "cached_input": 0,
+    "output": 82
+   },
+   "cost_usd": 0.000196,
+   "latency_ms": 4767.2
+  },
+  {
+   "question": "Why is demo-001 at risk, and what should the agent say?",
+   "answer": "demo-001 is at medium risk, with a 17% chance of not renewing. Risk factors include no payment in 38 days, no listening in 26 days, and payment method type 36. Auto-renew being on slightly lowers risk. The suggested action is a re-engagement message.\n\nThe agent could say: “Hi, we noticed you haven’t listened recently. Is there anything we can do to help you get back to enjoying your subscription?”",
+   "tool_calls": [
+    {
+     "name": "member_risk",
+     "arguments": {
+      "member_id": "demo-001"
+     },
+     "ok": true
+    },
+    {
+     "name": "why_at_risk",
+     "arguments": {
+      "member_id": "demo-001"
+     },
+     "ok": true
+    }
+   ],
+   "tool_results": [
+    {
+     "member_id": "demo-001",
+     "churn_probability": 0.17386545802704073,
+     "risk_level": "medium",
+     "member_value": 1812.8333333333335,
+     "expected_value_at_risk": 315.18909782668703,
+     "priority_rank": 90607,
+     "priority_percentile": 89.49,
+     "expiry_date": 20170315,
+     "model_version": "lgbm-k14w30-ef067b38"
+    },
+    {
+     "member_id": "demo-001",
+     "note": "Medium risk, 17% chance of not renewing after expiry on 2017-03-15. Value at stake: 1813 over 12 months. days since last payment [38], payment method [type 36], days since last listened [26]. Suggested action: send a re-engagement message.",
+     "suggested_action": "send a re-engagement message",
+     "reasons": [
+      {
+       "feature": "days_since_last_tx",
+       "label": "days since last payment",
+       "value": "38",
+       "contribution": 1.13,
+       "direction": "raises risk",
+       "shown_to_agent": true
+      },
+      {
+       "feature": "last_payment_method",
+       "label": "payment method",
+       "value": "type 36",
+       "contribution": 0.715,
+       "direction": "raises risk",
+       "shown_to_agent": true
+      },
+      {
+       "feature": "days_since_last_play",
+       "label": "days since last listened",
+       "value": "26",
+       "contribution": 0.338,
+       "direction": "raises risk",
+       "shown_to_agent": true
+      },
+      {
+       "feature": "last_list_price",
+       "label": "plan list price",
+       "value": "149",
+       "contribution": 0.2309,
+       "direction": "raises risk",
+       "shown_to_agent": true
+      },
+      {
+       "feature": "last_auto_renew",
+       "label": "auto-renew",
+       "value": "on",
+       "contribution": -0.2001,
+       "direction": "lowers risk",
+       "shown_to_agent": true
+      }
+     ],
+     "grounded": true
+    }
+   ],
+   "steps": 2,
+   "grounded": true,
+   "ungrounded_numbers": [],
+   "model": "gpt-6-luna",
+   "tokens": {
+    "input": 1922,
+    "cached_input": 0,
+    "output": 155
+   },
+   "cost_usd": 0.0002697,
+   "latency_ms": 5207.6
+  },
+  {
+   "question": "How risky is demo-042 and where do they rank on the call list?",
+   "answer": "demo-042 is at **low risk** of not renewing, with a churn probability of about **6%**. Their expected value at risk is about **108**. They rank **156,821st** on the call list, at the **81.81st percentile**.",
+   "tool_calls": [
+    {
+     "name": "member_risk",
+     "arguments": {
+      "member_id": "demo-042"
+     },
+     "ok": true
+    }
+   ],
+   "tool_results": [
+    {
+     "member_id": "demo-042",
+     "churn_probability": 0.059679653614026745,
+     "risk_level": "low",
+     "member_value": 1812.8333333333335,
+     "expected_value_at_risk": 108.18926539329483,
+     "priority_rank": 156821,
+     "priority_percentile": 81.81,
+     "expiry_date": 20170315,
+     "model_version": "lgbm-k14w30-ef067b38"
+    }
+   ],
+   "steps": 2,
+   "grounded": true,
+   "ungrounded_numbers": [],
+   "model": "gpt-6-luna",
+   "tokens": {
+    "input": 1542,
+    "cached_input": 0,
+    "output": 84
+   },
+   "cost_usd": 0.0001962,
+   "latency_ms": 4173.9
+  },
+  {
+   "question": "Who should we call first?",
+   "answer": "The call list doesn’t include individual member details, so I can’t name specific members to call first. It ranks the first 10% of members to call, assuming a 20% save rate and a cost of 20 per call.",
+   "tool_calls": [
+    {
+     "name": "call_list",
+     "arguments": {
+      "share": 0.1,
+      "limit": 5,
+      "save_rate": 0.2,
+      "cost_per_call": 20
+     },
+     "ok": true
+    }
+   ],
+   "tool_results": [
+    {
+     "request": {
+      "share": 0.1,
+      "limit": 20,
+      "save_rate": 0.2,
+      "cost_per_call": 20.0
+     },
+     "summary": {
+      "members_called": 86215,
+      "expected_churners": 33807.7,
+      "expected_value_at_risk": 60918657.0,
+      "expected_profit": 10459431.0
+     },
+     "members": [],
+     "members_note": "Real member rows are not published (competition data terms); see the demo members demo-001 to demo-100."
+    }
+   ],
+   "steps": 2,
+   "grounded": true,
+   "ungrounded_numbers": [],
+   "model": "gpt-6-luna",
+   "tokens": {
+    "input": 1547,
+    "cached_input": 0,
+    "output": 90
+   },
+   "cost_usd": 0.0001997,
+   "latency_ms": 6473.4
+  },
+  {
+   "question": "What is the churn risk of member Wk8vF3qZ+abc=?",
+   "answer": "I couldn’t retrieve a churn-risk estimate: this member ID isn’t available. The tool only serves demo members, from demo-001 to demo-100.",
+   "tool_calls": [
+    {
+     "name": "member_risk",
+     "arguments": {
+      "member_id": "Wk8vF3qZ+abc="
+     },
+     "ok": false
+    }
+   ],
+   "tool_results": [
+    {
+     "error": "unknown member: only demo members demo-001 to demo-100 are served (real members are not published)"
+    }
+   ],
+   "steps": 2,
+   "grounded": true,
+   "ungrounded_numbers": [],
+   "model": "gpt-6-luna",
+   "tokens": {
+    "input": 1475,
+    "cached_input": 0,
+    "output": 66
+   },
+   "cost_usd": 0.0001805,
+   "latency_ms": 5265.7
+  },
+  {
+   "question": "What will the weather be in Taipei tomorrow?",
+   "answer": "I can help with member renewal risk, reasons members are at risk, who to call, and the costs and expected profit of calling.",
+   "tool_calls": [],
+   "tool_results": [],
+   "steps": 1,
+   "grounded": true,
+   "ungrounded_numbers": [],
+   "model": "gpt-6-luna",
+   "tokens": {
+    "input": 694,
+    "cached_input": 0,
+    "output": 31
+   },
+   "cost_usd": 8.49e-05,
+   "latency_ms": 1895.2
+  }
+ ],
+ "summary": {
+  "questions": 9,
+  "grounded": 9,
+  "cost_usd_total": 0.001858,
+  "cost_per_1000_usd": 0.2064,
+  "latency_ms_p50": 5265.7,
+  "latency_ms_p95": 13144.6
+ }
+}

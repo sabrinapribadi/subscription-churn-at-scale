@@ -1,0 +1,104 @@
+[
+ {
+  "type": "function",
+  "name": "member_risk",
+  "description": "How likely this member is to leave after their next expiry, what they are worth, and where they rank on the call list.",
+  "parameters": {
+   "properties": {
+    "member_id": {
+     "description": "Member id",
+     "title": "Member Id",
+     "type": "string"
+    }
+   },
+   "required": [
+    "member_id"
+   ],
+   "type": "object"
+  }
+ },
+ {
+  "type": "function",
+  "name": "why_at_risk",
+  "description": "Plain-language reasons this member is at risk, the evidence behind them, and one suggested action.",
+  "parameters": {
+   "properties": {
+    "member_id": {
+     "description": "Member id",
+     "title": "Member Id",
+     "type": "string"
+    }
+   },
+   "required": [
+    "member_id"
+   ],
+   "type": "object"
+  }
+ },
+ {
+  "type": "function",
+  "name": "call_list",
+  "description": "Calling a given share of members: expected churners, value at risk and expected profit for that whole share,\nplus the first members to call. Use this for \"what profit if we call X%\" and \"who do we call first\".",
+  "parameters": {
+   "properties": {
+    "share": {
+     "default": 0.1,
+     "description": "Fraction of all members to call, e.g. 0.05 for 5%",
+     "exclusiveMinimum": 0,
+     "maximum": 1,
+     "title": "Share",
+     "type": "number"
+    },
+    "limit": {
+     "default": 5,
+     "description": "How many of the first members to list",
+     "maximum": 50,
+     "minimum": 1,
+     "title": "Limit",
+     "type": "integer"
+    },
+    "save_rate": {
+     "default": 0.2,
+     "description": "Share of called churners who stay, e.g. 0.2 for 1 in 5",
+     "maximum": 1,
+     "minimum": 0,
+     "title": "Save Rate",
+     "type": "number"
+    },
+    "cost_per_call": {
+     "default": 20.0,
+     "description": "Cost of one call, in the dataset's money units",
+     "minimum": 0,
+     "title": "Cost Per Call",
+     "type": "number"
+    }
+   },
+   "type": "object"
+  }
+ },
+ {
+  "type": "function",
+  "name": "what_if",
+  "description": "Finds the BEST share of members to call for a save rate and cost per call, and the monthly profit at that best share\n(from March 2017 results). Use call_list instead for the profit of a specific share.",
+  "parameters": {
+   "properties": {
+    "save_rate": {
+     "default": 0.2,
+     "description": "Share of called churners who stay, e.g. 0.2 for 1 in 5",
+     "maximum": 1,
+     "minimum": 0,
+     "title": "Save Rate",
+     "type": "number"
+    },
+    "cost_per_call": {
+     "default": 20.0,
+     "description": "Cost of one call, in the dataset's money units",
+     "minimum": 0,
+     "title": "Cost Per Call",
+     "type": "number"
+    }
+   },
+   "type": "object"
+  }
+ }
+]
