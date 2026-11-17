@@ -32,9 +32,12 @@ C = {"line": "#4d94e8" if dark else "#2a78d6", "you": "#d95926" if dark else "#e
 st.html("""<style>
 .hero-eyebrow{font-size:.78rem;letter-spacing:.09em;text-transform:uppercase;font-weight:600;opacity:.65;margin:0}
 .hero-title{font-family:'Space Grotesk',Inter,system-ui,sans-serif;font-size:clamp(2rem,4.2vw,3rem);font-weight:700;line-height:1.05;margin:.2rem 0 .4rem}
-.hero-sub{font-size:1.05rem;opacity:.8;max-width:62ch;margin:0}
-.brief-w{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#2a78d6;margin-bottom:.25rem}
-.note{border-left:3px solid #2a78d6;padding:.6rem .9rem;border-radius:0 .5rem .5rem 0;background:rgba(42,120,214,.08);line-height:1.5}
+.hero-sub{font-size:1.02rem;opacity:.8;max-width:70ch;margin:0 0 .4rem}
+.brief-w{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#7fb2f0;margin-bottom:.2rem}
+.brief-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin:.2rem 0 .3rem}
+.bcard{border:1px solid #2a3240;border-radius:10px;padding:8px 12px;font-size:.86rem;line-height:1.4;background:#11161e}
+.bcard a{color:#7fb2f0}
+.note{border-left:3px solid #4d94e8;padding:.6rem .9rem;border-radius:0 .5rem .5rem 0;background:rgba(77,148,232,.10);line-height:1.5}
 </style>""")
 
 
@@ -75,17 +78,23 @@ rows = P.curve(grid, save, cost, offer)
 top = P.best(rows)
 bt = P.backtest_best(snap["scenarios"], save, cost)
 
-# 1. Hero and brief (R22, R26)
+# 1. Hero, KPI strip and the brief (R22, R26): the first screen is what LinkedIn's preview captures
+hl = P.headline(snap)
 st.html(f"""<p class="hero-eyebrow">KKBox public data · members expiring March 2017 · {grid['members']:,} members · amounts in NT$</p>
 <h1 class="hero-title">Churn call planner</h1>
 <p class="hero-sub">Who to call two weeks before renewal, and what a call campaign is worth with your team's capacity and costs.</p>""")
+kp = st.columns(4)
+kp[0].metric("Leavers reached, calling 10%", f"{hl['model_reach']:.0%}", f"today's rule: {hl['rule_reach']:.0%}", delta_color="off", delta_arrow="off", border=True)
+kp[1].metric("Backtest profit a month", ntd(hl["profit_10pct"]), "March 2017, calling 10%", delta_color="off", delta_arrow="off", border=True)
+kp[2].metric("Leavers the rule never calls", f"{hl['auto_per_100']:.0f} per 100", "auto-renew; the model reaches", delta_color="off", delta_arrow="off", border=True)
+kp[3].metric("Members scored", f"{hl['members']:,}", "14 days before expiry", delta_color="off", delta_arrow="off", border=True)
 items = P.brief()
-for row in (items[:3], items[3:]):
-    for col, (w, lines) in zip(st.columns(3, border=True), row):
-        col.html(f'<div class="brief-w">{w}</div>')
-        col.markdown(" ".join(lines))
-st.markdown(f"[Results page]({P.PAGES}) · [Technical walkthrough]({P.PAGES}build.html) · [Demo API]({P.API}/docs) · [Source]({P.REPO})")
-st.info(f"This app sleeps after 12 hours without visits. The [results page]({P.PAGES}) is always on and carries every result.")
+st.html('<div class="brief-grid">' + "".join(f'<div class="bcard"><div class="brief-w">{w}</div><div>{P.md_html(lines[0])}</div></div>' for w, lines in items) + "</div>")
+with st.expander("Full brief"):
+    for w, lines in items:
+        st.markdown(f"**{w}:** " + " ".join(lines))
+st.caption(f"[Results page]({P.PAGES}) · [Technical walkthrough]({P.PAGES}build.html) · [Demo API]({P.API}/docs) · [Source]({P.REPO}) · "
+           f"Free Streamlit app: it sleeps after 12 hours without visits; the [results page]({P.PAGES}) is always on and carries every result.")
 
 plan_tab, members_tab, api_tab = st.tabs(["Plan a campaign", "Explore demo members", "Ask the live API"])
 

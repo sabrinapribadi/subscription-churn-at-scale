@@ -49,11 +49,15 @@ def run(**state):
 def test_page_opens_with_brief_limits_and_plan():
     at = run()
     text = " ".join(m.value for m in at.markdown)
-    assert "A churn early warning" in text and "Results page" in text and "Technical walkthrough" in text
-    assert "12 hours" in at.info[0].value                                 # free-tier limits stated (R26)
+    caps = " ".join(c.value for c in at.caption)
+    assert "A churn early warning" in text and "Results page" in caps and "Technical walkthrough" in caps
+    assert "12 hours" in caps                                             # free-tier limits stated (R26)
+    labels = [m.label for m in at.metric]
+    assert labels[:4] == ["Leavers reached, calling 10%", "Backtest profit a month", "Leavers the rule never calls", "Members scored"]
+    assert [m.value for m in at.metric][:2] == ["65%", "NT$12.4M"]       # first screen: committed results, as the API reports
     assert at.subheader[0].value.startswith("Calling the top 4.6%")      # 50 agents × 80 calls × 10 days = 40,000 calls
     assert any("= 40,000 calls" in c.value for c in at.caption)
-    assert [m.label for m in at.metric][:4] == ["Members called", "Likely churners", "Value at risk", "Expected profit"]
+    assert labels[4:8] == ["Members called", "Likely churners", "Value at risk", "Expected profit"]
 
 
 def test_capacity_and_loss_messages():

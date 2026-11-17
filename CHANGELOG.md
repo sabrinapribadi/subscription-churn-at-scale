@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.22.3] — 2026-11-17 — Streamlit app: showcase first screen (R26 item 7)
+**Files:** .streamlit/config.toml, app/streamlit_app.py, app/plan.py, tests/test_streamlit_app.py
+- **Situation:** The app previewed on LinkedIn as text cards, unlike the portfolio's featured apps (dark dashboards with KPI tiles).
+- **Task:** Show the title, headline results and the brief on the first screen.
+- **Action:** Dark theme by default; four KPI tiles computed from committed results; the brief as six compact cards (first line each, full brief one click away).
+- **Result:** First screen at 1440 × 900 shows the title, the KPI tiles and the brief; app tests updated and passing.
+- **Talking point:** "The first screen is the LinkedIn preview, so it carries the results, not the instructions."
+
 ## [0.22.2] — 2026-11-17 — Agent skill iteration 4: plain wording, a per-100 chart, leveled bullets
 **Files:** skills/churn-call-planner/ (SKILL.md, scripts/churn.py, scripts/charts.py, references/, evals/), tests/test_skill_client.py, docs/adr/ADR-012-agent-skill.md
 - **Situation:** Review of iteration 3: "3 of 3 views" confused general readers; the stacked chart needed explaining.

@@ -14,6 +14,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT = ROOT / "deploy" / "public_snapshot.json"
 BRIEF = ROOT / "docs" / "brief.yaml"
+DRIVERS = ROOT / "data" / "outputs" / "p8_global_drivers.json"
 REPO = "https://github.com/sabrinapribadi/subscription-churn-at-scale"
 API = "https://subscription-churn-at-scale.vercel.app"
 PAGES = "https://sabrinapribadi.github.io/subscription-churn-at-scale/"
@@ -80,3 +81,20 @@ def brief(path: Path = BRIEF) -> list[tuple[str, list[str]]]:
         return re.sub(r"\]\((?!https?://)([^)]+)\)", lambda m: f"]({REPO}/blob/main/{m.group(1)})", t)
 
     return [(item["w"], [fix(str(x)) for x in item["lines"]]) for item in b["brief"]]
+
+
+def headline(snap: dict, drivers_path: Path = DRIVERS) -> dict:
+    """KPI strip for the first screen: reach vs today's rule and backtest profit at 10%, from committed results only."""
+    g = json.loads(Path(drivers_path).read_text())["rule_gap"]
+    n, c = snap["scenarios"]["members"], snap["scenarios"]["value_curves"]["expected_value"]
+    profit = next(0.20 * v - 20 * n * f for f, v in c if abs(f - 0.10) < 1e-9)          # API defaults: 20% save rate, NT$20 per call
+    return {"members": snap["call_grid"]["members"], "model_reach": g["model_reach"], "rule_reach": g["rule_reach"],
+            "auto_per_100": 100 * g["points_from_auto_renew"], "profit_10pct": profit, "calls_10pct": g["calls"]}
+
+
+def md_html(text: str) -> str:
+    """Markdown links and bold to HTML for the compact brief cards (brief text is our own, from docs/brief.yaml)."""
+    import html as _h
+    t = _h.escape(text, quote=False)
+    t = re.sub(r"\[([^\]]+)\]\((https?://[^)]+)\)", r'<a href="\2" target="_blank">\1</a>', t)
+    return re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", t)
