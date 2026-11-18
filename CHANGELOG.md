@@ -2,6 +2,14 @@
 
 Newest first. Each entry uses STAR (Situation, Task, Action, Result) so it can be told as a story.
 
+## [0.24.0] — 2026-11-18 — App template v2: sidebar pages, Explore the data, a business question per page
+**Files:** app/streamlit_app.py, app/frame.py (new, shared), tests/test_streamlit_app.py, README.md
+- **Situation:** The user wanted every Streamlit app to combine the older dashboards' structure (sidebar pages: a real use case, EDA, an AI assistant; a business question on every view) with the newer apps' 5W1H brief and KPI first screen.
+- **Task:** Rebuild this app on one shared template (R26 item 8) and check every page against the data before release.
+- **Action:** Six pages on the shared `frame.py`; a new aggregates-only EDA page (churn by expiry month, the five ADR-003 listening groups, what the model weighs, month-to-month drift); campaign inputs kept across pages; member reasons shown without log-odds units.
+- **Result:** 15 app tests pass. Checking the page against the data replaced a churn range that mixed rebuilt and official labels (rebuilt labels matched 98.8% and 97.0%, short of the 99% gate) with official months only, and used the ADR-003 group names instead of invented ones.
+- **Talking point:** "Every portfolio app now reads the same way: what it is for, the data, the use case, then an assistant; and every page answers a business question from the data."
+
 ## [0.23.0] — 2026-11-17 — Agent chat in the Streamlit app: replay by default, your own key optional
 **Files:** app/agent.py (new, shared engine), app/chat.py (new, shared tab), app/agent_tools.py (new), app/agent_schemas.json (new), app/replays.json (new), scripts/record_agent_replays.py (new), app/streamlit_app.py, app/requirements.txt, tests/test_streamlit_app.py, README.md
 - **Situation:** The app showed models and tools but not the agent; hosting a key would let anyone spend the owner's budget.

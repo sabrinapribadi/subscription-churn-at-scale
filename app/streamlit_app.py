@@ -1,6 +1,7 @@
-"""Streamlit companion app (R26): plan a call campaign with your own capacity, explore the demo members, call the live API.
+"""Streamlit companion app (R26, app template v2): overview, the data, a campaign plan, a member's reasons, the agent, the live API.
 
-Only what the static results page cannot do; every number comes from the committed public snapshot or the public API.
+Only what the static results page cannot do; every number comes from the committed public snapshot, committed aggregate results
+(data/outputs; no member rows) or the public API.
 Run: streamlit run app/streamlit_app.py   (theme in .streamlit/config.toml at the repository root)
 """
 from __future__ import annotations
@@ -18,27 +19,35 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import plan as P  # sibling module; the app runs from the repo root on Streamlit Cloud
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import frame as F  # noqa: E402  shared app frame (identical in every portfolio app)
+import plan as P  # noqa: E402  sibling module; the app runs from the repo root on Streamlit Cloud
 
 API = os.environ.get("CHURN_API_BASE", P.API)
-st.set_page_config(page_title="Churn call planner", layout="wide", initial_sidebar_state="expanded")
+OUT = P.ROOT / "data" / "outputs"
+st.set_page_config(page_title="Churn call planner", page_icon=":material/call:", layout="wide", initial_sidebar_state="expanded")
+F.setup(st, accent="#7fb2f0", title_font="'Space Grotesk',Inter,system-ui,sans-serif")
 
 dark = getattr(getattr(st.context, "theme", None), "type", "light") == "dark"
 C = {"line": "#4d94e8" if dark else "#2a78d6", "you": "#d95926" if dark else "#eb6834", "muted": "#8a93a3" if dark else "#6b7385",
      "raise": "#e66767" if dark else "#e34948", "lower": "#4d94e8" if dark else "#2a78d6",
      "risk": ["#f08a5d", "#c4562a", "#7a3a22"] if dark else ["#b8441a", "#eb6834", "#f6b896"]}   # high, medium, low: one orange ramp
 
-st.html("""<style>
-.hero-eyebrow{font-size:.78rem;letter-spacing:.09em;text-transform:uppercase;font-weight:600;opacity:.65;margin:0}
-.hero-title{font-family:'Space Grotesk',Inter,system-ui,sans-serif;font-size:clamp(2rem,4.2vw,3rem);font-weight:700;line-height:1.05;margin:.2rem 0 .4rem}
-.hero-sub{font-size:1.02rem;opacity:.8;max-width:70ch;margin:0 0 .4rem}
-.brief-w{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#7fb2f0;margin-bottom:.2rem}
-.brief-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin:.2rem 0 .3rem}
-.bcard{border:1px solid #2a3240;border-radius:10px;padding:8px 12px;font-size:.86rem;line-height:1.4;background:#11161e}
-.bcard a{color:#7fb2f0}
-.note{border-left:3px solid #4d94e8;padding:.6rem .9rem;border-radius:0 .5rem .5rem 0;background:rgba(77,148,232,.10);line-height:1.5}
-</style>""")
+PAGES = [
+    F.Page("overview", "Overview", ":material/home:", "The results, the brief and where to start."),
+    F.Page("explore", "Explore the data", ":material/query_stats:",
+           "Who leaves (churn by expiry month, five listening groups), what the model weighs, and whether this month looks like the last. "
+           "Aggregates only; no member rows."),
+    F.Page("plan", "Plan a campaign", ":material/campaign:",
+           "Your agents, calls and days give a call list; see how many likely leavers it reaches and what it is worth, net of call and offer costs."),
+    F.Page("members", "Explain a member", ":material/person_search:",
+           "100 synthetic members scored by the real model: why each is flagged, how they rank, and the suggested action."),
+    F.Page("agent", "AI Assistant", ":material/smart_toy:",
+           "Ask the retention planner in plain words: recorded answers replay for free with their tool calls; your own OpenAI key runs it live."),
+    F.Page("api", "Live API and MCP", ":material/api:", "Run your plan on the public API and connect an AI assistant to the same tools."),
+]
+CAMPAIGN = ["agents", "per_day", "days", "save", "cost", "offer"]
 
 
 @st.cache_data
@@ -46,8 +55,9 @@ def snapshot() -> dict:
     return P.load()
 
 
-snap = snapshot()
-grid = snap["call_grid"]
+@st.cache_data
+def committed(name: str) -> dict:
+    return json.loads((OUT / name).read_text())
 
 
 def ntd(v: float) -> str:
@@ -55,55 +65,149 @@ def ntd(v: float) -> str:
     return f"{sign}NT${v / 1e6:.1f}M" if v >= 1e6 else f"{sign}NT${v:,.0f}"
 
 
-# Sidebar: the campaign, kept across tabs
-with st.sidebar:
-    st.subheader("Your campaign")
-    agents = st.number_input("Call agents", 1, 2000, 50, key="agents")
-    per_day = st.number_input("Calls per agent per day", 1, 300, 80, key="per_day")
-    days = st.number_input("Working days before renewal", 1, 14, 10, key="days",
-                           help="Members are scored 14 days before their plan expires, so about 10 working days.")
-    st.divider()
-    save = st.slider("Save rate: share of called churners kept", 0.05, 0.50, 0.20, 0.01, format="%.2f", key="save",
-                     help="An assumption, not data. A small call test measures it.")
-    cost = st.slider("Cost per call (NT$)", 0, 100, 20, 1, key="cost")
-    offer = st.slider("Retention offer per saved member (NT$)", 0, 500, 0, 10, key="offer",
-                      help="Not in the API: the app subtracts offer × expected saved members.")
-    st.divider()
-    st.caption(f"Model `{snap['model_version']}` · snapshot {snap['built']}")
-    st.caption("Free Streamlit Community Cloud app: it sleeps after 12 hours without visits; the first visit wakes it (up to a minute).")
-
-calls = int(agents * per_day * days)
-p = P.plan(grid, calls, save, cost, offer)
-rows = P.curve(grid, save, cost, offer)
-top = P.best(rows)
-bt = P.backtest_best(snap["scenarios"], save, cost)
-
-# 1. Hero, KPI strip and the brief (R22, R26): the first screen is what LinkedIn's preview captures
+snap = snapshot()
+grid = snap["call_grid"]
 hl = P.headline(snap)
-st.html(f"""<p class="hero-eyebrow">KKBox public data · members expiring March 2017 · {grid['members']:,} members · amounts in NT$</p>
-<h1 class="hero-title">Churn call planner</h1>
-<p class="hero-sub">Who to call two weeks before renewal, and what a call campaign is worth with your team's capacity and costs.</p>""")
-kp = st.columns(4)
-kp[0].metric("Leavers reached, calling 10%", f"{hl['model_reach']:.0%}", f"today's rule: {hl['rule_reach']:.0%}", delta_color="off", delta_arrow="off", border=True)
-kp[1].metric("Backtest profit a month", ntd(hl["profit_10pct"]), "March 2017, calling 10%", delta_color="off", delta_arrow="off", border=True)
-kp[2].metric("Leavers the rule never calls", f"{hl['auto_per_100']:.0f} per 100", "auto-renew; the model reaches", delta_color="off", delta_arrow="off", border=True)
-kp[3].metric("Members scored", f"{hl['members']:,}", "14 days before expiry", delta_color="off", delta_arrow="off", border=True)
-items = P.brief()
-st.html('<div class="brief-grid">' + "".join(f'<div class="bcard"><div class="brief-w">{w}</div><div>{P.md_html(lines[0])}</div></div>' for w, lines in items) + "</div>")
-with st.expander("Full brief"):
-    for w, lines in items:
-        st.markdown(f"**{w}:** " + " ".join(lines))
-st.caption(f"[Results page]({P.PAGES}) · [Technical walkthrough]({P.PAGES}build.html) · [Demo API]({P.API}/docs) · [Source]({P.REPO}) · "
-           f"Free Streamlit app: it sleeps after 12 hours without visits; the [results page]({P.PAGES}) is always on and carries every result.")
+F.keep(st, CAMPAIGN)
+page = F.navigate(st, PAGES, brand="Churn call planner", tagline="Who to call before renewal, and what it is worth", icon="☏")
+F.sidebar_stats(st, [(f"{hl['model_reach']:.0%}", f"leavers reached calling 10% (rule: {hl['rule_reach']:.0%})"),
+                     (ntd(hl["profit_10pct"]), "backtest profit a month"), (f"{hl['members']:,}", "members scored"),
+                     (f"{snap['notes']['grounded']}/{snap['notes']['live_calls']}", "agent notes pass the number check")])
 
-plan_tab, members_tab, agent_tab, api_tab = st.tabs(["Plan a campaign", "Explore demo members", "Ask the agent", "Ask the live API"])
 
-# 2. Plan with your own capacity and costs
-with plan_tab:
+def campaign() -> tuple[int, dict]:
+    """Sidebar campaign inputs (plan, members and API pages); kept across pages."""
+    with st.sidebar:
+        F.sidebar_label(st, "Your campaign")
+        agents = st.number_input("Call agents", 1, 2000, 50, key="agents")
+        per_day = st.number_input("Calls per agent per day", 1, 300, 80, key="per_day")
+        days = st.number_input("Working days before renewal", 1, 14, 10, key="days",
+                               help="Members are scored 14 days before their plan expires, so about 10 working days.")
+        save = st.slider("Save rate: share of called churners kept", 0.05, 0.50, 0.20, 0.01, format="%.2f", key="save",
+                         help="An assumption, not data. A small call test measures it.")
+        cost = st.slider("Cost per call (NT$)", 0, 100, 20, 1, key="cost")
+        offer = st.slider("Retention offer per saved member (NT$)", 0, 500, 0, 10, key="offer",
+                          help="Not in the API: the app subtracts offer × expected saved members.")
+    calls = int(agents * per_day * days)
+    return calls, {"agents": agents, "per_day": per_day, "days": days, "save": save, "cost": cost, "offer": offer}
+
+
+def footer() -> None:
+    F.sidebar_footer(st, {"Results page": P.PAGES, "Walkthrough": P.PAGES + "build.html", "Demo API": P.API + "/docs", "Source": P.REPO,
+                          "Agent skill": P.REPO + "/blob/main/skills/churn-call-planner/SKILL.md"},
+                     f"Data: KKBox public churn data (WSDM 2018), members expiring March 2017; model `{snap['model_version']}`, snapshot "
+                     f"{snap['built']}. Member rows are never published.")
+
+
+# 1. Overview: hero, KPI strip, the 5W1H brief and a card per page (R22, R26 item 7)
+if page.key == "overview":
+    footer()
+    F.hero(st, f"KKBox public data · members expiring March 2017 · {grid['members']:,} members · amounts in NT$", "Churn call planner",
+           "Who to call two weeks before renewal, and what a call campaign is worth with your team's capacity and costs.")
+    F.kpis(st, [("Leavers reached, calling 10%", f"{hl['model_reach']:.0%}", f"today's rule: {hl['rule_reach']:.0%}"),
+                ("Backtest profit a month", ntd(hl["profit_10pct"]), "March 2017, calling 10%"),
+                ("Leavers the rule never calls", f"{hl['auto_per_100']:.0f} per 100", "auto-renew; the model calls"),
+                ("Members scored", f"{hl['members']:,}", "14 days before expiry")])
+    F.brief(st, F.load_brief(P.ROOT, P.REPO))
+    F.links_line(st, {"Results page": P.PAGES, "Technical walkthrough": P.PAGES + "build.html", "Demo API": P.API + "/docs", "Source": P.REPO})
+    F.use_cards(st, PAGES)
+
+# 2. Explore the data: cohorts, listening groups, what the model weighs, drift (aggregates only)
+elif page.key == "explore":
+    footer()
+    ds, beh, drv, dr = committed("p1_dataset.json"), committed("p3_behaviour.json"), committed("p8_global_drivers.json"), committed("p7_drift.json")
+    months = pd.DataFrame([{"month": k.split(":")[1], **v} for k, v in ds.items() if k.startswith("k14_w120:")]).sort_values("month")
+    months["label"] = months["month"].map(lambda m: pd.Timestamp(f"{m[:4]}-{m[4:]}-01").strftime("%b %Y"))
+    gap = drv["rule_gap"]
+    groups = pd.DataFrame(beh["personas"]).sort_values("churn_rate", ascending=False)
+    names = {0: "Steady regulars", 1: "Silent payers", 2: "Re-engaging", 3: "Fading", 4: "Just came back"}   # ADR-003 names, by cluster
+    groups["group"] = groups.apply(lambda r: f"{names[r['cluster']]} ({r['median_minutes_per_day']:.0f} min a day)", axis=1)
+    themes = drv["themes"]
+    top_theme = max(themes, key=lambda t: themes[t]["share_all"])
+    mar = months[months["month"] == "201703"].iloc[0]
+    feb = months[months["month"] == "201702"].iloc[0]
+    agree = committed("p0_label_agreement.json")
+    F.header(st, page, "Who leaves, and what does the model look at?",
+             f"{mar['churn_rate']:.1%} of the {mar['members']:,} members expiring in {mar['label']} did not renew ({feb['churn_rate']:.1%} in "
+             f"{feb['label']}; official labels). **{gap['auto_renew_share_of_leavers']:.0%} "
+             f"of leavers had auto-renew on**, so a manual-renewal rule never calls them. {top_theme} signals carry "
+             f"{themes[top_theme]['share_all']:.0%} of the model's attention, {themes[top_theme]['share_call_list']:.0%} inside the call list.")
+
+    st.subheader("Churn by expiry month")
+    st.altair_chart(alt.Chart(months).mark_bar(cornerRadiusEnd=4, size=38).encode(
+        x=alt.X("label:N", sort=list(months["label"]), title=None, axis=alt.Axis(labelAngle=0)), y=alt.Y("churn_rate:Q", title="Did not renew", axis=alt.Axis(format="%")),
+        color=alt.Color("label_source:N", title="Label", scale=alt.Scale(domain=["official", "reconstructed"], range=[C["line"], C["muted"]]),
+                        legend=alt.Legend(orient="top")),
+        tooltip=["label", alt.Tooltip("members:Q", format=","), alt.Tooltip("churn_rate:Q", format=".2%"), "label_source"]
+    ).properties(height=260), width="stretch", theme="streamlit")
+    st.caption(f"Official labels come with the dataset for Feb and Mar 2017. Earlier months use labels rebuilt from the transaction log with the "
+               f"official rule; on the official months the rebuild matched {agree['2017-02']['label_agreement_on_overlap']:.1%} and "
+               f"{agree['2017-03']['label_agreement_on_overlap']:.1%} of labels, short of the 99% gate (ADR-002), so the test uses official labels only.")
+
+    st.subheader("Five listening groups (k-means on 60-day listening-shape statistics)")
+    metric = st.segmented_control("Compare the groups on", ["Churn rate", "Their leavers reached by the top 10%", "Share of members"],
+                                  default="Churn rate", key="group_metric") or "Churn rate"
+    col = {"Churn rate": "churn_rate", "Their leavers reached by the top 10%": "reached_in_top10", "Share of members": "share"}[metric]
+    st.altair_chart(alt.Chart(groups).mark_bar(cornerRadiusEnd=4, color=C["line"]).encode(
+        y=alt.Y("group:N", sort=list(groups["group"]), title=None, axis=alt.Axis(labelLimit=300)),
+        x=alt.X(f"{col}:Q", title=metric, axis=alt.Axis(format="%")),
+        tooltip=["group", alt.Tooltip("members:Q", format=","), alt.Tooltip("churn_rate:Q", title="Churn rate", format=".1%"),
+                 alt.Tooltip("reached_in_top10:Q", title="Leavers reached in top 10%", format=".0%"),
+                 alt.Tooltip("median_tenure_days:Q", title="Median tenure (days)")]).properties(height=alt.Step(34)), width="stretch", theme="streamlit")
+    st.caption("Names and clusters from ADR-003 (members expiring March 2017). The listening-shape features did not improve the model "
+               "(+0.004 PR-AUC against a +0.02 bar), so the groups are kept for practitioners' messaging, not for scoring.")
+
+    a, b = st.columns(2, gap="large")
+    with a:
+        st.markdown("**What the model weighs, by theme** (share of mean |TreeSHAP|)")
+        th = pd.DataFrame([{"theme": t, "who": w, "share": v[k]} for t, v in themes.items()
+                           for w, k in [("All members", "share_all"), ("Inside the call list", "share_call_list")]])
+        st.altair_chart(alt.Chart(th).mark_bar(cornerRadiusEnd=3, height=11).encode(
+            y=alt.Y("theme:N", sort=list(themes), title=None, axis=alt.Axis(labelLimit=200)), yOffset="who:N",
+            x=alt.X("share:Q", title=None, axis=alt.Axis(format="%")),
+            color=alt.Color("who:N", scale=alt.Scale(range=[C["muted"], C["line"]]), legend=alt.Legend(title=None, orient="top")),
+            tooltip=["theme", "who", alt.Tooltip("share:Q", format=".0%")]).properties(height=alt.Step(30)), width="stretch", theme="streamlit")
+    with b:
+        n = st.slider("Top features", 5, 20, 10, key="nfeat")
+        feats = pd.DataFrame(drv["features"]).sort_values("share_all", ascending=False).head(n)
+        st.markdown(f"**The {n} features the model leans on most**")
+        st.altair_chart(alt.Chart(feats).mark_bar(cornerRadiusEnd=3, color=C["line"]).encode(
+            y=alt.Y("label:N", sort="-x", title=None, axis=alt.Axis(labelLimit=220)), x=alt.X("share_all:Q", title=None, axis=alt.Axis(format="%")),
+            tooltip=["label", alt.Tooltip("share_all:Q", title="All members", format=".1%"),
+                     alt.Tooltip("share_call_list:Q", title="Call list", format=".1%")]).properties(height=alt.Step(24)), width="stretch", theme="streamlit")
+
+    st.subheader(f"Is March like February? Input drift (PSI) on {dr['features_checked']} features and the score")
+    tb = pd.DataFrame(dr["table"]).sort_values("psi", ascending=False)
+    clip = st.toggle("Clip the scale at 0.5 (shows the stable features)", True, key="clip")
+    tb["shown"] = tb["psi"].clip(upper=0.5) if clip else tb["psi"]
+    st.altair_chart((alt.Chart(tb).mark_bar(cornerRadiusEnd=3).encode(
+        y=alt.Y("feature:N", sort=list(tb["feature"]), title=None, axis=alt.Axis(labelLimit=220)), x=alt.X("shown:Q", title="PSI"),
+        color=alt.Color("band:N", scale=alt.Scale(domain=["stable", "watch", "alert"], range=[C["muted"], "#e0b04d", C["raise"]]),
+                        legend=alt.Legend(title=None, orient="top")),
+        tooltip=["feature", alt.Tooltip("psi:Q", format=".3f"), "band", "reference_mean", "current_mean"])
+        + alt.Chart(pd.DataFrame([{"x": dr["alert_threshold"]}])).mark_rule(strokeDash=[4, 3], color=C["muted"]).encode(x="x:Q")
+    ).properties(height=alt.Step(22)), width="stretch", theme="streamlit")
+    st.caption(f"Dashed line: alert at PSI {dr['alert_threshold']}. {dr['bands']['alert']} features alert ({', '.join(dr['alerts'])}); the score itself "
+               f"moved by PSI {dr['score_psi']}. Lagged check: the list expected {dr['lagged']['expected_churners_on_list']:,.0f} leavers and "
+               f"{dr['lagged']['realised_churners_on_list']:,} left.")
+
+# 3. Plan a campaign with your own capacity and costs
+elif page.key == "plan":
+    calls, cfg = campaign()
+    footer()
+    save, cost, offer = cfg["save"], cfg["cost"], cfg["offer"]
+    p = P.plan(grid, calls, save, cost, offer)
+    rows = P.curve(grid, save, cost, offer)
+    top = P.best(rows)
+    bt = P.backtest_best(snap["scenarios"], save, cost)
+    F.header(st, page, "How many members should we call with our team, and what is it worth?",
+             f"Your {calls:,} calls cover the top {p['share']:.1%} and reach about {p['expected_churners']:,.0f} likely leavers: expected profit "
+             f"**{ntd(p['expected_profit'])} a month**. The most profitable list at these costs is the top {top['share']:.1%} "
+             f"({ntd(top['expected_profit'])}). Change the campaign in the sidebar.")
     st.subheader(f"Calling the top {p['share']:.1%} (about {p['members_called']:,} members) reaches about {p['expected_churners']:,.0f} "
                  f"likely churners; expected profit {ntd(p['expected_profit'])} a month")
-    st.caption(f"Your capacity: {agents:,} agents × {per_day:,} calls × {days} days = {calls:,} calls, rounded to the nearest 0.1% of members "
-               "(the snapshot's grid, as in the API). Change it in the sidebar.")
+    st.caption(f"Your capacity: {cfg['agents']:,} agents × {cfg['per_day']:,} calls × {cfg['days']} days = {calls:,} calls, rounded to the nearest "
+               "0.1% of members (the snapshot's grid, as in the API). Change it in the sidebar.")
     m = st.columns(4)
     m[0].metric("Members called", f"{p['members_called']:,}", f"top {p['share']:.1%} of {grid['members']:,}",
                 delta_color="off", delta_arrow="off", border=True)
@@ -158,8 +262,8 @@ with plan_tab:
             color=alt.Color("kind:N", scale=alt.Scale(domain=["Kept", "Cost", "Profit"], range=[C["line"], C["you"], "#7fb2f0" if dark else "#1a5aa6"]),
                             legend=None),
             tooltip=[alt.Tooltip("step:N", title=""), alt.Tooltip("tip:N", title="NT$")])
-        labels = alt.Chart(wf).transform_calculate(hi="max(datum.start, datum.end)").mark_text(align="left", dx=6, fontWeight=600, color=C["muted"]
-            ).encode(y=y, x="hi:Q", text="text:N")
+        labels = alt.Chart(wf).transform_calculate(hi="max(datum.start, datum.end)").mark_text(
+            align="left", dx=6, fontWeight=600, color=C["muted"]).encode(y=y, x="hi:Q", text="text:N")
         st.altair_chart((bars + labels).properties(height=60 * len(wf) + 40), width="stretch", theme="streamlit")
         st.caption("Value kept = save rate × value at risk among the members called; costs are calls and offers.")
     st.caption(f"Forecast from calibrated churn chances for members expiring in March 2017, scored 14 days ahead. Profit = save rate × value at risk "
@@ -170,8 +274,12 @@ with plan_tab:
             "label": "Share", "members_called": "Members called", "expected_churners": "Likely churners", "expected_value_at_risk": "Value at risk (NT$)",
             "expected_profit": "Expected profit (NT$)"}), hide_index=True, width="stretch")
 
-# 3. Demo members: filter, click one, see why
-with members_tab:
+# 4. Explain a member: filter, click one, see why
+elif page.key == "members":
+    calls, cfg = campaign()
+    footer()
+    p = P.plan(grid, calls, cfg["save"], cfg["cost"], cfg["offer"])
+    top_box = st.container()                                    # the header is filled once the member is chosen
     st.markdown("100 synthetic members (real member rows are not published), scored by the real model and ranked against the real cohort. "
                 "**Click a point** or pick a member below.")
     a, b = st.columns([2, 1])
@@ -184,6 +292,7 @@ with members_tab:
     st.caption(f"{len(view)} of {len(dm)} demo members shown; {int(dm['in_call_list'].sum())} are inside your call list.")
 
     if view.empty:
+        F.header(top_box, page, "Why is this member on the call list, and what should the agent do?", "No demo member matches these filters.")
         st.info("No demo member matches these filters.")
     else:
         pick = alt.selection_point(fields=["member"], name="pick", on="click")
@@ -204,7 +313,14 @@ with members_tab:
             st.session_state.pop("member", None)
 
         mid = st.selectbox("Member to explain", view["member"].tolist(), key="member")
-        e = snap["demo"][mid]["explanation"]; s = e["score"]
+        e = snap["demo"][mid]["explanation"]
+        s = e["score"]
+        up = [x for x in e["reasons"] if x["contribution"] > 0]
+        F.header(top_box, page, "Why is this member on the call list, and what should the agent do?",
+                 f"{mid}: {s['churn_probability']:.0%} chance of not renewing, {ntd(s['member_value'])} a year at stake, top "
+                 f"{100 - s['priority_percentile']:.1f}% on priority. "
+                 + (f"The strongest reason is **{up[0]['label']} ({up[0]['value']})**. " if up else "")
+                 + f"Suggested action: {e['suggested_action']}.")
         st.subheader(f"{mid}: {s['churn_probability']:.0%} chance of not renewing ({s['risk_level']} risk), {ntd(s['member_value'])} a year at stake")
         k = st.columns(3)
         k[0].metric("Chance of not renewing", f"{s['churn_probability']:.0%}", f"{s['risk_level']} risk", delta_color="off", delta_arrow="off", border=True)
@@ -213,32 +329,41 @@ with members_tab:
         r = pd.DataFrame(e["reasons"]).assign(effect=lambda d: d["contribution"].map(lambda v: "Raises risk" if v > 0 else "Lowers risk"),
                                               text=lambda d: d["label"] + " (" + d["value"].astype(str) + ")")
         enc = {"y": alt.Y("text:N", sort=alt.EncodingSortField("contribution", op="max", order="descending"), title=None, axis=alt.Axis(labelLimit=320)),
-               "x": alt.X("contribution:Q", title="Contribution to the model's score (log-odds)")}
+               "x": alt.X("contribution:Q", title="How hard each reason pushes the churn chance (longer = stronger)", axis=alt.Axis(labels=False))}
         bars = alt.Chart(r).mark_bar(cornerRadiusEnd=4).encode(
             **enc, color=alt.Color("effect:N", scale=alt.Scale(domain=["Raises risk", "Lowers risk"], range=[C["raise"], C["lower"]]),
                                    legend=alt.Legend(title=None, orient="top")),
-            tooltip=[alt.Tooltip("label:N", title="Reason"), alt.Tooltip("value:N", title="Value"), alt.Tooltip("contribution:Q", title="Log-odds", format="+.2f")])
-        vals = alt.Chart(r).mark_text(align="left", dx=4, color=C["muted"]).encode(**enc, text=alt.Text("contribution:Q", format="+.2f"))
+            tooltip=[alt.Tooltip("label:N", title="Reason"), alt.Tooltip("value:N", title="Value"), alt.Tooltip("effect:N", title="")])
+        vals = alt.Chart(r).mark_text(align="left", dx=4, color=C["muted"]).encode(**enc, text="effect:N")
         st.markdown("**Why the model flags this member**")
         st.altair_chart((bars + vals).properties(height=alt.Step(30)), width="stretch", theme="streamlit")
         meter = e.get("meter", {})
         who = f"{meter.get('provider')} {meter.get('model')}" if meter.get("provider") != "template" else "the template writer"
         st.markdown(f"**Suggested action:** {e['suggested_action']}.")
         st.markdown(f"**Agent note** (written once offline by {who}; grader check: {'passed' if e.get('grounded') else 'failed'}; no model runs here):")
-        st.html(f'<div class="note">{e["narrative"]}</div>')
+        st.html(f'<div class="f-note">{e["narrative"]}</div>')
 
-# 4. The retention planner agent: recorded answers by default, live only with the viewer's own key
-with agent_tab:
+# 5. AI Assistant: recorded answers by default, live only with the viewer's own key
+elif page.key == "agent":
+    footer()
     import agent_tools as AT
     import chat
-    st.markdown("Ask the retention planner agent (ADR-007) in plain words. It picks the tools (call list, what-if, a member's risk and "
-                "reasons), reads their results and answers; every number must come from a tool.")
-    chat.render(st, Path(__file__).resolve().parent / "replays.json", AT)
+    rec = json.loads((HERE / "replays.json").read_text())["runs"]
+    F.header(st, page, "Can a retention manager ask in plain words instead of reading charts?",
+             f"Yes. The planner agent (ADR-007) picks the tools (call list, what-if, a member's risk and reasons) and answers; every number must "
+             f"come from a tool. {sum(r['grounded'] for r in rec)} of {len(rec)} recorded answers pass that check. Replay is free; with your own "
+             "OpenAI key you can ask anything, 10 questions per session, and the key is never stored.")
+    chat.render(st, HERE / "replays.json", AT)
 
-# 5. The live API: same plan, real HTTP
-with api_tab:
-    st.markdown(f"Run your plan against the public API ({API}). It answers from the same snapshot, so the numbers should match the plan tab "
-                "(except the offer cost, which the API does not take).")
+# 6. Live API and MCP: same plan, real HTTP
+elif page.key == "api":
+    calls, cfg = campaign()
+    footer()
+    save, cost = cfg["save"], cfg["cost"]
+    p = P.plan(grid, calls, save, cost, cfg["offer"])
+    F.header(st, page, "Can our own tools get the same numbers?",
+             f"Yes: the public API answers from the same snapshot, so the plan for your {calls:,} calls should match this app's expected profit "
+             "(the API takes no offer cost). The same four tools are served over MCP for AI assistants.")
     q = {"share": round(p["share"], 3), "save_rate": save, "cost_per_call": float(cost)}
     url = f"{API}/call-list?{urllib.parse.urlencode(q)}"
     st.code(f"curl '{url}'", language="bash")

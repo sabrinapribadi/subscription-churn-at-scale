@@ -111,14 +111,18 @@ pytest tests/ -q
 
 **Live:** [subscription-churn-at-scale.streamlit.app](https://subscription-churn-at-scale.streamlit.app/). A companion app in [`app/`](app/streamlit_app.py) (rule R26) holds only what the static results page cannot:
 
-1. **Plan a campaign from your capacity:** agents × calls per day × working days, your save rate, cost per call and a retention offer per saved member; shows expected profit, the best share and a backtest check.
-2. **Explore the 100 demo members:** filter by risk or by "inside your call list", then see one member's reasons (chart) and the note written once offline.
-3. **Ask the live API:** runs your plan against the public API and shows whether the numbers match; the MCP command for AI assistants.
+Built on the portfolio's app template (rule R26 item 8): a sidebar with one button per page (each page linkable as `?page=`), at-a-glance stats and links; every page opens with the business question it answers, with the answer computed from the data.
+
+1. **Overview:** the results, the 5W1H brief and a card per page.
+2. **Explore the data (aggregates only):** churn by expiry month, five listening groups (ADR-003), what the model weighs by theme and feature, and month-to-month input drift (PSI).
+3. **Plan a campaign:** agents × calls per day × working days, your save rate, cost per call and a retention offer; expected profit, the best share and a backtest check.
+4. **Explain a member:** 100 synthetic members scored by the real model; filter, click one, see why it is flagged and the suggested action.
+5. **AI Assistant** and 6. **Live API and MCP** (below).
 
 - **Ask the agent:** the retention planner agent (ADR-007). **Replay by default:** 9 real answers recorded on the public API (`app/replays.json`, made by `scripts/record_agent_replays.py`), each with its tool calls, a number check (9 of 9 pass), cost and time; a typed question shows the closest recorded one. **Live with your own key:** a viewer can paste their own OpenAI key; it stays in their session only, is never stored or logged, and is capped at 10 questions. The app never holds a key of ours.
 - **Data:** the committed public snapshot (`deploy/public_snapshot.json`) and the public API only; no keys, no model, no member rows.
 - **Free-tier limits:** Streamlit Community Cloud sleeps after 12 hours without visits and the first visit wakes it; the [results page](https://sabrinapribadi.github.io/subscription-churn-at-scale/) is the always-on fallback. No keep-awake pings.
-- **Look:** theme in `.streamlit/config.toml` (light and dark, Inter and Space Grotesk); campaign inputs in the sidebar; KPI cards, a profit curve, a where-the-money-goes waterfall and a clickable member scatter.
+- **Look:** dark theme in `.streamlit/config.toml`; campaign inputs in the sidebar (kept across pages); KPI cards, a profit curve, a where-the-money-goes waterfall and a clickable member scatter.
 - **Tests:** `tests/test_streamlit_app.py` (logic against the API's figures, and Streamlit AppTest smoke tests) runs in CI.
 - **Run locally:** `pip install -r app/requirements.txt && streamlit run app/streamlit_app.py`.
 

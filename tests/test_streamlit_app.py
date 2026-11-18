@@ -37,8 +37,12 @@ def test_brief_links_are_absolute():
     assert "](skills/" not in " ".join(items["Where"]) and P.REPO + "/blob/main/skills/" in " ".join(items["Where"])
 
 
-def run(**state):
+PAGES = ["overview", "explore", "plan", "members", "agent", "api"]
+
+
+def run(page="plan", **state):
     at = AppTest.from_file(APP, default_timeout=30)
+    at.session_state["page"] = page
     at.run()
     for k, v in state.items():
         (at.number_input(key=k) if k in {"agents", "per_day", "days"} else at.slider(key=k)).set_value(v)
@@ -47,8 +51,12 @@ def run(**state):
     return at
 
 
-def test_page_opens_with_brief_limits_and_plan():
-    at = run()
+def html_text(at) -> str:
+    return " ".join(e.proto.body for e in at.get("html"))
+
+
+def test_first_screen_brief_limits_and_pages():
+    at = run("overview")
     text = " ".join(m.value for m in at.markdown)
     caps = " ".join(c.value for c in at.caption)
     assert "A churn early warning" in text and "Results page" in caps and "Technical walkthrough" in caps
@@ -56,9 +64,33 @@ def test_page_opens_with_brief_limits_and_plan():
     labels = [m.label for m in at.metric]
     assert labels[:4] == ["Leavers reached, calling 10%", "Backtest profit a month", "Leavers the rule never calls", "Members scored"]
     assert [m.value for m in at.metric][:2] == ["65%", "NT$12.4M"]       # first screen: committed results, as the API reports
+    for w in ["What", "Why", "Who", "Where", "When it fails", "How"]:     # the 5W1H brief (R22)
+        assert f'class="f-w">{w}<' in html_text(at), w
+    assert [b.key for b in at.sidebar.button] == [f"nav_{k}" for k in PAGES]
+
+
+def test_every_page_opens_with_its_business_question():
+    for key in PAGES[1:]:
+        at = run(key)
+        assert "Business question" in html_text(at), key
+
+
+def test_plan_page_and_campaign_kept_across_pages():
+    at = run()
     assert at.subheader[0].value.startswith("Calling the top 4.6%")      # 50 agents × 80 calls × 10 days = 40,000 calls
     assert any("= 40,000 calls" in c.value for c in at.caption)
-    assert labels[4:8] == ["Members called", "Likely churners", "Value at risk", "Expected profit"]
+    assert [m.label for m in at.metric][:4] == ["Members called", "Likely churners", "Value at risk", "Expected profit"]
+    at.number_input(key="agents").set_value(100).run()
+    at.sidebar.button(key="nav_overview").click().run()
+    at.sidebar.button(key="nav_plan").click().run()
+    assert not at.exception and at.number_input(key="agents").value == 100
+
+
+def test_explore_uses_official_months_and_named_groups():
+    at = run("explore")
+    page = html_text(at)
+    assert "7.3% of the 862,158 members expiring in Mar 2017" in page and "5.5% in Feb 2017" in page
+    assert any("98.8%" in c.value and "97.0%" in c.value for c in at.caption)
 
 
 def test_capacity_and_loss_messages():
@@ -71,9 +103,10 @@ def test_capacity_and_loss_messages():
 
 def test_member_explorer_and_api_failure_is_handled(monkeypatch):
     monkeypatch.setenv("CHURN_API_BASE", "http://127.0.0.1:9")            # nothing listens: the button must warn, not crash
-    at = run()
+    at = run("members")
     at.selectbox(key="member").set_value("demo-001").run()
     assert any(s.value.startswith("demo-001: 17% chance") for s in at.subheader)
+    at = run("api")
     at.button(key="run_api").click().run()
     assert not at.exception and any("did not answer" in w.value for w in at.warning)
 
@@ -109,7 +142,7 @@ def _chat_app(monkeypatch, fake_run=None):
     if fake_run:
         monkeypatch.setattr(A, "run", fake_run)
     at = AppTest.from_file(APP, default_timeout=60)
-    at.session_state["view"] = "Ask the agent"                          # lazy tabs (site planner); ignored where tabs are eager
+    at.session_state["page"] = "agent"
     at.run()
     assert not at.exception, at.exception
     return at
@@ -152,3 +185,9 @@ def test_app_agent_matches_repo_agent():
     tools_mod = pytest.importorskip("src.genai.tools")
     assert AT.SYSTEM == agent_mod.SYSTEM
     assert AT.SCHEMAS == json.loads(json.dumps(tools_mod.openai_tool_schemas(tools_mod.build_tools(None))))
+
+
+def test_frame_is_the_shared_copy():
+    """The app frame is identical in every portfolio app; change it everywhere at once (checksum of the shared copy)."""
+    import hashlib
+    assert hashlib.sha256((ROOT / "app" / "frame.py").read_bytes()).hexdigest()[:16] == "385e92329f20405a"
